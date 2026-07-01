@@ -20,6 +20,13 @@ const SYS_ROLE_DISPLAY = {
   hr: 'HR', accountant: 'Accountant', poc: 'POC',
 }
 
+// Maps admin-staff display role → DB users.role (must be one of the backend's VALID_ROLES)
+const ADMIN_ROLE_TO_SYS_ROLE = {
+  Admin: 'admin', Manager: 'manager', HR: 'hr', Accountant: 'accountant', POC: 'poc',
+  'Operations Manager': 'manager', 'Fleet Manager': 'manager',
+  'POC Supervisor': 'poc', 'Finance Manager': 'accountant',
+}
+
 const STATUS = {
   active:   { l:'Active',   c:'#10B981', bg:'#F0FDF4', bc:'#A7F3D0', dot:'#10B981' },
   on_leave: { l:'On Leave', c:'#F59E0B', bg:'#FFFBEB', bc:'#FDE68A', dot:'#F59E0B' },
@@ -40,7 +47,8 @@ const EMPTY = {
   salary:'', joined:'', phone:'', work_number:'', nationality:'',
   visa_expiry:'', license_expiry:'', iloe_expiry:'',
   station_code:'DDB1', avatar:'👔', emirates_id:'',
-  annual_leave_balance:30, annual_leave_start:'', insurance_url:''
+  annual_leave_balance:30, annual_leave_start:'', insurance_url:'',
+  login_email:'', login_password:''
 }
 
 function hdr() { return { 'Content-Type':'application/json', Authorization:`Bearer ${localStorage.getItem('gcd_token')}` } }
@@ -84,6 +92,9 @@ function AdminModal({ emp, onSave, onClose, mode }) {
   async function handleSave() {
     if (!form.name || !form.role || !form.dept) return setErr('Name, role and department required')
     if (mode==='add' && !form.id) return setErr('Employee ID required')
+    if (mode==='add' && form.login_email && form.login_password && form.login_password.length < 6) {
+      return setErr('Login password must be at least 6 characters')
+    }
     setSaving(true); setErr(null)
     try {
       const body = { ...form, salary: Number(form.salary)||0, hourly_rate: 0 }
@@ -91,7 +102,24 @@ function AdminModal({ emp, onSave, onClose, mode }) {
       const res  = await fetch(url, { method: mode==='add'?'POST':'PUT', headers: hdr(), body: JSON.stringify(body) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to save')
-      onSave(data.employee || data)
+      const savedEmp = data.employee || data
+      if (mode==='add' && form.login_email && form.login_password) {
+        const loginRes = await fetch(`${API}/api/auth/users`, {
+          method:'POST', headers:hdr(),
+          body: JSON.stringify({
+            email: form.login_email.trim().toLowerCase(),
+            password: form.login_password,
+            name: form.name,
+            role: ADMIN_ROLE_TO_SYS_ROLE[form.role] || 'admin',
+            emp_id: savedEmp.id,
+            station_code: form.station_code,
+            status: 'active',
+          })
+        })
+        const loginData = await loginRes.json()
+        if (!loginRes.ok) throw new Error(`Staff saved, but login creation failed: ${loginData.error || 'unknown error'}`)
+      }
+      onSave(savedEmp)
     } catch(e) { setErr(e.message) } finally { setSaving(false) }
   }
 
@@ -115,7 +143,10 @@ function AdminModal({ emp, onSave, onClose, mode }) {
     )
   }
 
-  const TABS = [{ id:'identity', l:'Identity' }, { id:'work', l:'Work & Pay' }, { id:'docs', l:'Documents' }]
+  const TABS = [
+    { id:'identity', l:'Identity' }, { id:'work', l:'Work & Pay' }, { id:'docs', l:'Documents' },
+    ...(mode==='add' ? [{ id:'login', l:'Login' }] : []),
+  ]
 
   return (
     <div className="modal-overlay" style={{ zIndex:9999 }} onClick={e=>e.target===e.currentTarget&&onClose()}>
@@ -188,6 +219,18 @@ function AdminModal({ emp, onSave, onClose, mode }) {
                 <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:5 }}>
                   Paste the Google Drive sharing link for this staff member's insurance card.
                 </div>
+              </div>
+            </div>
+          )}
+
+          {tab==='login' && mode==='add' && (
+            <div style={{ display:'flex', flexDirection:'column', gap:13 }}>
+              <div style={{ background:'var(--amber-bg)', border:'1px solid var(--amber-border)', borderRadius:10, padding:'12px 14px', fontSize:12.5, color:'#92400E' }}>
+                <strong>Optional:</strong> Creates a dashboard login for this admin staff member, using their assigned role ({form.role}).
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:13 }}>
+                {inp('Login Email','login_email','email','name@goldencrescent.ae')}
+                {inp('Login Password','login_password','password','Min 6 characters')}
               </div>
             </div>
           )}
