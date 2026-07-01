@@ -21,8 +21,9 @@ const SYS_ROLE_DISPLAY = {
 }
 
 // Maps admin-staff display role → DB users.role (must be one of the backend's VALID_ROLES)
+// 'Manager' maps to general_manager (not manager) to match existing convention (e.g. Muhammad Iftikhar)
 const ADMIN_ROLE_TO_SYS_ROLE = {
-  Admin: 'admin', Manager: 'manager', HR: 'hr', Accountant: 'accountant', POC: 'poc',
+  Admin: 'admin', Manager: 'general_manager', HR: 'hr', Accountant: 'accountant', POC: 'poc',
   'Operations Manager': 'manager', 'Fleet Manager': 'manager',
   'POC Supervisor': 'poc', 'Finance Manager': 'accountant',
 }
