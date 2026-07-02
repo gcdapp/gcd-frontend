@@ -16,6 +16,18 @@ const MANAGER_TYPES = [
 ]
 const STATIONS  = ['DDB1','DXE6']
 
+// Mirrors backend VALID_PROJECTS (backend/src/routes/auth.js) — restricts which DAs/employees this account can see
+const PROJECT_OPTIONS = [
+  { value:'pulser',           label:'Pulser (Amazon)' },
+  { value:'cret',             label:'CRET (Amazon)' },
+  { value:'office',           label:'Office' },
+  { value:'creative_packers', label:'Creative Packers' },
+  { value:'ig_rak',           label:'IG RAK' },
+  { value:'imile',            label:'IMILE Delivery Services' },
+  { value:'jnt_express',      label:'Jnt Express' },
+  { value:'le_chocola',       label:'Le Chocola' },
+]
+
 const ROLE_CFG = {
   admin:           { c:'#7C3AED', bg:'#F5F3FF', bc:'#DDD6FE', label:'Admin' },
   general_manager: { c:'#0F766E', bg:'#F0FDFA', bc:'#99F6E4', label:'Manager' },
@@ -38,18 +50,25 @@ function UserModal({ user, onSave, onClose }) {
   const [station,  setStation]  = useState(user?.station_code||'DDB1')
   const [status,   setStatus]   = useState(user?.status||'active')
   const [mgrType]              = useState(user?.manager_type||'general_manager')
+  const [projects, setProjects] = useState(user?.assigned_projects || [])
   const [showPw,   setShowPw]   = useState(false)
   const [saving,   setSaving]   = useState(false)
   const [err,      setErr]      = useState(null)
 
   const rc = ROLE_CFG[role] || ROLE_CFG.driver
+  const showProjectScope = role !== 'driver' && role !== 'poc'
+
+  function toggleProject(v) {
+    setProjects(p => p.includes(v) ? p.filter(x=>x!==v) : [...p, v])
+  }
 
   async function handleSave() {
     if (!name||!email) return setErr('Name and email required')
     if (!isEdit && !password) return setErr('Password required for new account')
     setSaving(true); setErr(null)
     try {
-      const body = { name, email, role, manager_type:role==='general_manager'?mgrType:null, emp_id:empId||null, station_code:role==='poc'?station:null, status }
+      const body = { name, email, role, manager_type:role==='general_manager'?mgrType:null, emp_id:empId||null, station_code:role==='poc'?station:null, status,
+        assigned_projects: showProjectScope ? (projects.length ? projects : null) : null }
       if (password) body.password = password
       const res  = await fetch(`${API}/api/auth/users${isEdit?`/${user.id}`:''}`, { method:isEdit?'PUT':'POST', headers:hdr(), body:JSON.stringify(body) })
       const data = await res.json()
@@ -147,6 +166,28 @@ function UserModal({ user, onSave, onClose }) {
               </div>
             )}
           </div>
+
+          {showProjectScope && (
+            <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:'#A89880', marginBottom:5 }}>
+                Project Scope
+                <span style={{ fontWeight:400, textTransform:'none', letterSpacing:0, fontSize:10, marginLeft:5, color:'#C4B49A' }}>
+                  {projects.length ? 'restricted to selected projects — sees only their DAs' : 'none selected = sees all projects'}
+                </span>
+              </label>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {PROJECT_OPTIONS.map(p => {
+                  const active = projects.includes(p.value)
+                  return (
+                    <button key={p.value} type="button" onClick={()=>toggleProject(p.value)}
+                      style={{ padding:'6px 12px', borderRadius:20, border:`1.5px solid ${active?'#7C3AED':'#EAE6DE'}`, background:active?'#F5F3FF':'#FFF', color:active?'#7C3AED':'#A89880', fontWeight:active?700:500, fontSize:11.5, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'Poppins,sans-serif' }}>
+                      {p.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         <div style={{ padding:'14px 24px 22px', borderTop:'1px solid #EAE6DE', display:'flex', gap:10, justifyContent:'flex-end', background:'#FAFAF8' }}>
@@ -195,6 +236,11 @@ function UserCard({ u, onEdit, onDelete, onToggle, index }) {
               </span>
             )}
             {u.station_code && <span style={{ fontSize:10.5, fontWeight:700, color:'#B8860B', background:'#FDF6E3', border:'1px solid #F0D78C', borderRadius:20, padding:'2px 9px' }}>{u.station_code}</span>}
+            {u.assigned_projects?.length > 0 && (
+              <span style={{ fontSize:10.5, fontWeight:700, color:'#7C3AED', background:'#F5F3FF', border:'1px solid #DDD6FE', borderRadius:20, padding:'2px 9px' }} title={u.assigned_projects.join(', ')}>
+                {u.assigned_projects.length} project{u.assigned_projects.length>1?'s':''} only
+              </span>
+            )}
             <button onClick={()=>onToggle(u)}
               style={{ fontSize:10.5, fontWeight:700, color:u.status==='active'?'#2E7D52':'#C0392B', background:u.status==='active'?'#ECFDF5':'#FEF2F2', border:`1px solid ${u.status==='active'?'#A7F3D0':'#FCA5A5'}`, borderRadius:20, padding:'2px 9px', cursor:'pointer', fontFamily:'Poppins,sans-serif', display:'flex', alignItems:'center', gap:3 }}>
               {u.status==='active'?<><CheckCircle size={9}/> Active</>:<><XCircle size={9}/> Blocked</>}

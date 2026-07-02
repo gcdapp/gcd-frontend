@@ -16,6 +16,13 @@ const SC_COLOR = { DDB1:'#B8860B', DXE6:'#2563EB' }
 const SC_BG    = { DDB1:'#FFFBEB', DXE6:'#EFF6FF' }
 const SC_BORDER= { DDB1:'#FDE68A', DXE6:'#BFDBFE' }
 
+const PROJECT_LABELS = {
+  pulser: 'Pulser', cret: 'CRET', office: 'Office',
+  creative_packers: 'Creative Packers', ig_rak: 'IG RAK',
+  imile: 'IMILE Delivery Services', jnt_express: 'Jnt Express', le_chocola: 'Le Chocola',
+}
+function projectLabel(v) { return PROJECT_LABELS[v] || (v ? v.charAt(0).toUpperCase()+v.slice(1) : v) }
+
 const STATUS = {
   active:   { l:'Active',   c:'#10B981', bg:'#F0FDF4', bc:'#A7F3D0', dot:'#10B981' },
   on_leave: { l:'On Leave', c:'#F59E0B', bg:'#FFFBEB', bc:'#FDE68A', dot:'#F59E0B' },
@@ -204,10 +211,9 @@ function EmpModal({ emp, onSave, onClose, mode }) {
   const previewSalary = () => {
     const base=Number(form.salary||0), rate=Number(form.hourly_rate||3.85)
     const perf=Number(form.performance_bonus||100), perShip=Number(form.per_shipment_rate||0.5)
-    if (form.project_type==='office') return `AED ${base} (fixed salary)`
-    return form.project_type==='cret'
-      ? `AED ${base} + shipments × ${perShip}`
-      : `AED ${base} + hours × ${rate} + ${perf} bonus`
+    if (form.project_type==='cret')   return `AED ${base} + shipments × ${perShip}`
+    if (form.project_type==='pulser') return `AED ${base} + hours × ${rate} + ${perf} bonus`
+    return `AED ${base} (fixed salary)`
   }
 
   return (
@@ -295,8 +301,25 @@ function EmpModal({ emp, onSave, onClose, mode }) {
               <div style={{ gridColumn:'span 2' }}>
                 <div style={{ background:'var(--purple-bg)', border:'1px solid var(--purple-border)', borderRadius:12, padding:'14px 16px' }}>
                   <label style={{ fontSize:11, fontWeight:800, letterSpacing:'0.06em', textTransform:'uppercase', color:'#7C3AED', marginBottom:10, display:'block' }}>Project & Salary Type</label>
-                  <div className="modal-proj-col" style={{ marginBottom:12 }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'2px 0 6px' }}>Amazon</div>
+                  <div className="modal-proj-col" style={{ marginBottom:10 }}>
                     {[{v:'pulser',l:'Pulser',d:'Base + Hours × Rate + Bonus'},{v:'cret',l:'CRET',d:'Base + Shipments × Rate'},{v:'office',l:'Office',d:'Fixed Base Salary'}].map(p=>(
+                      <button key={p.v} onClick={e=>{e.stopPropagation();set('project_type',p.v)}} type="button"
+                        style={{ padding:'11px', borderRadius:10, border:`2px solid ${form.project_type===p.v?'#7C3AED':'var(--border)'}`, background:form.project_type===p.v?'var(--purple-bg)':'var(--card)', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
+                        <div style={{ fontWeight:700, fontSize:13, color:form.project_type===p.v?'#7C3AED':'var(--text)' }}>{p.l}</div>
+                        <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:2 }}>{p.d}</div>
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'2px 0 6px' }}>Other Clients</div>
+                  <div className="modal-proj-col" style={{ marginBottom:12 }}>
+                    {[
+                      {v:'creative_packers',l:'Creative Packers',d:'Fixed Base Salary'},
+                      {v:'ig_rak',l:'IG RAK',d:'Fixed Base Salary'},
+                      {v:'imile',l:'IMILE Delivery Services',d:'Fixed Base Salary'},
+                      {v:'jnt_express',l:'Jnt Express',d:'Fixed Base Salary'},
+                      {v:'le_chocola',l:'Le Chocola',d:'Fixed Base Salary'},
+                    ].map(p=>(
                       <button key={p.v} onClick={e=>{e.stopPropagation();set('project_type',p.v)}} type="button"
                         style={{ padding:'11px', borderRadius:10, border:`2px solid ${form.project_type===p.v?'#7C3AED':'var(--border)'}`, background:form.project_type===p.v?'var(--purple-bg)':'var(--card)', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
                         <div style={{ fontWeight:700, fontSize:13, color:form.project_type===p.v?'#7C3AED':'var(--text)' }}>{p.l}</div>
@@ -310,7 +333,7 @@ function EmpModal({ emp, onSave, onClose, mode }) {
                     {form.project_type==='cret' && inp('Per Shipment Rate','per_shipment_rate','number','0.5')}
                     {form.project_type==='pulser' && inp('Performance Bonus','performance_bonus','number','100')}
                   </div>
-                  <div style={{ marginTop:10, background:form.project_type==='office'?'var(--amber-bg)':form.project_type==='pulser'?'var(--green-bg)':'var(--blue-bg)', borderRadius:9, padding:'8px 12px', fontSize:12, color:form.project_type==='office'?'#92400E':form.project_type==='pulser'?'var(--green)':'var(--blue)', fontWeight:600 }}>
+                  <div style={{ marginTop:10, background:form.project_type==='pulser'?'var(--green-bg)':form.project_type==='cret'?'var(--blue-bg)':'var(--amber-bg)', borderRadius:9, padding:'8px 12px', fontSize:12, color:form.project_type==='pulser'?'var(--green)':form.project_type==='cret'?'var(--blue)':'#92400E', fontWeight:600 }}>
                     Formula: {previewSalary()}
                   </div>
                 </div>
@@ -716,7 +739,7 @@ function DetailDrawer({ emp, onEdit, onDelete, onClose, onRefresh, userRole, onS
               {emp.role} · {emp.station_code||'DDB1'} · <span style={{ fontFamily:'monospace', fontSize:10.5 }}>#{emp.id}</span>
             </div>
             <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-              {emp.project_type && <span style={{ fontSize:10, fontWeight:700, color:'#A78BFA', background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)', borderRadius:99, padding:'2px 8px' }}>{emp.project_type.toUpperCase()}</span>}
+              {emp.project_type && <span style={{ fontSize:10, fontWeight:700, color:'#A78BFA', background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)', borderRadius:99, padding:'2px 8px' }}>{projectLabel(emp.project_type).toUpperCase()}</span>}
               {emp.visa_type && <span style={{ fontSize:10, fontWeight:600, color:emp.visa_type==='own'?'#60A5FA':'#34D399', background:emp.visa_type==='own'?'rgba(96,165,250,0.12)':'rgba(52,211,153,0.12)', border:`1px solid ${emp.visa_type==='own'?'rgba(96,165,250,0.3)':'rgba(52,211,153,0.3)'}`, borderRadius:99, padding:'2px 8px' }}>{emp.visa_type==='own'?'Own Visa':'Co. Visa'}</span>}
               {serviceDays > 0 && <span style={{ fontSize:10, color:'rgba(255,255,255,0.4)', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:99, padding:'2px 8px' }}>{serviceStr}</span>}
             </div>
@@ -787,7 +810,7 @@ function DetailDrawer({ emp, onEdit, onDelete, onClose, onRefresh, userRole, onS
 
             <Section title="Employment" icon={Briefcase}>
               <InfoRow icon={Building2}  label="Station"     value={emp.station_code}/>
-              <InfoRow icon={Briefcase}  label="Project"     value={emp.project_type ? emp.project_type.charAt(0).toUpperCase()+emp.project_type.slice(1) : null}/>
+              <InfoRow icon={Briefcase}  label="Project"     value={emp.project_type ? projectLabel(emp.project_type) : null}/>
               <InfoRow icon={Calendar}   label="Join Date"   value={emp.joined?.slice(0,10)}/>
               <InfoRow icon={Wallet}     label="Base Salary" value={emp.salary ? `AED ${Number(emp.salary).toLocaleString('en-US')}` : null} accent="#B8860B"/>
               {emp.project_type==='pulser' && <InfoRow icon={TrendingUp} label="Hourly Rate"  value={emp.hourly_rate?`AED ${emp.hourly_rate}/hr`:null}/>}
@@ -1131,7 +1154,7 @@ function EmpCard({ emp, onClick, onEdit, onDelete, index, isSelected, userRole }
               <span style={{ fontSize:10, fontWeight:600, color:'var(--text-muted)', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:6, padding:'2px 7px' }}>{emp.nationality}</span>
             )}
             {emp.project_type && (
-              <span style={{ fontSize:10, fontWeight:700, color:'#7C3AED', background:'var(--purple-bg)', border:'1px solid var(--purple-border)', borderRadius:6, padding:'2px 7px' }}>{emp.project_type.toUpperCase()}</span>
+              <span style={{ fontSize:10, fontWeight:700, color:'#7C3AED', background:'var(--purple-bg)', border:'1px solid var(--purple-border)', borderRadius:6, padding:'2px 7px' }}>{projectLabel(emp.project_type).toUpperCase()}</span>
             )}
             <span style={{ fontSize:10, fontWeight:600, color:isOwn?'#0369A1':'#065F46', background:isOwn?'#EFF6FF':'#ECFDF5', border:`1px solid ${isOwn?'#BAE6FD':'#A7F3D0'}`, borderRadius:6, padding:'2px 7px' }}>
               {isOwn ? 'Own Visa' : 'Co. Visa'}
