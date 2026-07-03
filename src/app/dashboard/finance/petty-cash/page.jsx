@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '@/lib/auth'
 import {
   Wallet, ArrowDownLeft, ArrowUpRight,
-  ChevronLeft, ChevronRight, X, Users, Trash2,
+  ChevronLeft, ChevronRight, X, Users, Trash2, Pencil,
   TrendingUp, TrendingDown, User, Search, Receipt,
   HandCoins, AlertCircle, RefreshCw,
 } from 'lucide-react'
@@ -274,8 +274,102 @@ function GiveCashModal({ users, onSave, onClose }) {
   )
 }
 
+/* ── Edit Modal ─────────────────────────────────────────────── */
+function EditModal({ record, drivers, onSave, onClose }) {
+  const isExpense = record.type === 'expense'
+  const [form, setForm] = useState({
+    amount: record.amount,
+    date: record.date?.slice(0,10) || new Date().toISOString().slice(0,10),
+    note: record.note || '',
+    expense_type: record.expense_type || '',
+    emp_id: record.emp_id || '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [err, setErr]       = useState(null)
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
+
+  async function handleSave() {
+    if (!form.amount || !form.date) return setErr('Amount and date required')
+    const amt = parseFloat(form.amount)
+    if (isNaN(amt) || amt <= 0) return setErr('Amount must be positive')
+    if (isExpense && !form.expense_type) return setErr('Expense type required')
+    setSaving(true); setErr(null)
+    try {
+      const body = { amount:amt, date:form.date, note:form.note||null }
+      if (isExpense) { body.expense_type = form.expense_type; body.emp_id = form.emp_id||null }
+      const res = await fetch(`${API}/api/petty-cash/${record.id}`, {
+        method:'PUT', headers: hdr(), body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      onSave()
+    } catch(e) { setErr(e.message) } finally { setSaving(false) }
+  }
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
+      onClick={onClose}>
+      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:460, border:'1px solid var(--border)', overflow:'hidden', animation:'slideUp 0.2s ease' }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#EFF6FF', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#2563EB,#3B82F6)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(37,99,235,0.3)' }}>
+              <Pencil size={16} color="white"/>
+            </div>
+            <div>
+              <div style={{ fontWeight:800, fontSize:15, color:'#1E3A5F' }}>Edit {isExpense?'Expense':'Cash Record'}</div>
+              <div style={{ fontSize:11, color:'#6B7280', marginTop:1 }}>Update this petty cash transaction</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background:'rgba(37,99,235,0.1)', border:'1px solid #BFDBFE', cursor:'pointer', color:'#2563EB', display:'flex', padding:6, borderRadius:'50%' }}><X size={16}/></button>
+        </div>
+        <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14 }}>
+          {err && (
+            <div style={{ background:'#FEF2F2', border:'1px solid #FCA5A5', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#DC2626', display:'flex', gap:8, alignItems:'center' }}>
+              <AlertCircle size={14}/> {err}
+            </div>
+          )}
+          {isExpense && (
+            <div>
+              <Lbl>Expense Type *</Lbl>
+              <select className="input" value={form.expense_type} onChange={set('expense_type')} style={{ borderRadius:10 }}>
+                <option value="">Select type…</option>
+                {EXPENSE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+          )}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <div>
+              <Lbl>Amount (AED) *</Lbl>
+              <input className="input" type="number" min="0.01" step="0.01" value={form.amount} onChange={set('amount')} placeholder="0.00" style={{ borderRadius:10 }}/>
+            </div>
+            <div>
+              <Lbl>Date *</Lbl>
+              <input className="input" type="date" value={form.date} onChange={set('date')} style={{ borderRadius:10 }}/>
+            </div>
+          </div>
+          {isExpense && (
+            <div>
+              <Lbl>Driver (optional)</Lbl>
+              <DriverPicker drivers={drivers} value={form.emp_id} onChange={v => setForm(p => ({ ...p, emp_id:v }))}/>
+            </div>
+          )}
+          <div>
+            <Lbl>Note (optional)</Lbl>
+            <input className="input" value={form.note} onChange={set('note')} placeholder="Add a note…" style={{ borderRadius:10 }}/>
+          </div>
+          <button onClick={handleSave} disabled={saving}
+            style={{ padding:'13px', borderRadius:12, border:'none', cursor:saving?'not-allowed':'pointer', background:saving?'var(--border)':'linear-gradient(135deg,#2563EB,#3B82F6)', color:saving?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'Poppins,sans-serif', marginTop:4, transition:'all 0.2s', boxShadow:saving?'none':'0 3px 12px rgba(37,99,235,0.35)' }}>
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ── Transaction Row ────────────────────────────────────────── */
-function TxRow({ record, canDelete, onDelete }) {
+function TxRow({ record, canDelete, onDelete, onEdit }) {
   const isAlloc = record.type === 'allocation'
   return (
     <div style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderBottom:'1px solid var(--border)', transition:'background 0.15s' }}
@@ -288,13 +382,13 @@ function TxRow({ record, canDelete, onDelete }) {
         <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>
           {isAlloc ? 'Cash Received' : record.expense_type}
         </div>
-        <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2, display:'flex', gap:6, flexWrap:'wrap' }}>
+        <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2, display:'flex', gap:6, flexWrap:'wrap', alignItems:'baseline' }}>
           {record.emp_name && (
-            <span style={{ color:'#B8860B', fontWeight:600, display:'flex', alignItems:'center', gap:3 }}>
+            <span style={{ color:'#B8860B', fontWeight:600, display:'flex', alignItems:'center', gap:3, flexShrink:0 }}>
               <User size={9}/> {record.emp_name}
             </span>
           )}
-          {record.note && <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:180 }}>{record.note}</span>}
+          {record.note && <span style={{ wordBreak:'break-word' }}>{record.note}</span>}
           {!record.note && !record.emp_name && (
             <span>{isAlloc ? `From ${record.created_by_name||'Accountant'}` : record.date}</span>
           )}
@@ -307,21 +401,30 @@ function TxRow({ record, canDelete, onDelete }) {
         <div style={{ fontSize:10, color:'var(--text-muted)', marginTop:2 }}>{record.date}</div>
       </div>
       {canDelete && (
-        <button onClick={() => onDelete(record.id)}
-          style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:4, display:'flex', borderRadius:6, flexShrink:0 }}
-          onMouseEnter={e => e.currentTarget.style.color='#EF4444'}
-          onMouseLeave={e => e.currentTarget.style.color='var(--text-muted)'}>
-          <Trash2 size={13}/>
-        </button>
+        <div style={{ display:'flex', gap:2, flexShrink:0 }}>
+          <button onClick={() => onEdit(record)}
+            style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:4, display:'flex', borderRadius:6 }}
+            onMouseEnter={e => e.currentTarget.style.color='#2563EB'}
+            onMouseLeave={e => e.currentTarget.style.color='var(--text-muted)'}>
+            <Pencil size={13}/>
+          </button>
+          <button onClick={() => onDelete(record.id)}
+            style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:4, display:'flex', borderRadius:6 }}
+            onMouseEnter={e => e.currentTarget.style.color='#EF4444'}
+            onMouseLeave={e => e.currentTarget.style.color='var(--text-muted)'}>
+            <Trash2 size={13}/>
+          </button>
+        </div>
       )}
     </div>
   )
 }
 
 /* ── User Detail Panel ──────────────────────────────────────── */
-function UserDetailPanel({ userId, userName, userRole, onBack, canDelete }) {
+function UserDetailPanel({ userId, userName, userRole, onBack, canDelete, drivers }) {
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
+  const [editRecord, setEditRecord] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -381,9 +484,13 @@ function UserDetailPanel({ userId, userName, userRole, onBack, canDelete }) {
         ) : !data?.records?.length ? (
           <div style={{ padding:40, textAlign:'center', color:'var(--text-muted)', fontSize:13 }}>No transactions yet</div>
         ) : (
-          data.records.map(r => <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDelete}/>)
+          data.records.map(r => <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDelete} onEdit={setEditRecord}/>)
         )}
       </div>
+
+      {editRecord && (
+        <EditModal record={editRecord} drivers={drivers} onSave={() => { setEditRecord(null); load() }} onClose={() => setEditRecord(null)}/>
+      )}
     </div>
   )
 }
@@ -401,6 +508,7 @@ export default function PettyCashPage() {
   const [drillUser, setDrillUser] = useState(null)
   const [tab,       setTab]       = useState('my')
   const [search,    setSearch]    = useState('')
+  const [editRecord,setEditRecord]= useState(null)
 
   const canGiveCash = ['admin','accountant'].includes(user?.role)
   const canViewTeam = ['admin','accountant','general_manager','manager'].includes(user?.role)
@@ -445,7 +553,7 @@ export default function PettyCashPage() {
   }, [summary, search])
 
   if (loading) return (
-    <div style={{ maxWidth:760, margin:'0 auto' }}>
+    <div>
       <div style={{ background:'linear-gradient(135deg,#0f1623 0%,#1a2535 50%,#1e3a5f 100%)', borderRadius:16, padding:24, marginBottom:16 }}>
         <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
           <div className="skeleton" style={{ width:48, height:48, borderRadius:14 }}/>
@@ -473,11 +581,9 @@ export default function PettyCashPage() {
 
   if (drillUser) {
     return (
-      <div style={{ maxWidth:760, margin:'0 auto' }}>
-        <UserDetailPanel
-          userId={drillUser.id} userName={drillUser.name} userRole={drillUser.role}
-          onBack={() => setDrillUser(null)} canDelete={canDelete}/>
-      </div>
+      <UserDetailPanel
+        userId={drillUser.id} userName={drillUser.name} userRole={drillUser.role}
+        onBack={() => setDrillUser(null)} canDelete={canDelete} drivers={drivers}/>
     )
   }
 
@@ -491,7 +597,7 @@ export default function PettyCashPage() {
         .pc-spin { animation:pc-spin 0.8s linear infinite; }
       `}</style>
 
-      <div style={{ maxWidth:760, margin:'0 auto' }}>
+      <div>
 
         {/* ── Hero ── */}
         <div style={{ background:'linear-gradient(135deg,#0f1623 0%,#1a2535 50%,#1e3a5f 100%)', borderRadius:16, padding:24, marginBottom:16 }}>
@@ -579,7 +685,7 @@ export default function PettyCashPage() {
                   <div style={{ fontSize:11, marginTop:4 }}>Record an expense or receive cash to get started</div>
                 </div>
               ) : (
-                myData.records.map(r => <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDeleteMy}/>)
+                myData.records.map(r => <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDeleteMy} onEdit={setEditRecord}/>)
               )}
             </div>
           )}
@@ -655,6 +761,7 @@ export default function PettyCashPage() {
 
       {modal==='expense' && <ExpenseModal drivers={drivers} onSave={() => { setModal(null); load() }} onClose={() => setModal(null)}/>}
       {modal==='give'    && <GiveCashModal users={allUsers} onSave={() => { setModal(null); load() }} onClose={() => setModal(null)}/>}
+      {editRecord && <EditModal record={editRecord} drivers={drivers} onSave={() => { setEditRecord(null); load() }} onClose={() => setEditRecord(null)}/>}
     </>
   )
 }
