@@ -301,7 +301,7 @@ export default function OverviewPage() {
                 <div key={lbl} className="ov-kpi">
                   {val === null
                     ? <Skel w={60} h={27}/>
-                    : <div className="ov-kpi-val" style={{ color, fontSize: small ? 18 : undefined }}>{val}</div>}
+                    : <div className="ov-kpi-val kpi-val" style={{ color, fontSize: small ? 18 : undefined }}>{val}</div>}
                   <div className="ov-kpi-lbl">{lbl}</div>
                   {hint ? <div className="ov-kpi-hint">{hint}</div> : <div style={{ height:14 }}/>}
                 </div>
@@ -446,7 +446,7 @@ export default function OverviewPage() {
                 { label:'Total',    value:totalEmp,    color:'#7C3AED', bg:'#F5F3FF', border:'#DDD6FE' },
               ].map(({ label, value, color, bg, border }) => (
                 <div key={label} className="ov-stat" style={{ background:bg, borderColor:border }}>
-                  {loadingHero ? <Skel w={48} h={22} r={6}/> : <div className="ov-stat-val" style={{ color }}>{value}</div>}
+                  {loadingHero ? <Skel w={48} h={22} r={6}/> : <div className="ov-stat-val kpi-val" style={{ color }}>{value}</div>}
                   <div className="ov-stat-lbl" style={{ color }}>{label}</div>
                 </div>
               ))}
@@ -493,7 +493,7 @@ export default function OverviewPage() {
                 { label:'Total',       value:fleetStats?.total       ?? null, color:'#7C3AED', bg:'#F5F3FF', border:'#DDD6FE' },
               ].map(({ label, value, color, bg, border }) => (
                 <div key={label} className="ov-stat" style={{ background:bg, borderColor:border }}>
-                  {value === null ? <Skel w={40} h={22} r={6}/> : <div className="ov-stat-val" style={{ color }}>{value}</div>}
+                  {value === null ? <Skel w={40} h={22} r={6}/> : <div className="ov-stat-val kpi-val" style={{ color }}>{value}</div>}
                   <div className="ov-stat-lbl" style={{ color }}>{label}</div>
                 </div>
               ))}
@@ -546,7 +546,7 @@ export default function OverviewPage() {
                 { label:'Rejected', value:rejectedExp,          color:'#DC2626',     bg:'#FEF2F2',       border:'#FCA5A5' },
               ].map(({ label, value, color, bg, border, sm }) => (
                 <div key={label} className="ov-stat" style={{ background:bg, borderColor:border }}>
-                  {loadingExp ? <Skel w={sm?80:40} h={22} r={6}/> : <div className="ov-stat-val" style={{ color, fontSize:sm?14:undefined }}>{value}</div>}
+                  {loadingExp ? <Skel w={sm?80:40} h={22} r={6}/> : <div className="ov-stat-val kpi-val" style={{ color, fontSize:sm?14:undefined }}>{value}</div>}
                   <div className="ov-stat-lbl" style={{ color }}>{label}</div>
                 </div>
               ))}
@@ -602,7 +602,7 @@ export default function OverviewPage() {
                 { label:'Monthly Cost', value:fmtAED(simStats?.monthly_cost||0), color:'#2563EB', bg:'#EFF6FF', border:'#BFDBFE', sm:true },
               ].map(({ label, value, color, bg, border, sm }) => (
                 <div key={label} className="ov-stat" style={{ background:bg, borderColor:border }}>
-                  {(loadingSim && value === null) ? <Skel w={sm?80:40} h={22} r={6}/> : <div className="ov-stat-val" style={{ color, fontSize:sm?14:undefined }}>{value ?? '—'}</div>}
+                  {(loadingSim && value === null) ? <Skel w={sm?80:40} h={22} r={6}/> : <div className="ov-stat-val kpi-val" style={{ color, fontSize:sm?14:undefined }}>{value ?? '—'}</div>}
                   <div className="ov-stat-lbl" style={{ color }}>{label}</div>
                 </div>
               ))}

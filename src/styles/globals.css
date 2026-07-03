@@ -856,3 +856,35 @@ a { text-decoration:none; color:inherit; }
     animation: slideInBottom 0.3s cubic-bezier(0.16,1,0.3,1);
   }
 }
+
+/* ── Route transition (see app/dashboard/template.jsx) ─────────── */
+.route-fade { animation: up 0.22s cubic-bezier(0.2,0,0,1) both; }
+
+/* ── POC hub section cards ── */
+/* Per-card accent color passed via --hover-border/--hover-shadow custom
+   properties, hover state resolved entirely by the CSS engine instead of
+   JS mutating inline styles on every mouseenter/mouseleave. */
+.poc-sec-card { transition: border-color var(--t-base), box-shadow var(--t-base), transform var(--t-base); }
+.poc-sec-card:hover {
+  border-color: var(--hover-border);
+  box-shadow: 0 8px 28px var(--hover-shadow);
+  transform: translateY(-2px);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   REDUCED MOTION
+   Respects OS-level "reduce motion" preference — both an accessibility
+   requirement and a performance win (this cohort is disproportionately
+   likely to be on lower-power/battery-constrained devices). Collapses
+   every keyframe animation to a near-instant, layout-stable state
+   rather than disabling animation:none outright (which can leave
+   opacity:0 elements permanently invisible if JS never toggles a class).
+   ───────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -158,9 +158,8 @@ export default function POCHub() {
             return (
               <Link key={sec.id} href={sec.href} style={{ textDecoration:'none', display:'block', animation:`slideUp 0.3s ${i*0.04}s ease both` }}>
                 <div
-                  style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:18, padding:'16px', transition:'all 0.2s', cursor:'pointer', position:'relative', overflow:'hidden', height:'100%' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor=sec.color+'55'; e.currentTarget.style.boxShadow=`0 8px 28px ${sec.color}18`; e.currentTarget.style.transform='translateY(-2px)' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor='var(--border)'; e.currentTarget.style.boxShadow='none'; e.currentTarget.style.transform='none' }}>
+                  className="poc-sec-card"
+                  style={{ '--hover-border':sec.color+'55', '--hover-shadow':sec.color+'18', background:'var(--card)', border:'1px solid var(--border)', borderRadius:18, padding:'16px', cursor:'pointer', position:'relative', overflow:'hidden', height:'100%' }}>
                   <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:`linear-gradient(90deg,${sec.color},${sec.color}70)` }}/>
                   <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:10, marginTop:4 }}>
                     <div style={{ width:42, height:42, borderRadius:13, background:`${sec.color}15`, border:`1.5px solid ${sec.color}28`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
