@@ -27,9 +27,10 @@ const DED_TYPES = [
   {v:'other',         l:'Other',         c:'#6B5D4A'},
 ]
 const BON_TYPES = [
-  {v:'performance',l:'Performance',c:'#10B981'},
-  {v:'kpi',        l:'KPI Bonus',  c:'#3B82F6'},
-  {v:'other',      l:'Other',      c:'#B8860B'},
+  {v:'performance',   l:'Performance',           c:'#10B981'},
+  {v:'kpi',           l:'KPI Bonus',             c:'#3B82F6'},
+  {v:'reimbursement', l:'Expense Reimbursement', c:'#0EA5E9'},
+  {v:'other',         l:'Other',                 c:'#B8860B'},
 ]
 const ROLE_CFG = {
   admin:           {l:'Admin',    c:'#7C3AED', bg:'rgba(124,58,237,0.1)'},
