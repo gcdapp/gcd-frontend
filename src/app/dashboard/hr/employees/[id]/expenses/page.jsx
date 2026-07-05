@@ -2,24 +2,24 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { empApi, expenseApi, API } from '@/lib/api'
+import { getEmp, setEmp as cacheEmp } from '@/lib/empCache'
+import { hdr, getUserRole, fmt } from '@/lib/employees'
+import PageHero from '@/components/employees/PageHero'
+import BackLink from '@/components/employees/BackLink'
 import ExpenseModal, { CAT_MAP } from '@/components/expenses/ExpenseModal'
-import { ChevronLeft, Plus, Pencil, Trash2, Check, X, Receipt, Tag } from 'lucide-react'
-
-function hdr() { return { 'Content-Type':'application/json', Authorization:`Bearer ${localStorage.getItem('gcd_token')}` } }
-function getUserRole() { try { const t = localStorage.getItem('gcd_token'); return t ? JSON.parse(atob(t.split('.')[1])).role : null } catch { return null } }
-function fmt(n) { return Number(n||0).toLocaleString('en-AE', { maximumFractionDigits: 0 }) }
+import { Plus, Pencil, Trash2, Check, X, Receipt, Tag } from 'lucide-react'
 
 export default function DriverExpensesPage() {
   const { id } = useParams()
   const router = useRouter()
-  const [emp,       setEmp]      = useState(null)
+  const [emp,       setEmp]      = useState(() => getEmp(id))
   const [expenses,  setExpenses] = useState([])
   const [loading,   setLoading]  = useState(true)
   const [modal,     setModal]    = useState(null) // 'add' | expense object
   const [userRole,  setUserRole] = useState(null)
 
   useEffect(() => { setUserRole(getUserRole()) }, [])
-  useEffect(() => { empApi.get(id).then(d => setEmp(d.employee)).catch(() => setEmp(null)) }, [id])
+  useEffect(() => { empApi.get(id).then(d => { setEmp(d.employee); cacheEmp(d.employee) }).catch(() => setEmp(prev => prev)) }, [id])
 
   const load = useCallback(() => {
     setLoading(true)
@@ -46,29 +46,17 @@ export default function DriverExpensesPage() {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14, animation:'slideUp 0.3s ease' }}>
-      <button onClick={()=>router.push(`/dashboard/hr/employees/${id}`)}
-        style={{ display:'flex', alignItems:'center', gap:6, alignSelf:'flex-start', background:'none', border:'none', color:'var(--text-muted)', fontSize:12.5, fontWeight:600, cursor:'pointer', padding:0, fontFamily:'inherit' }}>
-        <ChevronLeft size={14}/> Back to {emp?.name || 'Driver'}
-      </button>
+      <BackLink router={router} href={`/dashboard/hr/employees/${id}`} label={`Back to ${emp?.name || 'Driver'}`}/>
 
-      {/* Hero */}
-      <div style={{ background:'linear-gradient(135deg,#0f1117 0%,#1a1f2e 50%,#1f1a2e 100%)', borderRadius:16, padding:24 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap' }}>
-          <div style={{ width:46, height:46, borderRadius:14, background:'rgba(251,191,36,0.15)', border:'1.5px solid rgba(251,191,36,0.35)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <Receipt size={22} color="#FBBF24"/>
-          </div>
-          <div>
-            <div style={{ fontWeight:900, fontSize:20, color:'white', letterSpacing:'-0.02em', lineHeight:1.1 }}>Expenses — {emp?.name || '…'}</div>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', marginTop:3 }}>{loading ? 'Loading…' : `${expenses.length} record${expenses.length!==1?'s':''} · AED ${fmt(total)} total`}</div>
-          </div>
-          <div style={{ marginLeft:'auto' }}>
-            <button onClick={()=>setModal('add')}
-              style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 18px', borderRadius:10, border:'none', background:'linear-gradient(135deg,#F59E0B,#D97706)', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
-              <Plus size={14}/> Add Expense
-            </button>
-          </div>
-        </div>
-
+      <PageHero icon={Receipt} iconColor="#D97706" iconBg="rgba(217,119,6,0.15)" iconBorder="rgba(217,119,6,0.35)"
+        title={`Expenses — ${emp?.name || '…'}`}
+        subtitle={loading ? 'Loading…' : `${expenses.length} record${expenses.length!==1?'s':''} · AED ${fmt(total)} total`}
+        actions={
+          <button onClick={()=>setModal('add')}
+            style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 18px', borderRadius:10, border:'none', background:'linear-gradient(135deg,#F59E0B,#D97706)', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
+            <Plus size={14}/> Add Expense
+          </button>
+        }>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginTop:20 }}>
           {[
             { label:'Total',    val:`AED ${fmt(total)}`,    color:'#F5F5F5' },
@@ -81,7 +69,7 @@ export default function DriverExpensesPage() {
             </div>
           ))}
         </div>
-      </div>
+      </PageHero>
 
       {/* List */}
       {loading ? (

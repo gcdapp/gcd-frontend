@@ -2,11 +2,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { empApi, payrollApi, API } from '@/lib/api'
-import { ChevronLeft, Banknote, Plus, Trash2, Check, Undo2, X } from 'lucide-react'
-
-function hdr() { return { 'Content-Type':'application/json', Authorization:`Bearer ${localStorage.getItem('gcd_token')}` } }
-function getUserRole() { try { const t = localStorage.getItem('gcd_token'); return t ? JSON.parse(atob(t.split('.')[1])).role : null } catch { return null } }
-function fmt(n) { return Number(n||0).toLocaleString('en-AE', { maximumFractionDigits: 0 }) }
+import { getEmp, setEmp as cacheEmp } from '@/lib/empCache'
+import { hdr, getUserRole, fmt } from '@/lib/employees'
+import PageHero from '@/components/employees/PageHero'
+import BackLink from '@/components/employees/BackLink'
+import { Banknote, Plus, Trash2, Check, Undo2, X } from 'lucide-react'
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => {
   const d = new Date(); d.setMonth(d.getMonth() - i); return d.toISOString().slice(0, 7)
@@ -84,7 +84,7 @@ function AddModal({ kind, empId, month, onClose, onSaved }) {
 export default function DriverSalaryPage() {
   const { id } = useParams()
   const router = useRouter()
-  const [emp,      setEmp]      = useState(null)
+  const [emp,      setEmp]      = useState(() => getEmp(id))
   const [row,      setRow]      = useState(null)
   const [month,    setMonth]    = useState(MONTHS[0])
   const [loading,  setLoading]  = useState(true)
@@ -93,7 +93,7 @@ export default function DriverSalaryPage() {
   const [busy,     setBusy]     = useState(false)
 
   useEffect(() => { setUserRole(getUserRole()) }, [])
-  useEffect(() => { empApi.get(id).then(d => setEmp(d.employee)).catch(() => setEmp(null)) }, [id])
+  useEffect(() => { empApi.get(id).then(d => { setEmp(d.employee); cacheEmp(d.employee) }).catch(() => setEmp(prev => prev)) }, [id])
 
   const load = useCallback(() => {
     setLoading(true)
@@ -130,28 +130,17 @@ export default function DriverSalaryPage() {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14, animation:'slideUp 0.3s ease' }}>
-      <button onClick={()=>router.push(`/dashboard/hr/employees/${id}`)}
-        style={{ display:'flex', alignItems:'center', gap:6, alignSelf:'flex-start', background:'none', border:'none', color:'var(--text-muted)', fontSize:12.5, fontWeight:600, cursor:'pointer', padding:0, fontFamily:'inherit' }}>
-        <ChevronLeft size={14}/> Back to {emp?.name || 'Driver'}
-      </button>
+      <BackLink router={router} href={`/dashboard/hr/employees/${id}`} label={`Back to ${emp?.name || 'Driver'}`}/>
 
-      <div style={{ background:'linear-gradient(135deg,#0f1623 0%,#1a2535 55%,#1e3a5f 100%)', borderRadius:16, padding:24 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap' }}>
-          <div style={{ width:46, height:46, borderRadius:14, background:'rgba(16,185,129,0.15)', border:'1.5px solid rgba(16,185,129,0.35)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <Banknote size={22} color="#34D399"/>
-          </div>
-          <div>
-            <div style={{ fontWeight:900, fontSize:20, color:'white', letterSpacing:'-0.02em', lineHeight:1.1 }}>Salary — {emp?.name || '…'}</div>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,0.45)', marginTop:3 }}>Payroll breakdown by month</div>
-          </div>
-          <div style={{ marginLeft:'auto' }}>
-            <select value={month} onChange={e=>setMonth(e.target.value)}
-              style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:10, padding:'8px 13px', color:'rgba(255,255,255,0.85)', fontSize:12.5, outline:'none', cursor:'pointer', fontFamily:'inherit' }}>
-              {MONTHS.map(m => <option key={m}>{m}</option>)}
-            </select>
-          </div>
-        </div>
-
+      <PageHero icon={Banknote} iconColor="#34D399" iconBg="rgba(16,185,129,0.15)" iconBorder="rgba(16,185,129,0.35)"
+        title={`Salary — ${emp?.name || '…'}`}
+        subtitle="Payroll breakdown by month"
+        actions={
+          <select value={month} onChange={e=>setMonth(e.target.value)}
+            style={{ background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:10, padding:'8px 13px', color:'rgba(255,255,255,0.85)', fontSize:12.5, outline:'none', cursor:'pointer', fontFamily:'inherit' }}>
+            {MONTHS.map(m => <option key={m}>{m}</option>)}
+          </select>
+        }>
         <div style={{ marginTop:20, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'18px 20px' }}>
           <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:6 }}>Net Pay</div>
           <div style={{ fontSize:30, fontWeight:900, color:'#34D399', letterSpacing:'-0.03em' }}>{loading ? '—' : `AED ${fmt(net)}`}</div>
@@ -179,7 +168,7 @@ export default function DriverSalaryPage() {
             )}
           </div>
         </div>
-      </div>
+      </PageHero>
 
       {!loading && !row ? (
         <div style={{ textAlign:'center', padding:'40px 20px', color:'var(--text-muted)' }}>

@@ -2,20 +2,22 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { empApi, docApi, API } from '@/lib/api'
+import { getEmp, setEmp as cacheEmp } from '@/lib/empCache'
+import { hdr } from '@/lib/employees'
+import PageHero from '@/components/employees/PageHero'
+import BackLink from '@/components/employees/BackLink'
 import DocModal, { DOC_TYPES, expiryStatus } from '@/components/documents/DocModal'
-import { ChevronLeft, Plus, Trash2, ExternalLink, FolderOpen } from 'lucide-react'
-
-function hdr() { return { Authorization:`Bearer ${localStorage.getItem('gcd_token')}` } }
+import { Plus, Trash2, ExternalLink, FolderOpen } from 'lucide-react'
 
 export default function DriverDocumentsPage() {
   const { id } = useParams()
   const router = useRouter()
-  const [emp,       setEmp]       = useState(null)
+  const [emp,       setEmp]       = useState(() => getEmp(id))
   const [documents, setDocuments] = useState([])
   const [loading,    setLoading]  = useState(true)
   const [modal,      setModal]    = useState(null) // 'add' | doc object
 
-  useEffect(() => { empApi.get(id).then(d => setEmp(d.employee)).catch(() => setEmp(null)) }, [id])
+  useEffect(() => { empApi.get(id).then(d => { setEmp(d.employee); cacheEmp(d.employee) }).catch(() => setEmp(prev => prev)) }, [id])
 
   const load = useCallback(() => {
     setLoading(true)
@@ -34,34 +36,30 @@ export default function DriverDocumentsPage() {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14, animation:'slideUp 0.3s ease' }}>
-      <button onClick={()=>router.push(`/dashboard/hr/employees/${id}`)}
-        style={{ display:'flex', alignItems:'center', gap:6, alignSelf:'flex-start', background:'none', border:'none', color:'var(--text-muted)', fontSize:12.5, fontWeight:600, cursor:'pointer', padding:0, fontFamily:'inherit' }}>
-        <ChevronLeft size={14}/> Back to {emp?.name || 'Driver'}
-      </button>
+      <BackLink router={router} href={`/dashboard/hr/employees/${id}`} label={`Back to ${emp?.name || 'Driver'}`}/>
 
-      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
-        <div>
-          <h1 style={{ fontWeight:900, fontSize:20, color:'var(--text)', letterSpacing:'-0.03em' }}>Documents — {emp?.name || '…'}</h1>
-          <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:3 }}>{documents.length} file{documents.length!==1?'s':''} on record</p>
+      <PageHero icon={FolderOpen} iconColor="#2563EB" iconBg="rgba(37,99,235,0.15)" iconBorder="rgba(37,99,235,0.35)"
+        title={`Documents — ${emp?.name || '…'}`}
+        subtitle={`${documents.length} file${documents.length!==1?'s':''} on record`}
+        actions={
+          <button onClick={()=>setModal('add')}
+            style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 18px', borderRadius:10, border:'none', background:'linear-gradient(135deg,#3B82F6,#2563EB)', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
+            <Plus size={14}/> Upload Document
+          </button>
+        }>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginTop:20 }}>
+          {[
+            { label:'Total Files',   val:documents.length, color:'#F5F5F5' },
+            { label:'Expiring Soon', val:expiring,          color:'#FBBF24' },
+            { label:'Expired',       val:expired,           color:'#F87171' },
+          ].map(k => (
+            <div key={k.label} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'14px 16px' }}>
+              <div style={{ fontSize:22, fontWeight:800, color:k.color, lineHeight:1.1 }}>{loading ? '—' : k.val}</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.38)', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', marginTop:4 }}>{k.label}</div>
+            </div>
+          ))}
         </div>
-        <button onClick={()=>setModal('add')} className="btn btn-primary" style={{ borderRadius:24, gap:7 }}>
-          <Plus size={15}/> Upload Document
-        </button>
-      </div>
-
-      <div className="r-grid-3">
-        {[
-          { l:'Total Files',   v:documents.length, c:'#1A1612', bg:'#FAFAF8', bc:'#EAE6DE', icon:'📁' },
-          { l:'Expiring Soon', v:expiring,          c:'#B45309', bg:'#FFFBEB', bc:'#FCD34D', icon:'⏰' },
-          { l:'Expired',       v:expired,           c:'#C0392B', bg:'#FEF2F2', bc:'#FCA5A5', icon:'❌' },
-        ].map(s => (
-          <div key={s.l} className="stat-card" style={{ padding:'14px 12px', textAlign:'center', background:s.bg, border:`1px solid ${s.bc}` }}>
-            <div style={{ fontSize:22, marginBottom:5 }}>{s.icon}</div>
-            <div style={{ fontWeight:900, fontSize:24, color:s.c, letterSpacing:'-0.04em', lineHeight:1 }}>{loading ? '—' : s.v}</div>
-            <div style={{ fontSize:10.5, color:s.c, fontWeight:600, marginTop:4, opacity:0.8 }}>{s.l}</div>
-          </div>
-        ))}
-      </div>
+      </PageHero>
 
       {loading ? (
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>

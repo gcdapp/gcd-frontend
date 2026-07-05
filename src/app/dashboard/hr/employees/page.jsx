@@ -3,75 +3,18 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { empApi } from '@/lib/api'
 import { useSocket } from '@/lib/socket'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import EmpForm from '@/components/employees/EmpForm'
+import PageHero from '@/components/employees/PageHero'
+import { setEmps } from '@/lib/empCache'
+import {
+  STATUS, SC_COLOR, SC_BG, SC_BORDER, projectLabel, expiry, profileCompletion,
+} from '@/lib/employees'
 import { Search, Plus, X, Pencil, Trash2, Users, RefreshCw } from 'lucide-react'
-import { differenceInDays, parseISO } from 'date-fns'
-
-import { API } from '@/lib/api'
-const STATIONS = ['All','DDB1','DXE6']
-const SC_COLOR = { DDB1:'#B8860B', DXE6:'#2563EB' }
-const SC_BG    = { DDB1:'#FFFBEB', DXE6:'#EFF6FF' }
-const SC_BORDER= { DDB1:'#FDE68A', DXE6:'#BFDBFE' }
-
-const PROJECT_LABELS = {
-  pulser: 'Pulser', cret: 'CRET', office: 'Office',
-  creative_packers: 'Creative Packers', ig_rak: 'IG RAK',
-  imile: 'IMILE Delivery Services', jnt_express: 'Jnt Express', le_chocola: 'Le Chocola',
-}
-function projectLabel(v) { return PROJECT_LABELS[v] || (v ? v.charAt(0).toUpperCase()+v.slice(1) : v) }
-
-const STATUS = {
-  active:   { l:'Active',   c:'#10B981', bg:'#F0FDF4', bc:'#A7F3D0', dot:'#10B981' },
-  on_leave: { l:'On Leave', c:'#F59E0B', bg:'#FFFBEB', bc:'#FDE68A', dot:'#F59E0B' },
-  inactive: { l:'Inactive', c:'#9CA3AF', bg:'#F9FAFB', bc:'#E5E7EB', dot:'#9CA3AF' },
-}
-
-function hdr() { return { 'Content-Type':'application/json', Authorization:`Bearer ${localStorage.getItem('gcd_token')}` } }
-function expiry(ds) {
-  if (!ds) return null
-  try {
-    const d = differenceInDays(parseISO(ds.slice(0,10)), new Date())
-    if (d < 0)   return { label:'Expired',    c:'#EF4444', bg:'#FEF2F2', bc:'#FECACA' }
-    if (d <= 30) return { label:`${d}d left`, c:'#EF4444', bg:'#FEF2F2', bc:'#FECACA' }
-    if (d <= 90) return { label:`${d}d left`, c:'#F59E0B', bg:'#FFFBEB', bc:'#FDE68A' }
-    return { label:'Valid', c:'#10B981', bg:'#F0FDF4', bc:'#A7F3D0' }
-  } catch { return null }
-}
-
-/* ── Profile completion ──────────────────────────────────────── */
-const COMPLETION_FIELDS = [
-  'phone','emirates_id','nationality','dob','gender','marital_status',
-  'passport_no','uid_number','visa_file_no','email_id','father_family_name',
-  'residential_location','work_location',
-  'emirates_issuing_visa','visa_expiry','license_expiry','amazon_id',
-  'sub_group_name',
-]
-const COMPLETION_LABELS = {
-  phone:'Phone', emirates_id:'Emirates ID', nationality:'Nationality',
-  dob:'Date of Birth', gender:'Gender', marital_status:'Marital Status',
-  passport_no:'Passport No', uid_number:'UID Number', visa_file_no:'Visa File No',
-  email_id:'Email', father_family_name:'Father/Family Name',
-  residential_location:'Residential Location',
-  work_location:'Work Location', emirates_issuing_visa:'Emirates Issuing Visa',
-  visa_expiry:'Visa Expiry', license_expiry:'License Expiry',
-  amazon_id:'Amazon ID', sub_group_name:'Sub Group',
-}
-function profileCompletion(emp) {
-  if (!emp) return 0
-  const filled = COMPLETION_FIELDS.filter(f => emp[f] && String(emp[f]).trim() !== '').length
-  const hasSalary = Number(emp.salary||0) > 0 ? 1 : 0
-  return Math.round(((filled + hasSalary) / (COMPLETION_FIELDS.length + 1)) * 100)
-}
-function missingFields(emp) {
-  if (!emp) return []
-  const missing = COMPLETION_FIELDS.filter(f => !emp[f] || String(emp[f]).trim() === '').map(f => COMPLETION_LABELS[f]||f)
-  if (!Number(emp.salary||0)) missing.unshift('Salary')
-  return missing
-}
 
 /* ── Completion Ring (SVG) ───────────────────────────────────── */
-function CompletionRing({ pct, size=54, stroke=3 }) {
-  const r   = (size - stroke) / 2
+function CompletionRing({ pct, size=52, stroke=3 }) {
+  const r    = (size - stroke) / 2
   const circ = 2 * Math.PI * r
   const dash = (pct / 100) * circ
   const color = pct === 100 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#EF4444'
@@ -85,7 +28,7 @@ function CompletionRing({ pct, size=54, stroke=3 }) {
   )
 }
 
-/* ── Modal (Add DA only — Edit now lives at hr/employees/[id]/edit) ──── */
+/* ── Modal (Add DA only — Edit lives at hr/employees/[id]/edit) ──── */
 function EmpModal({ emp, onSave, onClose, mode }) {
   return (
     <div className="modal-overlay" style={{ zIndex:9999 }}>
@@ -95,83 +38,61 @@ function EmpModal({ emp, onSave, onClose, mode }) {
 }
 
 /* ── Employee Card ───────────────────────────────────────────── */
-function EmpCard({ emp, onClick, onEdit, onDelete, index, isSelected, userRole }) {
+function EmpCard({ emp, onEdit, onDelete, index, userRole }) {
   const s        = STATUS[emp.status] || STATUS.inactive
-  const sc       = SC_COLOR[emp.station_code]  || '#B8860B'
-  const sbg      = SC_BG[emp.station_code]     || '#FFFBEB'
-  const sbc      = SC_BORDER[emp.station_code] || '#FDE68A'
+  const sc       = SC_COLOR[emp.station_code] || '#B8860B'
   const exp      = expiry(emp.visa_expiry)
   const hasAlert = exp && (exp.label === 'Expired' || parseInt(exp.label) <= 60)
   const pct      = profileCompletion(emp)
-  const vt       = emp.visa_type || 'company'
-  const isOwn    = vt === 'own'
+  const isOwn    = (emp.visa_type || 'company') === 'own'
 
-  const bc   = hasAlert ? '#EF4444' : isSelected ? sc : s.dot
-  const glow = hasAlert ? '#EF444420' : isSelected ? `${sc}28` : `${s.dot}18`
+  const bc = hasAlert ? '#EF4444' : s.dot
 
   return (
-    <div onClick={onClick}
+    <Link href={`/dashboard/hr/employees/${emp.id}`} prefetch
+      className="da-card"
       style={{
         background:'var(--card)',
-        border:`2px solid ${bc}`,
+        border:`1.5px solid ${hasAlert ? bc : 'var(--border)'}`,
         borderRadius:16,
         overflow:'hidden',
-        cursor:'pointer',
-        transition:'box-shadow 0.18s, transform 0.18s',
-        boxShadow:`0 0 0 1px ${glow}, 0 4px 16px rgba(0,0,0,0.06)`,
+        textDecoration:'none',
         display:'flex',
         flexDirection:'column',
         animation:`slideUp 0.25s ${Math.min(index,12)*0.025}s ease both`,
-      }}
-      onMouseEnter={e => {
-        if (!isSelected) {
-          e.currentTarget.style.transform = 'translateY(-2px)'
-          e.currentTarget.style.boxShadow = `0 0 0 1px ${glow}, 0 10px 28px rgba(0,0,0,0.10)`
-        }
-      }}
-      onMouseLeave={e => {
-        if (!isSelected) {
-          e.currentTarget.style.transform = 'translateY(0)'
-          e.currentTarget.style.boxShadow = `0 0 0 1px ${glow}, 0 4px 16px rgba(0,0,0,0.06)`
-        }
       }}>
 
-      {/* Main content */}
       <div style={{ padding:'16px 16px 12px', display:'flex', gap:12, alignItems:'flex-start' }}>
-        {/* Avatar with completion ring */}
         <div style={{ position:'relative', flexShrink:0 }}>
-          <div style={{ width:52, height:52, borderRadius:14, background:`linear-gradient(135deg,${bc}22,${bc}40)`, border:`1.5px solid ${bc}45`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:900, color:bc, letterSpacing:'-0.02em' }}>
+          <div style={{ width:50, height:50, borderRadius:14, background:`linear-gradient(135deg,${bc}18,${bc}35)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, fontWeight:900, color:bc, letterSpacing:'-0.02em' }}>
             {emp.name?.slice(0,2).toUpperCase()}
-            <CompletionRing pct={pct} size={52} stroke={3}/>
+            <CompletionRing pct={pct} size={50} stroke={3}/>
           </div>
-          <div style={{ position:'absolute', bottom:-2, right:-2, width:12, height:12, borderRadius:'50%', background:hasAlert?'#EF4444':s.dot, border:'2.5px solid var(--card)' }}/>
+          <div style={{ position:'absolute', bottom:-2, right:-2, width:11, height:11, borderRadius:'50%', background:hasAlert?'#EF4444':s.dot, border:'2.5px solid var(--card)' }}/>
         </div>
 
-        {/* Identity */}
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:6, marginBottom:4 }}>
-            <span style={{ fontWeight:800, fontSize:14, color:'var(--text)', lineHeight:1.25, wordBreak:'break-word' }}>{emp.name}</span>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:6, marginBottom:3 }}>
+            <span style={{ fontWeight:800, fontSize:14.5, color:'var(--text)', lineHeight:1.25, wordBreak:'break-word' }}>{emp.name}</span>
             <span style={{ fontSize:9.5, fontWeight:700, color:s.c, background:s.bg, border:`1px solid ${s.bc}`, borderRadius:20, padding:'2px 8px', flexShrink:0, whiteSpace:'nowrap' }}>{s.l}</span>
           </div>
-          <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', fontFamily:'monospace', marginBottom:7 }}>#{emp.id}</div>
-          <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
-            {emp.station_code && (
-              <span style={{ fontSize:10, fontWeight:700, color:sc, background:sbg, border:`1px solid ${sbc}`, borderRadius:6, padding:'2px 7px' }}>{emp.station_code}</span>
+          <div style={{ fontSize:11.5, color:'var(--text-muted)', display:'flex', alignItems:'center', gap:5, flexWrap:'wrap' }}>
+            <span style={{ fontWeight:700, color:sc }}>{emp.station_code || '—'}</span>
+            {emp.project_type && <>· {projectLabel(emp.project_type)}</>}
+            {emp.nationality && <>· {emp.nationality}</>}
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:5 }}>
+            <span style={{ fontSize:10, fontWeight:600, color:'var(--text-muted)', fontFamily:'monospace' }}>#{emp.id}</span>
+            {isOwn && (
+              <span style={{ fontSize:9.5, fontWeight:700, color:'#0369A1', background:'#EFF6FF', border:'1px solid #BAE6FD', borderRadius:6, padding:'1px 6px' }}>Own Visa</span>
             )}
-            {emp.nationality && (
-              <span style={{ fontSize:10, fontWeight:600, color:'var(--text-muted)', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:6, padding:'2px 7px' }}>{emp.nationality}</span>
+            {hasAlert && (
+              <span style={{ fontSize:9.5, fontWeight:700, color:'#DC2626', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:6, padding:'1px 6px' }}>Visa {exp.label}</span>
             )}
-            {emp.project_type && (
-              <span style={{ fontSize:10, fontWeight:700, color:'#7C3AED', background:'var(--purple-bg)', border:'1px solid var(--purple-border)', borderRadius:6, padding:'2px 7px' }}>{projectLabel(emp.project_type).toUpperCase()}</span>
-            )}
-            <span style={{ fontSize:10, fontWeight:600, color:isOwn?'#0369A1':'#065F46', background:isOwn?'#EFF6FF':'#ECFDF5', border:`1px solid ${isOwn?'#BAE6FD':'#A7F3D0'}`, borderRadius:6, padding:'2px 7px' }}>
-              {isOwn ? 'Own Visa' : 'Co. Visa'}
-            </span>
           </div>
         </div>
       </div>
 
-      {/* Footer */}
       <div style={{ margin:'0 16px 14px', borderTop:'1px solid var(--border)', paddingTop:10, display:'flex', alignItems:'center', gap:8 }}>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontSize:9, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:2 }}>Personal</div>
@@ -187,18 +108,18 @@ function EmpCard({ emp, onClick, onEdit, onDelete, index, isSelected, userRole }
         </div>
         {userRole !== 'accountant' && (
           <div style={{ display:'flex', gap:4, flexShrink:0 }}>
-            <button onClick={e=>{e.stopPropagation();onEdit(emp)}}
+            <button onClick={e=>{e.preventDefault();e.stopPropagation();onEdit(emp)}}
               style={{ width:30, height:30, borderRadius:8, background:'var(--bg-alt)', border:'1px solid var(--border)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-sub)' }}>
               <Pencil size={11}/>
             </button>
-            <button onClick={e=>{e.stopPropagation();onDelete(emp)}}
+            <button onClick={e=>{e.preventDefault();e.stopPropagation();onDelete(emp)}}
               style={{ width:30, height:30, borderRadius:8, background:'var(--red-bg)', border:'1px solid var(--red-border)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--red)' }}>
               <Trash2 size={11}/>
             </button>
           </div>
         )}
       </div>
-    </div>
+    </Link>
   )
 }
 
@@ -212,8 +133,6 @@ export default function EmployeesPage() {
   const [filterTab,    setFilterTab]    = useState('all')
   const [modal,        setModal]        = useState(null)
   const [userRole,     setUserRole]     = useState(null)
-  const [page,         setPage]         = useState(1)
-  const PAGE_SIZE = 24
 
   useEffect(() => {
     try { const t=localStorage.getItem('gcd_token'); if(t){const p=JSON.parse(atob(t.split('.')[1]));setUserRole(p.role)} } catch(e){}
@@ -223,13 +142,14 @@ export default function EmployeesPage() {
     try {
       setLoading(true)
       const data = await empApi.list({})
-      setAllEmployees((data.employees||[]).filter(e=>(e.role||'').toLowerCase()==='driver'))
+      const drivers = (data.employees||[]).filter(e=>(e.role||'').toLowerCase()==='driver')
+      setAllEmployees(drivers)
+      setEmps(drivers)
     } catch(e) { console.error(e) } finally { setLoading(false) }
   }, [])
 
   useEffect(() => { load() }, [load])
 
-  // Station-scoped counts for tab badges
   const stationEmps = useMemo(() =>
     station==='All' ? allEmployees : allEmployees.filter(e=>e.station_code===station)
   , [allEmployees, station])
@@ -238,7 +158,6 @@ export default function EmployeesPage() {
   const onLeave = stationEmps.filter(e=>e.status==='on_leave').length
   const alerts  = stationEmps.filter(e=>{const v=expiry(e.visa_expiry);return v&&(v.label==='Expired'||parseInt(v.label)<=60)}).length
 
-  // Full client-side filter: station + tab + search (all instant)
   const employees = useMemo(() => {
     let r = stationEmps
     if (filterTab==='active')   r = r.filter(e=>e.status==='active')
@@ -247,8 +166,6 @@ export default function EmployeesPage() {
     if (search) r = r.filter(e=>[e.name,e.id,e.work_number,e.phone,e.nationality].some(f=>(f||'').toLowerCase().includes(search.toLowerCase())))
     return r
   }, [stationEmps, filterTab, search])
-
-  useEffect(() => { setPage(1) }, [search, station, filterTab])
 
   useSocket({
     'employee:created': e      => { if((e.role||'').toLowerCase()==='driver') setAllEmployees(p=>[...p,e]) },
@@ -262,14 +179,12 @@ export default function EmployeesPage() {
     catch(e) { alert(e.message) }
   }
 
-  const total      = employees.length
-  const totalPages = Math.ceil(total / PAGE_SIZE)
-  const paginated  = employees.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE)
-
   const CSS = `
-    .da-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
-    .da-tab{display:flex;align-items:center;justify-content:center;gap:6px;flex:1 0 auto;padding:8px 12px;border-radius:11px;border:none;cursor:pointer;font-weight:500;font-size:12.5px;font-family:inherit;transition:all 0.18s;white-space:nowrap;background:transparent}
-    .da-tab.active{font-weight:700;background:var(--card);box-shadow:0 1px 6px rgba(0,0,0,0.10)}
+    .da-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+    .da-card{transition:box-shadow var(--t-base),transform var(--t-base),border-color var(--t-base)}
+    .da-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--border-strong)}
+    .da-tab{display:flex;align-items:center;justify-content:center;gap:6px;flex:1 0 auto;padding:8px 12px;border-radius:11px;border:none;cursor:pointer;font-weight:500;font-size:12.5px;font-family:inherit;transition:all var(--t-fast);white-space:nowrap;background:transparent}
+    .da-tab.active{font-weight:700;background:var(--card);box-shadow:var(--shadow)}
     .da-tab-count{font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px}
     .da-skel{background:var(--bg-alt);border-radius:16px;animation:da-pulse 1.4s ease infinite}
     @keyframes da-pulse{0%,100%{opacity:.45}50%{opacity:.85}}
@@ -296,41 +211,25 @@ export default function EmployeesPage() {
       <style>{CSS}</style>
       <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
-        {/* ── Hero (matches fleet exactly) ─────────────────────── */}
-        <div style={{ background:'linear-gradient(135deg,#0f1623 0%,#1a2535 50%,#1e3a5f 100%)', borderRadius:16, padding:24 }}>
-
-          {/* Title row */}
-          <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20, flexWrap:'wrap' }}>
-            <div style={{ width:46, height:46, borderRadius:14, background:'rgba(59,130,246,0.15)', border:'1.5px solid rgba(59,130,246,0.35)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <Users size={22} color="#60A5FA"/>
+        <PageHero icon={Users} title="DAs" subtitle="Delivery Associates — assignments & profiles"
+          actions={<>
+            <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+              {['DDB1','DXE6'].map(st => (
+                <button key={st} onClick={()=>setStation(station===st?'All':st)}
+                  style={{ padding:'5px 14px', borderRadius:20, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:12, transition:'all var(--t-fast)',
+                    background: station===st ? '#3B82F6' : 'rgba(255,255,255,0.08)',
+                    color: station===st ? 'white' : 'rgba(255,255,255,0.55)',
+                    boxShadow: station===st ? '0 2px 8px rgba(59,130,246,0.4)' : 'none',
+                  }}>
+                  {st}
+                </button>
+              ))}
             </div>
-            <div>
-              <div style={{ fontWeight:900, fontSize:20, color:'white', letterSpacing:'-0.02em', lineHeight:1.1 }}>DAs</div>
-              <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginTop:3 }}>Delivery Associates — assignments &amp; profiles</div>
-            </div>
-            <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-              {/* Station pills */}
-              <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                {['DDB1','DXE6'].map(s => (
-                  <button key={s} onClick={()=>setStation(station===s?'All':s)}
-                    style={{ padding:'5px 14px', borderRadius:20, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:12, transition:'all 0.18s',
-                      background: station===s ? '#3B82F6' : 'rgba(255,255,255,0.08)',
-                      color: station===s ? 'white' : 'rgba(255,255,255,0.55)',
-                      boxShadow: station===s ? '0 2px 8px rgba(59,130,246,0.4)' : 'none',
-                    }}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-              {/* Refresh */}
-              <button onClick={load} title="Refresh"
-                style={{ width:36, height:36, borderRadius:10, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.15)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'rgba(255,255,255,0.7)' }}>
-                <RefreshCw size={14}/>
-              </button>
-            </div>
-          </div>
-
-          {/* KPI tiles */}
+            <button onClick={load} title="Refresh"
+              style={{ width:36, height:36, borderRadius:10, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.15)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'rgba(255,255,255,0.7)' }}>
+              <RefreshCw size={14}/>
+            </button>
+          </>}>
           <div className="da-hero-kpi">
             {[
               { label:'Total DAs',  val:loading?'—':allEmployees.length, color:'#B8860B' },
@@ -346,9 +245,8 @@ export default function EmployeesPage() {
               </div>
             ))}
           </div>
-        </div>
+        </PageHero>
 
-        {/* ── Search + Add DA ─────────────────────────────────── */}
         <div style={{ display:'flex', gap:10, alignItems:'center' }}>
           <div style={{ flex:1, position:'relative' }}>
             <Search size={14} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)', pointerEvents:'none' }}/>
@@ -360,7 +258,7 @@ export default function EmployeesPage() {
           </div>
           {userRole !== 'accountant' && (
             <button onClick={()=>setModal({mode:'add',emp:null})}
-              style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background 0.15s' }}
+              style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background var(--t-fast)' }}
               onMouseEnter={e=>e.currentTarget.style.background='#9a7209'}
               onMouseLeave={e=>e.currentTarget.style.background='#B8860B'}>
               <Plus size={14}/> Add DA
@@ -368,7 +266,6 @@ export default function EmployeesPage() {
           )}
         </div>
 
-        {/* ── Filter tabs ─────────────────────────────────────── */}
         <div style={{ display:'flex', gap:3, background:'var(--bg-alt)', borderRadius:14, padding:3 }}>
           {TABS.map(f=>(
             <button key={f.id} onClick={()=>setFilterTab(f.id)}
@@ -383,7 +280,6 @@ export default function EmployeesPage() {
           ))}
         </div>
 
-        {/* ── Cards ────────────────────────────────────────────── */}
         {loading ? (
           <div className="da-grid">
             {[1,2,3,4,5,6].map(i=><div key={i} className="da-skel" style={{ height:150 }}/>)}
@@ -394,25 +290,14 @@ export default function EmployeesPage() {
             <div style={{ fontWeight:700, fontSize:15, color:'var(--text-sub)' }}>{search?`No results for "${search}"`:'No DAs found'}</div>
           </div>
         ) : (
-          <>
-            <div className="da-grid">
-              {paginated.map((emp,i)=>(
-                <EmpCard key={emp.id} emp={emp} index={i}
-                  isSelected={false}
-                  onClick={()=>router.push(`/dashboard/hr/employees/${emp.id}`)}
-                  onEdit={e=>router.push(`/dashboard/hr/employees/${e.id}/edit`)}
-                  onDelete={handleDelete}
-                  userRole={userRole}/>
-              ))}
-            </div>
-            {totalPages>1 && (
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, paddingTop:8 }}>
-                <button className="btn btn-secondary btn-sm" onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1}>‹ Prev</button>
-                <span style={{ fontSize:12.5, color:'var(--text-muted)' }}>Page {page} of {totalPages}</span>
-                <button className="btn btn-secondary btn-sm" onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages}>Next ›</button>
-              </div>
-            )}
-          </>
+          <div className="da-grid">
+            {employees.map((emp,i)=>(
+              <EmpCard key={emp.id} emp={emp} index={i}
+                onEdit={e=>router.push(`/dashboard/hr/employees/${e.id}/edit`)}
+                onDelete={handleDelete}
+                userRole={userRole}/>
+            ))}
+          </div>
         )}
       </div>
 

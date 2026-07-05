@@ -1,40 +1,30 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { empApi, payrollApi, API } from '@/lib/api'
+import { empApi, payrollApi, docApi, expenseApi, API } from '@/lib/api'
+import { getEmp, setEmp } from '@/lib/empCache'
+import BackLink from '@/components/employees/BackLink'
+import { expiryStatus } from '@/components/documents/DocModal'
 import {
-  Phone, Mail, Calendar, Building2, Briefcase, CreditCard, Shield, User,
+  STATUS, SC_COLOR, projectLabel, docDays, docChip, hdr, DA_HERO_GRADIENT,
+} from '@/lib/employees'
+import {
+  Phone, Mail, Calendar, Building2, Briefcase, CreditCard, User,
   Truck, ArrowLeftRight, Receipt, ExternalLink, X, AlertTriangle, Wallet,
-  TrendingUp, FileText, Clock, ChevronLeft, Pencil, FolderOpen, Banknote, MapPin
+  TrendingUp, FileText, Clock, Pencil, FolderOpen, Banknote, ChevronRight
 } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
 
-const SC_COLOR = { DDB1:'#B8860B', DXE6:'#2563EB' }
-const SC_BG    = { DDB1:'#FFFBEB', DXE6:'#EFF6FF' }
-const SC_BORDER= { DDB1:'#FDE68A', DXE6:'#BFDBFE' }
-const PROJECT_LABELS = {
-  pulser: 'Pulser', cret: 'CRET', office: 'Office',
-  creative_packers: 'Creative Packers', ig_rak: 'IG RAK',
-  imile: 'IMILE Delivery Services', jnt_express: 'Jnt Express', le_chocola: 'Le Chocola',
-}
-function projectLabel(v) { return PROJECT_LABELS[v] || (v ? v.charAt(0).toUpperCase()+v.slice(1) : v) }
-const STATUS = {
-  active:   { l:'Active',   c:'#10B981', bg:'#F0FDF4', bc:'#A7F3D0', dot:'#10B981' },
-  on_leave: { l:'On Leave', c:'#F59E0B', bg:'#FFFBEB', bc:'#FDE68A', dot:'#F59E0B' },
-  inactive: { l:'Inactive', c:'#9CA3AF', bg:'#F9FAFB', bc:'#E5E7EB', dot:'#9CA3AF' },
-}
-function hdr() { return { Authorization:`Bearer ${localStorage.getItem('gcd_token')}` } }
-
-/* ── Work Number Assigner (moved from hr/employees/page.jsx) ─────────── */
+/* ── Work Number Assigner (SIMs tab) ─────────────────────────── */
 function WorkNumberAssigner({ emp, onSaved, userRole, onSelectEmployee }) {
   const [mode,    setMode]    = useState('view') // 'view' | 'pick'
   const [sims,    setSims]    = useState([])
   const [loading, setLoading] = useState(false)
   const [saving,  setSaving]  = useState(false)
-  const [conflict,setConflict]= useState(null)   // { conflictEmpId, conflictEmpName }
-  const [step,    setStep]    = useState(0)       // 0 | 1 | 2
+  const [conflict,setConflict]= useState(null)
+  const [step,    setStep]    = useState(0)
   const [pending, setPending] = useState('')
-  const [history, setHistory] = useState(null)   // null = hidden, [] = loaded
+  const [history, setHistory] = useState(null)
   const [hLoad,   setHLoad]   = useState(false)
 
   const canEdit = ['admin','manager','general_manager','hr','poc'].includes(userRole)
@@ -54,7 +44,7 @@ function WorkNumberAssigner({ emp, onSaved, userRole, onSelectEmployee }) {
     setSaving(true)
     try {
       const r = await fetch(`${API}/api/employees/${emp.id}/assign-work-number`, {
-        method:'POST', headers:{ ...hdr(), 'Content-Type':'application/json' },
+        method:'POST', headers:hdr(),
         body: JSON.stringify({ phone_number: phoneNumber, force })
       })
       const d = await r.json()
@@ -203,29 +193,47 @@ function WorkNumberAssigner({ emp, onSaved, userRole, onSelectEmployee }) {
   )
 }
 
+/* ── Snapshot tile — live data that IS the navigation into its page ── */
+function SnapshotTile({ icon: Icon, color, bg, border, label, value, sub, onClick }) {
+  return (
+    <button onClick={onClick} className="snap-tile"
+      style={{ flex:1, minWidth:150, display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderRadius:14, background:'var(--card)', border:'1px solid var(--border)', cursor:'pointer', textAlign:'left', transition:'box-shadow var(--t-base),transform var(--t-base)' }}>
+      <div style={{ width:38, height:38, borderRadius:11, background:bg, border:`1px solid ${border}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+        <Icon size={17} color={color}/>
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em' }}>{label}</div>
+        <div style={{ fontSize:14, fontWeight:800, color:'var(--text)', marginTop:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{value}</div>
+        {sub && <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:1 }}>{sub}</div>}
+      </div>
+      <ChevronRight size={14} color="var(--text-muted)" style={{ flexShrink:0 }}/>
+    </button>
+  )
+}
+
 /* ── Driver Dashboard page ─────────────────────────────────────────── */
 export default function DriverDashboardPage() {
   const { id } = useParams()
   const router = useRouter()
 
-  const [emp,        setEmp]        = useState(null)
-  const [loading,     setLoading]    = useState(true)
+  const [emp,        setEmpState] = useState(() => getEmp(id))
+  const [loading,     setLoading]    = useState(!getEmp(id))
   const [userRole,    setUserRole]   = useState(null)
   const [leaves,      setLeaves]     = useState([])
   const [leavesLoad,  setLeavesLoad] = useState(true)
   const [expenses,    setExpenses]   = useState([])
-  const [expLoad,     setExpLoad]    = useState(false)
+  const [expLoad,     setExpLoad]    = useState(true)
+  const [documents,   setDocuments]  = useState([])
+  const [docsLoad,    setDocsLoad]   = useState(true)
   const [fleetHv,     setFleetHv]    = useState([])
   const [fleetAsgn,   setFleetAsgn]  = useState([])
   const [fleetLoad,   setFleetLoad]  = useState(false)
   const [attendance,  setAttendance] = useState([])
-  const [attLoad,     setAttLoad]    = useState(false)
+  const [attLoad,     setAttLoad]    = useState(true)
   const [salarySnap,  setSalarySnap] = useState(null)
-  const [salaryLoad,  setSalaryLoad] = useState(false)
+  const [salaryLoad,  setSalaryLoad] = useState(true)
   const [tab,         setTab]        = useState('overview')
   const [isMobile,    setIsMobile]   = useState(false)
-
-  const auth = () => ({ Authorization: `Bearer ${localStorage.getItem('gcd_token')}` })
 
   useEffect(() => {
     try { const t=localStorage.getItem('gcd_token'); if(t){const p=JSON.parse(atob(t.split('.')[1]));setUserRole(p.role)} } catch(e){}
@@ -237,49 +245,56 @@ export default function DriverDashboardPage() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // Instant paint from cache (if we navigated here from the list), then
+  // silently refresh from the network so the profile stays correct.
   function loadEmp() {
-    setLoading(true)
-    empApi.get(id).then(d => setEmp(d.employee)).catch(() => setEmp(null)).finally(() => setLoading(false))
+    empApi.get(id).then(d => { setEmpState(d.employee); setEmp(d.employee) }).catch(() => setEmpState(prev => prev)).finally(() => setLoading(false))
   }
   useEffect(() => { loadEmp() }, [id])
 
   useEffect(() => {
     setLeavesLoad(true)
-    fetch(`${API}/api/leaves?emp_id=${id}&stage=all`, { headers: auth() })
+    fetch(`${API}/api/leaves?emp_id=${id}&stage=all`, { headers: hdr() })
       .then(r => r.json()).then(d => setLeaves(d.leaves || [])).catch(() => setLeaves([])).finally(() => setLeavesLoad(false))
   }, [id])
 
   useEffect(() => {
     setAttLoad(true)
     const month = new Date().toISOString().slice(0, 7)
-    fetch(`${API}/api/attendance?emp_id=${id}&month=${month}`, { headers: auth() })
+    fetch(`${API}/api/attendance?emp_id=${id}&month=${month}`, { headers: hdr() })
       .then(r => r.json()).then(d => setAttendance(d.records || d.attendance || [])).catch(() => setAttendance([])).finally(() => setAttLoad(false))
   }, [id])
 
+  // Eager (not tab-gated) — feeds the Expenses snapshot tile
   useEffect(() => {
-    if (tab !== 'expenses') return
     setExpLoad(true)
-    fetch(`${API}/api/expenses?emp_id=${id}`, { headers: auth() })
-      .then(r => r.json()).then(d => setExpenses(d.expenses || [])).catch(() => setExpenses([])).finally(() => setExpLoad(false))
-  }, [tab, id])
+    expenseApi.list({ emp_id: id }).then(d => setExpenses(d.expenses || [])).catch(() => setExpenses([])).finally(() => setExpLoad(false))
+  }, [id])
 
+  // Eager — feeds the Documents snapshot tile
+  useEffect(() => {
+    setDocsLoad(true)
+    docApi.list({ emp_id: id }).then(d => setDocuments(d.documents || [])).catch(() => setDocuments([])).finally(() => setDocsLoad(false))
+  }, [id])
+
+  // Eager — feeds the Salary snapshot tile
+  useEffect(() => {
+    setSalaryLoad(true)
+    const month = new Date().toISOString().slice(0, 7)
+    payrollApi.list({ emp_id: id, month }).then(d => setSalarySnap((d.payroll || [])[0] || null)).catch(() => setSalarySnap(null)).finally(() => setSalaryLoad(false))
+  }, [id])
+
+  // Lazy — only Fleet tab needs this
   useEffect(() => {
     if (tab !== 'fleet') return
     setFleetLoad(true)
     Promise.all([
-      fetch(`${API}/api/handovers?emp_id=${id}`, { headers: auth() }).then(r => r.json()).catch(() => ({ handovers: [] })),
-      fetch(`${API}/api/vehicles/assignments/history?emp_id=${id}`, { headers: auth() }).then(r => r.json()).catch(() => ({ history: [] })),
+      fetch(`${API}/api/handovers?emp_id=${id}`, { headers: hdr() }).then(r => r.json()).catch(() => ({ handovers: [] })),
+      fetch(`${API}/api/vehicles/assignments/history?emp_id=${id}`, { headers: hdr() }).then(r => r.json()).catch(() => ({ history: [] })),
     ]).then(([hv, asgn]) => { setFleetHv(hv.handovers || []); setFleetAsgn(asgn.history || []) }).finally(() => setFleetLoad(false))
   }, [tab, id])
 
-  useEffect(() => {
-    if (tab !== 'salary') return
-    setSalaryLoad(true)
-    const month = new Date().toISOString().slice(0, 7)
-    payrollApi.list({ emp_id: id, month }).then(d => setSalarySnap((d.payroll || [])[0] || null)).catch(() => setSalarySnap(null)).finally(() => setSalaryLoad(false))
-  }, [tab, id])
-
-  if (loading) {
+  if (loading && !emp) {
     return <div style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>Loading driver profile…</div>
   }
   if (!emp) {
@@ -303,18 +318,6 @@ export default function DriverDashboardPage() {
   const usedAnnual  = usedByType('Annual')
   const curVehicle  = fleetHv.find(h => h.type === 'received' && !fleetHv.find(h2 => h2.vehicle_id === h.vehicle_id && h2.type === 'returned' && new Date(h2.submitted_at) > new Date(h.submitted_at)))
 
-  function docDays(d) {
-    if (!d) return null
-    try { return differenceInDays(parseISO(d.slice(0,10)), new Date()) } catch { return null }
-  }
-  function docChip(d) {
-    const days = docDays(d)
-    if (days === null) return null
-    if (days < 0)   return { label:'Expired',       c:'#DC2626', bg:'#FEF2F2', bc:'#FECACA' }
-    if (days <= 30) return { label:`${days}d left`, c:'#DC2626', bg:'#FEF2F2', bc:'#FECACA' }
-    if (days <= 90) return { label:`${days}d left`, c:'#D97706', bg:'#FFFBEB', bc:'#FDE68A' }
-    return              { label:'Valid',             c:'#059669', bg:'#F0FDF4', bc:'#A7F3D0' }
-  }
   const alertCount = [emp.visa_expiry, emp.license_expiry, emp.iloe_expiry].filter(d => { const n = docDays(d); return n !== null && n <= 30 }).length
   const attPresent = attendance.filter(a => a.status === 'present').length
   const attAbsent  = attendance.filter(a => a.status === 'absent').length
@@ -325,9 +328,6 @@ export default function DriverDashboardPage() {
     { id:'leaves',    l:`Leaves${leaves.length ? ` (${leaves.length})` : ''}` },
     { id:'sims',      l:'SIMs'      },
     { id:'fleet',     l:'Fleet'     },
-    { id:'documents', l:'Documents' },
-    { id:'expenses',  l:'Expenses'  },
-    { id:'salary',    l:'Salary'    },
   ]
 
   function Section({ title, icon: SIcon, children }) {
@@ -373,28 +373,23 @@ export default function DriverDashboardPage() {
       </div>
     )
   }
-  function QuickLink({ icon: Icon, label, onClick, color }) {
-    return (
-      <button onClick={onClick} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'11px 14px', borderRadius:12, background:'var(--card)', border:'1px solid var(--border)', color:color||'var(--text)', fontWeight:700, fontSize:12.5, cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
-        <Icon size={14}/> {label}
-      </button>
-    )
-  }
 
+  // ── Snapshot tile data ──
+  const expPending  = expenses.filter(e => e.status === 'pending').length
+  const expTotal    = expenses.reduce((s, e) => s + Number(e.amount || 0), 0)
+  const docsExpiring = documents.filter(d => { const st = expiryStatus(d.expires_at); return st && st.days <= 60 }).length
   const netSnap = salarySnap ? Number(salarySnap.net_pay || (Number(salarySnap.base_salary||0) + Number(salarySnap.bonus_total||0) - Number(salarySnap.deduction_total||0))) : null
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14, fontFamily:'Poppins,sans-serif', animation:'slideUp 0.3s ease' }}>
+      <style>{`.snap-tile:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}`}</style>
 
-      <button onClick={()=>router.push('/dashboard/hr/employees')}
-        style={{ display:'flex', alignItems:'center', gap:6, alignSelf:'flex-start', background:'none', border:'none', color:'var(--text-muted)', fontSize:12.5, fontWeight:600, cursor:'pointer', padding:0, fontFamily:'inherit' }}>
-        <ChevronLeft size={14}/> Back to DAs
-      </button>
+      <BackLink router={router} href="/dashboard/hr/employees" label="Back to DAs"/>
 
       <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:18, overflow:'hidden' }}>
 
         {/* Hero header */}
-        <div style={{ background:'linear-gradient(135deg,#0f1623 0%,#1a2535 55%,#1e3a5f 100%)', padding:'20px 22px 18px' }}>
+        <div style={{ background:DA_HERO_GRADIENT, padding:'20px 22px 18px' }}>
           <div style={{ display:'flex', alignItems:'flex-start', gap:14, marginBottom:16 }}>
             <div style={{ position:'relative', flexShrink:0 }}>
               <div style={{ width:58, height:58, borderRadius:16, background:`linear-gradient(145deg,${sc}30,${sc}60)`, border:`2px solid ${sc}60`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:900, color:'white', letterSpacing:'-0.02em', boxShadow:`0 6px 20px ${sc}35` }}>
@@ -428,7 +423,7 @@ export default function DriverDashboardPage() {
               { label:'Service',    v: serviceDays > 0 ? serviceStr : '—',                                             sub: emp.joined ? emp.joined.slice(0,10) : 'No join date',   c:'#60A5FA' },
               { label:'Status',     v: onLeaveNow > 0 ? 'On Leave' : s.l,                                              sub: onLeaveNow > 0 ? 'Currently away' : 'Working',           c: onLeaveNow>0?'#FBBF24':s.dot },
               { label:'Leave Used', v: leavesLoad ? '…' : `${usedAnnual}d`,                                            sub: leavesLoad ? '' : `${Math.max(0,30-usedAnnual)}d left`,  c:'#A78BFA' },
-              { label:'Documents',  v: alertCount > 0 ? `${alertCount} Alert${alertCount>1?'s':''}` : 'All OK',        sub: alertCount > 0 ? 'Needs renewal' : 'Up to date',         c: alertCount>0?'#F87171':'#34D399' },
+              { label:'Alerts',     v: alertCount > 0 ? `${alertCount} Alert${alertCount>1?'s':''}` : 'All OK',        sub: alertCount > 0 ? 'Needs renewal' : 'Up to date',         c: alertCount>0?'#F87171':'#34D399' },
             ].map(m => (
               <div key={m.label} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'12px 14px' }}>
                 <div style={{ fontSize:16, fontWeight:900, color:m.c, letterSpacing:'-0.03em', lineHeight:1, marginBottom:4 }}>{m.v}</div>
@@ -451,18 +446,27 @@ export default function DriverDashboardPage() {
           )}
         </div>
 
-        {/* Quick links row */}
-        <div style={{ display:'flex', gap:8, padding:'14px 18px', borderBottom:'1px solid var(--border)', flexWrap:'wrap' }}>
-          <QuickLink icon={Receipt}    label="Expenses"  color="#DC2626" onClick={()=>router.push(`/dashboard/hr/employees/${id}/expenses`)}/>
-          <QuickLink icon={FolderOpen} label="Documents" color="#2563EB" onClick={()=>router.push(`/dashboard/hr/employees/${id}/documents`)}/>
-          <QuickLink icon={Banknote}   label="Salary"    color="#059669" onClick={()=>router.push(`/dashboard/hr/employees/${id}/salary`)}/>
+        {/* Snapshot tiles — live data that IS the navigation */}
+        <div style={{ display:'flex', gap:10, padding:'14px 18px', borderBottom:'1px solid var(--border)', flexWrap:'wrap' }}>
+          <SnapshotTile icon={Receipt} color="#D97706" bg="var(--amber-bg)" border="var(--amber-border)"
+            label="Expenses" value={expLoad ? '…' : `AED ${expTotal.toLocaleString('en-US')}`}
+            sub={expLoad ? '' : `${expenses.length} record${expenses.length!==1?'s':''}${expPending?` · ${expPending} pending`:''}`}
+            onClick={()=>router.push(`/dashboard/hr/employees/${id}/expenses`)}/>
+          <SnapshotTile icon={FolderOpen} color="#2563EB" bg="var(--blue-bg)" border="var(--blue-border)"
+            label="Documents" value={docsLoad ? '…' : `${documents.length} file${documents.length!==1?'s':''}`}
+            sub={docsLoad ? '' : (docsExpiring ? `${docsExpiring} expiring soon` : 'All up to date')}
+            onClick={()=>router.push(`/dashboard/hr/employees/${id}/documents`)}/>
+          <SnapshotTile icon={Banknote} color="#059669" bg="var(--green-bg)" border="var(--green-border)"
+            label="Salary" value={salaryLoad ? '…' : netSnap===null ? 'No record' : `AED ${netSnap.toLocaleString('en-US')}`}
+            sub={salaryLoad ? '' : salarySnap ? (salarySnap.payroll_status==='paid' ? 'Paid this month' : 'Pending payment') : `for ${new Date().toISOString().slice(0,7)}`}
+            onClick={()=>router.push(`/dashboard/hr/employees/${id}/salary`)}/>
         </div>
 
         {/* Tabs */}
         <div style={{ display:'flex', overflowX:'auto', borderBottom:'1px solid var(--border)', background:'var(--card)', scrollbarWidth:'none', padding:'0 4px' }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              style={{ padding:'11px 16px', fontSize:12.5, fontWeight:tab===t.id?700:500, color:tab===t.id?'#B8860B':'var(--text-muted)', background:'none', border:'none', borderBottom:`2.5px solid ${tab===t.id?'#B8860B':'transparent'}`, cursor:'pointer', fontFamily:'Poppins,sans-serif', marginBottom:-1, whiteSpace:'nowrap', flexShrink:0, transition:'all 0.15s' }}>
+              style={{ padding:'11px 16px', fontSize:12.5, fontWeight:tab===t.id?700:500, color:tab===t.id?'#B8860B':'var(--text-muted)', background:'none', border:'none', borderBottom:`2.5px solid ${tab===t.id?'#B8860B':'transparent'}`, cursor:'pointer', fontFamily:'Poppins,sans-serif', marginBottom:-1, whiteSpace:'nowrap', flexShrink:0, transition:'all var(--t-fast)' }}>
               {t.l}
             </button>
           ))}
@@ -493,6 +497,14 @@ export default function DriverDashboardPage() {
               <DocRow label="UAE Visa"        date={emp.visa_expiry}/>
               <DocRow label="Driving License" date={emp.license_expiry}/>
               <DocRow label="ILOE"            date={emp.iloe_expiry}/>
+              {emp.insurance_url && (
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px' }}>
+                  <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>Insurance Card</span>
+                  <a href={emp.insurance_url} target="_blank" rel="noreferrer" style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:700, color:'#B8860B', textDecoration:'none' }}>
+                    View <ExternalLink size={11}/>
+                  </a>
+                </div>
+              )}
             </Section>
 
             <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr':'1fr 1fr', gap:12 }}>
@@ -635,94 +647,6 @@ export default function DriverDashboardPage() {
                     <div style={{ textAlign:'center', padding:'20px', color:'var(--text-muted)', fontSize:12 }}>No handover records</div>
                   )}
                 </>
-              )}
-            </div>
-          )}
-
-          {/* ── Documents: short preview, full management lives on its own page ── */}
-          {tab === 'documents' && (
-            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-              <button onClick={()=>router.push(`/dashboard/hr/employees/${id}/documents`)}
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'10px 14px', borderRadius:10, background:'var(--blue-bg)', border:'1px solid var(--blue-border)', color:'var(--blue)', fontWeight:600, fontSize:12, cursor:'pointer' }}>
-                <FolderOpen size={13}/> Manage Documents <ExternalLink size={11}/>
-              </button>
-              <Section title="Expiry Dates">
-                <DocRow label="UAE Visa"        date={emp.visa_expiry}/>
-                <DocRow label="Driving License" date={emp.license_expiry}/>
-                <DocRow label="ILOE"            date={emp.iloe_expiry}/>
-              </Section>
-              {emp.insurance_url && (
-                <Section title="Insurance Card">
-                  <div style={{ padding:'14px 16px' }}>
-                    <a href={emp.insurance_url} target="_blank" rel="noreferrer"
-                      style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'13px', borderRadius:12, background:'var(--amber-bg)', border:'1px solid var(--amber-border)', color:'#B8860B', fontWeight:700, fontSize:13, fontFamily:'Poppins,sans-serif', textDecoration:'none' }}>
-                      <FileText size={14}/> View Insurance Card <ExternalLink size={12}/>
-                    </a>
-                  </div>
-                </Section>
-              )}
-            </div>
-          )}
-
-          {/* ── Expenses: short preview, add/approve lives on its own page ── */}
-          {tab === 'expenses' && (
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              <button onClick={()=>router.push(`/dashboard/hr/employees/${id}/expenses`)}
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'10px 14px', borderRadius:10, background:'var(--blue-bg)', border:'1px solid var(--blue-border)', color:'var(--blue)', fontWeight:600, fontSize:12, cursor:'pointer' }}>
-                <Receipt size={13}/> Manage Expenses <ExternalLink size={11}/>
-              </button>
-              {expLoad
-                ? [1,2,3].map(i => <div key={i} className="sk" style={{ height:68, borderRadius:12 }}/>)
-                : expenses.length === 0
-                  ? <div style={{ textAlign:'center', padding:'40px 20px' }}>
-                      <Receipt size={32} style={{ margin:'0 auto 12px', display:'block', opacity:0.15 }}/>
-                      <div style={{ fontSize:13, color:'var(--text-muted)' }}>No expense records</div>
-                    </div>
-                  : expenses.slice(0,5).map(ex => (
-                      <div key={ex.id} style={{ background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:12, padding:'12px 14px' }}>
-                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
-                          <span style={{ fontSize:12.5, fontWeight:700, color:'var(--text)' }}>{ex.description || ex.category || 'Expense'}</span>
-                          <span style={{ fontSize:13.5, fontWeight:800, color:'#DC2626' }}>AED {Number(ex.amount||0).toLocaleString('en-US')}</span>
-                        </div>
-                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                          <span style={{ fontSize:11.5, color:'var(--text-muted)' }}>{ex.date?.slice(0,10)}</span>
-                          <span style={{ fontSize:10.5, fontWeight:700, color:ex.status==='approved'?'#059669':ex.status==='pending'?'#D97706':'#EF4444', background:ex.status==='approved'?'#F0FDF4':ex.status==='pending'?'#FFFBEB':'#FEF2F2', borderRadius:99, padding:'2px 9px' }}>
-                            {ex.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-              }
-            </div>
-          )}
-
-          {/* ── Salary: current-month snapshot, full page has the breakdown ── */}
-          {tab === 'salary' && (
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              <button onClick={()=>router.push(`/dashboard/hr/employees/${id}/salary`)}
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'10px 14px', borderRadius:10, background:'var(--blue-bg)', border:'1px solid var(--blue-border)', color:'var(--blue)', fontWeight:600, fontSize:12, cursor:'pointer' }}>
-                <Banknote size={13}/> View Full Salary <ExternalLink size={11}/>
-              </button>
-              {salaryLoad ? (
-                <div className="sk" style={{ height:100, borderRadius:14 }}/>
-              ) : !salarySnap ? (
-                <div style={{ textAlign:'center', padding:'40px 20px' }}>
-                  <Banknote size={32} style={{ margin:'0 auto 12px', display:'block', opacity:0.15 }}/>
-                  <div style={{ fontSize:13, color:'var(--text-muted)' }}>No payroll record for this month yet</div>
-                </div>
-              ) : (
-                <div style={{ background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:14, padding:'16px' }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:6 }}>Net Pay — {new Date().toISOString().slice(0,7)}</div>
-                  <div style={{ fontSize:26, fontWeight:900, color:'#059669', letterSpacing:'-0.03em' }}>AED {netSnap.toLocaleString('en-US')}</div>
-                  <div style={{ display:'flex', gap:16, marginTop:10 }}>
-                    <div><span style={{ fontSize:11, color:'var(--text-muted)' }}>Base</span> <strong style={{ fontSize:12.5 }}>AED {Number(salarySnap.base_salary||0).toLocaleString('en-US')}</strong></div>
-                    <div><span style={{ fontSize:11, color:'var(--text-muted)' }}>Bonuses</span> <strong style={{ fontSize:12.5, color:'#059669' }}>+{Number(salarySnap.bonus_total||0).toLocaleString('en-US')}</strong></div>
-                    <div><span style={{ fontSize:11, color:'var(--text-muted)' }}>Deductions</span> <strong style={{ fontSize:12.5, color:'#DC2626' }}>-{Number(salarySnap.deduction_total||0).toLocaleString('en-US')}</strong></div>
-                  </div>
-                  <span style={{ display:'inline-block', marginTop:10, fontSize:10.5, fontWeight:700, color:salarySnap.payroll_status==='paid'?'#059669':'#D97706', background:salarySnap.payroll_status==='paid'?'#F0FDF4':'#FFFBEB', borderRadius:99, padding:'2px 10px' }}>
-                    {salarySnap.payroll_status==='paid'?'Paid':'Pending'}
-                  </span>
-                </div>
               )}
             </div>
           )}
