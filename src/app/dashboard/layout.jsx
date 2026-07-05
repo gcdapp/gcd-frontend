@@ -27,7 +27,7 @@ class ErrorBoundary extends Component {
 const BOTTOM_NAV = [
   { href:'/dashboard/overview',  icon:LayoutDashboard, label:'Overview',  roles:['admin','general_manager','hr','accountant','poc'] },
   { href:'/dashboard/hr',        icon:Users,        label:'HR',        roles:['admin','general_manager','hr'] },
-  { href:'/dashboard/finance',   icon:DollarSign,   label:'Finance',   roles:['admin','accountant'] },
+  { href:'/dashboard/finance',   icon:DollarSign,   label:'Finance',   roles:['admin','accountant','manager','general_manager'] },
   { href:'/dashboard/poc',       icon:Radio,        label:'Station',   roles:['admin','general_manager','poc'] },
 ]
 

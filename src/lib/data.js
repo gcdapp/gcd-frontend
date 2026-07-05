@@ -32,9 +32,9 @@ export const NAV = [
   { label:'User Accounts', href:'/dashboard/hr/users',      icon:'KeyRound',    roles:['admin'] },
 
   // ── Finance ───────────────────────────────────────────────────
-  { type:'section', label:'Finance', roles:['admin','accountant','general_manager','hr','poc'] },
+  { type:'section', label:'Finance', roles:['admin','accountant','manager','general_manager','hr','poc'] },
   { label:'Payroll',          href:'/dashboard/finance/payroll',    icon:'Wallet',     roles:['admin','accountant'] },
-  { label:'Expenses',         href:'/dashboard/finance/expenses',   icon:'Receipt',    roles:['admin','accountant'] },
+  { label:'Expenses',         href:'/dashboard/finance/expenses',   icon:'Receipt',    roles:['admin','accountant','manager','general_manager'] },
   { label:'Petty Cash',       href:'/dashboard/finance/petty-cash', icon:'Banknote',   roles:['admin','accountant','general_manager','hr','poc'] },
   { label:'Staff Attendance', href:'/dashboard/finance/attendance', icon:'Clock',      roles:['admin','accountant'] },
   { label:'Customers',        href:'/dashboard/finance/customers',  icon:'Building2',  roles:['admin','accountant'] },

@@ -155,7 +155,7 @@ function ExpensesPageInner() {
     })
   }, [expenses, search, catFilter, empFilter, sortBy])
 
-  const canEdit     = userRole === 'accountant' || userRole === 'admin' || userRole === 'general_manager'
+  const canEdit     = ['accountant', 'admin', 'general_manager', 'manager'].includes(userRole)
   const canApprove  = ['admin', 'manager', 'accountant'].includes(userRole)
 
   async function del(id) {

@@ -27,7 +27,7 @@ export default function DriverExpensesPage() {
   }, [id])
   useEffect(() => { load() }, [load])
 
-  const canEdit    = ['accountant','admin','general_manager'].includes(userRole)
+  const canEdit    = ['accountant','admin','general_manager','manager'].includes(userRole)
   const canApprove = ['admin','manager','accountant'].includes(userRole)
 
   async function del(expId) {
