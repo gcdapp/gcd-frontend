@@ -183,6 +183,24 @@ function ExpenseModal({ drivers, onSave, onClose }) {
   )
 }
 
+// Accepts ISO (YYYY-MM-DD) or DD/MM/YYYY (DD-MM-YYYY) — this app's locale —
+// and normalizes to ISO before it ever reaches Postgres, since passing an
+// ambiguous slash-separated date straight through as a raw string is what
+// broke the bulk upload (one bad date crashed the whole batch).
+function parseFlexibleDate(input) {
+  const s = String(input || '').trim()
+  if (!s) return null
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+  const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+  if (m) {
+    const day = parseInt(m[1], 10), month = parseInt(m[2], 10), year = m[3]
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+    }
+  }
+  return null
+}
+
 /* ── Bulk Upload Modal ──────────────────────────────────────── */
 function BulkUploadModal({ drivers, onSave, onClose }) {
   const [rows,      setRows]      = useState([])
@@ -212,13 +230,15 @@ function BulkUploadModal({ drivers, onSave, onClose }) {
         const parsed = res.data.map((r, i) => {
           const amount       = parseFloat(r.amount)
           const expense_type = (r.expense_type || '').trim()
-          const date         = (r.date || '').trim() || new Date().toISOString().slice(0,10)
+          const rawDate      = (r.date || '').trim()
+          const date         = rawDate ? parseFlexibleDate(rawDate) : new Date().toISOString().slice(0,10)
           const emp_id       = (r.emp_id || '').trim()
           const errors = []
           if (!expense_type) errors.push('expense_type required')
           if (!r.amount || isNaN(amount) || amount <= 0) errors.push('amount must be positive')
+          if (rawDate && !date) errors.push(`unrecognized date "${rawDate}" (use YYYY-MM-DD or DD/MM/YYYY)`)
           if (emp_id && !drivers.find(d => d.id === emp_id)) errors.push(`unknown driver id "${emp_id}"`)
-          return { row: i + 2, expense_type, amount, date, note: r.note || '', emp_id, errors }
+          return { row: i + 2, expense_type, amount, date: date || rawDate, note: r.note || '', emp_id, errors }
         })
         setRows(parsed)
       },
@@ -273,7 +293,16 @@ function BulkUploadModal({ drivers, onSave, onClose }) {
                 <Check size={24} color="#22C55E"/>
               </div>
               <div style={{ fontWeight:800, fontSize:16, color:'var(--text)', marginBottom:6 }}>{result.created} expense{result.created!==1?'s':''} recorded</div>
-              {result.skipped > 0 && <div style={{ fontSize:12.5, color:'var(--text-muted)' }}>{result.skipped} row{result.skipped!==1?'s':''} skipped (invalid amount/type)</div>}
+              {result.skipped > 0 && <div style={{ fontSize:12.5, color:'var(--text-muted)' }}>{result.skipped} row{result.skipped!==1?'s':''} skipped</div>}
+              {result.failures?.length > 0 && (
+                <div style={{ marginTop:12, textAlign:'left', maxHeight:160, overflowY:'auto', border:'1px solid var(--border)', borderRadius:10 }}>
+                  {result.failures.map((f,i) => (
+                    <div key={i} style={{ padding:'7px 12px', fontSize:11.5, color:'#DC2626', borderTop: i>0?'1px solid var(--border)':'none' }}>
+                      Row {f.row}: {f.reason}
+                    </div>
+                  ))}
+                </div>
+              )}
               <button onClick={onSave} className="btn btn-primary" style={{ marginTop:16 }}>Done</button>
             </div>
           ) : (
