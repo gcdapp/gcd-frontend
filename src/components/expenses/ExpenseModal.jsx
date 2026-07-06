@@ -4,22 +4,32 @@ import { API } from '@/lib/api'
 import {
   X, AlertCircle, ParkingCircle, Banknote, Plane, Fuel, HeartPulse,
   ScanSearch, Smartphone, Building2, Wallet, Bus, Car, KeyRound, FileText, Package,
+  Scale, Gavel, Award, TrendingDown, Clock, Wrench, Route,
 } from 'lucide-react'
 
 export const CATEGORIES = [
   { v:'Parking',               c:'#F59E0B', I:ParkingCircle  },
+  { v:'Parking Fee',           c:'#F59E0B', I:ParkingCircle  },
   { v:'Advances',              c:'#10B981', I:Banknote       },
   { v:'Air Tickets',           c:'#3B82F6', I:Plane          },
   { v:'ENOC',                  c:'#EF4444', I:Fuel           },
+  { v:'Fuel',                  c:'#EF4444', I:Fuel           },
   { v:'Health Insurance',      c:'#8B5CF6', I:HeartPulse     },
   { v:'Idfy',                  c:'#EC4899', I:ScanSearch     },
   { v:'Mobile Expenses',       c:'#06B6D4', I:Smartphone     },
   { v:'Office Expenses',       c:'#84CC16', I:Building2      },
   { v:'Petty Cash',            c:'#F97316', I:Wallet         },
   { v:'RTA Top-up',            c:'#0EA5E9', I:Bus            },
+  { v:'Salik',                 c:'#0EA5E9', I:Route          },
   { v:'Vehicle Expenses',      c:'#6366F1', I:Car            },
   { v:'Vehicle Rent',          c:'#7C3AED', I:KeyRound       },
+  { v:'Vehicle Damage',        c:'#DC2626', I:Wrench         },
   { v:'Visa Expenses',         c:'#D97706', I:FileText       },
+  { v:'Cash Variance',         c:'#F59E0B', I:Scale          },
+  { v:'Fine',                  c:'#DC2626', I:Gavel          },
+  { v:'Incentive',             c:'#22C55E', I:Award          },
+  { v:'Incentive Deductions',  c:'#DC2626', I:TrendingDown   },
+  { v:'Overtime',              c:'#8B5CF6', I:Clock          },
   { v:'Miscellaneous Expenses',c:'#94A3B8', I:Package        },
 ]
 export const CAT_MAP = Object.fromEntries(CATEGORIES.map(c => [c.v, c]))

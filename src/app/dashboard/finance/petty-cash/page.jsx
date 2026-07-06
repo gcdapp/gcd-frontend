@@ -1,11 +1,12 @@
 'use client'
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '@/lib/auth'
+import Papa from 'papaparse'
 import {
   Wallet, ArrowDownLeft, ArrowUpRight,
   ChevronLeft, ChevronRight, X, Users, Trash2, Pencil,
   TrendingUp, TrendingDown, User, Search, Receipt,
-  HandCoins, AlertCircle, RefreshCw,
+  HandCoins, AlertCircle, RefreshCw, UploadCloud, Download, Check,
 } from 'lucide-react'
 import { API } from '@/lib/api'
 
@@ -176,6 +177,149 @@ function ExpenseModal({ drivers, onSave, onClose }) {
             style={{ padding:'13px', borderRadius:12, border:'none', cursor:saving?'not-allowed':'pointer', background:saving?'var(--border)':'linear-gradient(135deg,#B8860B,#D4A017)', color:saving?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'Poppins,sans-serif', marginTop:4, transition:'all 0.2s', boxShadow:saving?'none':'0 3px 12px rgba(184,134,11,0.35)' }}>
             {saving ? 'Saving…' : 'Record Expense'}
           </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Bulk Upload Modal ──────────────────────────────────────── */
+function BulkUploadModal({ drivers, onSave, onClose }) {
+  const [rows,      setRows]      = useState([])
+  const [fileName,  setFileName]  = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [err,       setErr]       = useState(null)
+  const [result,    setResult]    = useState(null)
+
+  function downloadTemplate() {
+    const csv = 'date,expense_type,amount,note,emp_id\n'
+      + `${new Date().toISOString().slice(0,10)},Fuel,50.00,Example note,\n`
+    const blob = new Blob([csv], { type:'text/csv' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href = url; a.download = 'petty_cash_expenses_template.csv'
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  function handleFile(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setFileName(file.name); setErr(null); setResult(null)
+    Papa.parse(file, {
+      header: true, skipEmptyLines: true,
+      complete: (res) => {
+        const parsed = res.data.map((r, i) => {
+          const amount       = parseFloat(r.amount)
+          const expense_type = (r.expense_type || '').trim()
+          const date         = (r.date || '').trim() || new Date().toISOString().slice(0,10)
+          const emp_id       = (r.emp_id || '').trim()
+          const errors = []
+          if (!expense_type) errors.push('expense_type required')
+          if (!r.amount || isNaN(amount) || amount <= 0) errors.push('amount must be positive')
+          if (emp_id && !drivers.find(d => d.id === emp_id)) errors.push(`unknown driver id "${emp_id}"`)
+          return { row: i + 2, expense_type, amount, date, note: r.note || '', emp_id, errors }
+        })
+        setRows(parsed)
+      },
+      error: (e) => setErr(e.message),
+    })
+  }
+
+  const validRows = rows.filter(r => r.errors.length === 0)
+
+  async function handleUpload() {
+    if (!validRows.length) return
+    setUploading(true); setErr(null)
+    try {
+      const res = await fetch(`${API}/api/petty-cash/expense/bulk`, {
+        method:'POST', headers: hdr(),
+        body: JSON.stringify({ records: validRows.map(({ row, errors, ...r }) => r) }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setResult(data)
+    } catch(e) { setErr(e.message) } finally { setUploading(false) }
+  }
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
+      onClick={onClose}>
+      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:640, maxHeight:'85vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#FDF6E3', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(184,134,11,0.3)' }}>
+              <UploadCloud size={17} color="white"/>
+            </div>
+            <div>
+              <div style={{ fontWeight:800, fontSize:15, color:'#1A1612' }}>Bulk Upload Expenses</div>
+              <div style={{ fontSize:11, color:'#A89880', marginTop:1 }}>Log many petty cash expenses from a CSV file</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background:'rgba(184,134,11,0.1)', border:'1px solid #F0D78C', cursor:'pointer', color:'#B8860B', display:'flex', padding:6, borderRadius:'50%' }}><X size={16}/></button>
+        </div>
+
+        <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14, overflowY:'auto', flex:1 }}>
+          {err && (
+            <div style={{ background:'#FEF2F2', border:'1px solid #FCA5A5', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#DC2626', display:'flex', gap:8, alignItems:'center' }}>
+              <AlertCircle size={14}/> {err}
+            </div>
+          )}
+
+          {result ? (
+            <div style={{ textAlign:'center', padding:'20px 10px' }}>
+              <div style={{ width:52, height:52, borderRadius:'50%', background:'#ECFDF5', border:'1px solid #A7F3D0', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }}>
+                <Check size={24} color="#22C55E"/>
+              </div>
+              <div style={{ fontWeight:800, fontSize:16, color:'var(--text)', marginBottom:6 }}>{result.created} expense{result.created!==1?'s':''} recorded</div>
+              {result.skipped > 0 && <div style={{ fontSize:12.5, color:'var(--text-muted)' }}>{result.skipped} row{result.skipped!==1?'s':''} skipped (invalid amount/type)</div>}
+              <button onClick={onSave} className="btn btn-primary" style={{ marginTop:16 }}>Done</button>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize:12.5, color:'var(--text-muted)', lineHeight:1.5 }}>
+                Download the template, fill in one row per expense (columns: <code>date, expense_type, amount, note, emp_id</code> — <code>emp_id</code> is the driver's employee ID and is optional), then upload it back here.
+              </div>
+              <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+                <button onClick={downloadTemplate} type="button"
+                  style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:10, border:'1px solid var(--border)', background:'var(--bg-alt)', color:'var(--text)', fontWeight:600, fontSize:12.5, cursor:'pointer', fontFamily:'inherit' }}>
+                  <Download size={13}/> Download Template
+                </button>
+                <label style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:10, border:'1px solid rgba(184,134,11,0.5)', background:'rgba(184,134,11,0.15)', color:'#B8860B', fontWeight:700, fontSize:12.5, cursor:'pointer' }}>
+                  <UploadCloud size={13}/> Choose CSV File
+                  <input type="file" accept=".csv" onChange={handleFile} style={{ display:'none' }}/>
+                </label>
+                {fileName && <span style={{ fontSize:11.5, color:'var(--text-muted)' }}>{fileName}</span>}
+              </div>
+
+              {rows.length > 0 && (
+                <div style={{ border:'1px solid var(--border)', borderRadius:12, overflow:'hidden' }}>
+                  <div style={{ padding:'9px 14px', background:'var(--bg-alt)', fontSize:11.5, fontWeight:700, color:'var(--text-muted)', display:'flex', justifyContent:'space-between' }}>
+                    <span>{rows.length} row{rows.length!==1?'s':''} parsed</span>
+                    <span style={{ color: validRows.length===rows.length ? '#22C55E' : '#D97706' }}>{validRows.length} valid</span>
+                  </div>
+                  <div style={{ maxHeight:240, overflowY:'auto' }}>
+                    {rows.map((r,i) => (
+                      <div key={i} title={r.errors.join(', ')}
+                        style={{ display:'flex', gap:10, alignItems:'center', padding:'8px 14px', borderTop:'1px solid var(--border)', fontSize:12, background: r.errors.length ? '#FEF2F2' : 'transparent' }}>
+                        <span style={{ width:26, color:'var(--text-muted)', flexShrink:0 }}>#{r.row}</span>
+                        <span style={{ flex:1, minWidth:0, color:'var(--text)', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.expense_type || '—'}</span>
+                        <span style={{ width:80, textAlign:'right', color:'var(--text)', flexShrink:0 }}>{isNaN(r.amount)?'—':`AED ${r.amount}`}</span>
+                        <span style={{ width:90, color:'var(--text-muted)', flexShrink:0 }}>{r.date}</span>
+                        {r.errors.length > 0 && <AlertCircle size={12} color="#DC2626" style={{ flexShrink:0 }}/>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button onClick={handleUpload} disabled={uploading || !validRows.length}
+                style={{ padding:'13px', borderRadius:12, border:'none', cursor:(uploading||!validRows.length)?'not-allowed':'pointer', background:(uploading||!validRows.length)?'var(--border)':'linear-gradient(135deg,#B8860B,#D4A017)', color:(uploading||!validRows.length)?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'Poppins,sans-serif', marginTop:4, transition:'all 0.2s' }}>
+                {uploading ? 'Uploading…' : validRows.length ? `Upload ${validRows.length} Expense${validRows.length!==1?'s':''}` : 'Choose a file to continue'}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -630,6 +774,10 @@ export default function PettyCashPage() {
                 style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'1px solid rgba(184,134,11,0.5)', cursor:'pointer', background:'rgba(184,134,11,0.15)', color:'#D4A017', fontWeight:700, fontSize:13, fontFamily:'Poppins,sans-serif', whiteSpace:'nowrap' }}>
                 <Receipt size={14}/> Record Expense
               </button>
+              <button onClick={() => setModal('bulk')}
+                style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'1px solid rgba(255,255,255,0.15)', cursor:'pointer', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.85)', fontWeight:700, fontSize:13, fontFamily:'Poppins,sans-serif', whiteSpace:'nowrap' }}>
+                <UploadCloud size={14}/> Bulk Upload
+              </button>
             </div>
           </div>
 
@@ -760,6 +908,7 @@ export default function PettyCashPage() {
       </div>
 
       {modal==='expense' && <ExpenseModal drivers={drivers} onSave={() => { setModal(null); load() }} onClose={() => setModal(null)}/>}
+      {modal==='bulk'    && <BulkUploadModal drivers={drivers} onSave={() => { setModal(null); load() }} onClose={() => setModal(null)}/>}
       {modal==='give'    && <GiveCashModal users={allUsers} onSave={() => { setModal(null); load() }} onClose={() => setModal(null)}/>}
       {editRecord && <EditModal record={editRecord} drivers={drivers} onSave={() => { setEditRecord(null); load() }} onClose={() => setEditRecord(null)}/>}
     </>
