@@ -512,13 +512,37 @@ function EditModal({ record, drivers, onSave, onClose }) {
   )
 }
 
+/* ── Bulk Select Bar ────────────────────────────────────────── */
+function BulkSelectBar({ count, total, onSelectAll, onClear, onDelete, deleting }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, padding:'10px 16px', background:'#FEF2F2', borderBottom:'1px solid #FCA5A5', flexWrap:'wrap' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+        <span style={{ fontSize:12.5, fontWeight:700, color:'#DC2626' }}>{count} selected</span>
+        {count < total && (
+          <button onClick={onSelectAll} style={{ fontSize:11.5, fontWeight:600, color:'var(--text-muted)', background:'none', border:'none', cursor:'pointer', textDecoration:'underline', padding:0 }}>Select all {total}</button>
+        )}
+        <button onClick={onClear} style={{ fontSize:11.5, fontWeight:600, color:'var(--text-muted)', background:'none', border:'none', cursor:'pointer', textDecoration:'underline', padding:0 }}>Clear</button>
+      </div>
+      <button onClick={onDelete} disabled={!count || deleting}
+        style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:8, border:'none', background: count ? '#DC2626' : 'var(--border)', color:'white', fontWeight:700, fontSize:12, cursor: count && !deleting ? 'pointer' : 'not-allowed', fontFamily:'inherit' }}>
+        <Trash2 size={12}/> {deleting ? 'Deleting…' : `Delete${count ? ` ${count}` : ''}`}
+      </button>
+    </div>
+  )
+}
+
 /* ── Transaction Row ────────────────────────────────────────── */
-function TxRow({ record, canDelete, onDelete, onEdit }) {
+function TxRow({ record, canDelete, onDelete, onEdit, selectMode, selected, onToggleSelect }) {
   const isAlloc = record.type === 'allocation'
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderBottom:'1px solid var(--border)', transition:'background 0.15s' }}
-      onMouseEnter={e => e.currentTarget.style.background='var(--bg-alt)'}
-      onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+    <div onClick={selectMode ? () => onToggleSelect(record.id) : undefined}
+      style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderBottom:'1px solid var(--border)', transition:'background 0.15s', cursor: selectMode ? 'pointer' : 'default', background: selected ? '#FEF2F2' : 'transparent' }}
+      onMouseEnter={e => { if (!selected) e.currentTarget.style.background='var(--bg-alt)' }}
+      onMouseLeave={e => { if (!selected) e.currentTarget.style.background='transparent' }}>
+      {selectMode && (
+        <input type="checkbox" checked={!!selected} onChange={() => onToggleSelect(record.id)} onClick={e => e.stopPropagation()}
+          style={{ width:16, height:16, flexShrink:0, cursor:'pointer', accentColor:'#DC2626' }}/>
+      )}
       <div style={{ width:38, height:38, borderRadius:11, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', background: isAlloc ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.1)' }}>
         {isAlloc ? <ArrowDownLeft size={16} color="#22C55E"/> : <ArrowUpRight size={16} color="#EF4444"/>}
       </div>
@@ -544,7 +568,7 @@ function TxRow({ record, canDelete, onDelete, onEdit }) {
         </div>
         <div style={{ fontSize:10, color:'var(--text-muted)', marginTop:2 }}>{record.date}</div>
       </div>
-      {canDelete && (
+      {canDelete && !selectMode && (
         <div style={{ display:'flex', gap:2, flexShrink:0 }}>
           <button onClick={() => onEdit(record)}
             style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:4, display:'flex', borderRadius:6 }}
@@ -569,6 +593,9 @@ function UserDetailPanel({ userId, userName, userRole, onBack, canDelete, driver
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
   const [editRecord, setEditRecord] = useState(null)
+  const [selectMode,   setSelectMode]   = useState(false)
+  const [selectedIds,  setSelectedIds]  = useState(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -584,6 +611,27 @@ function UserDetailPanel({ userId, userName, userRole, onBack, canDelete, driver
     if (!confirm('Delete this record?')) return
     await fetch(`${API}/api/petty-cash/${id}`, { method:'DELETE', headers:hdr() })
     load()
+  }
+
+  function toggleSelect(id) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+  function exitSelectMode() { setSelectMode(false); setSelectedIds(new Set()) }
+  async function handleBulkDelete() {
+    if (!selectedIds.size) return
+    if (!confirm(`Delete ${selectedIds.size} record${selectedIds.size!==1?'s':''}? This cannot be undone.`)) return
+    setBulkDeleting(true)
+    try {
+      await fetch(`${API}/api/petty-cash/delete-bulk`, { method:'POST', headers:hdr(), body: JSON.stringify({ ids:[...selectedIds] }) })
+    } finally {
+      setBulkDeleting(false)
+      exitSelectMode()
+      load()
+    }
   }
 
   const balance = Number(data?.balance || 0)
@@ -622,13 +670,30 @@ function UserDetailPanel({ userId, userName, userRole, onBack, canDelete, driver
 
       {/* Transactions card */}
       <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden' }}>
-        <div style={{ padding:'13px 16px', borderBottom:'1px solid var(--border)', fontWeight:700, fontSize:13, color:'var(--text)' }}>Transaction History</div>
+        <div style={{ padding:'13px 16px', borderBottom:'1px solid var(--border)', fontWeight:700, fontSize:13, color:'var(--text)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <span>Transaction History</span>
+          {canDelete && data?.records?.length > 0 && (
+            <button onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
+              style={{ fontSize:11.5, fontWeight:700, color: selectMode?'var(--text-muted)':'#DC2626', background:'none', border:'none', cursor:'pointer', fontFamily:'inherit' }}>
+              {selectMode ? 'Cancel' : 'Select'}
+            </button>
+          )}
+        </div>
+        {selectMode && (
+          <BulkSelectBar count={selectedIds.size} total={data?.records?.length||0}
+            onSelectAll={() => setSelectedIds(new Set(data.records.map(r=>r.id)))}
+            onClear={() => setSelectedIds(new Set())}
+            onDelete={handleBulkDelete} deleting={bulkDeleting}/>
+        )}
         {loading ? (
           <div style={{ padding:32, textAlign:'center', color:'var(--text-muted)', fontSize:13 }}>Loading…</div>
         ) : !data?.records?.length ? (
           <div style={{ padding:40, textAlign:'center', color:'var(--text-muted)', fontSize:13 }}>No transactions yet</div>
         ) : (
-          data.records.map(r => <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDelete} onEdit={setEditRecord}/>)
+          data.records.map(r => (
+            <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDelete} onEdit={setEditRecord}
+              selectMode={selectMode} selected={selectedIds.has(r.id)} onToggleSelect={toggleSelect}/>
+          ))
         )}
       </div>
 
@@ -653,6 +718,9 @@ export default function PettyCashPage() {
   const [tab,       setTab]       = useState('my')
   const [search,    setSearch]    = useState('')
   const [editRecord,setEditRecord]= useState(null)
+  const [selectMode,   setSelectMode]   = useState(false)
+  const [selectedIds,  setSelectedIds]  = useState(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
 
   const canGiveCash = ['admin','accountant'].includes(user?.role)
   const canViewTeam = ['admin','accountant','general_manager','manager'].includes(user?.role)
@@ -688,6 +756,27 @@ export default function PettyCashPage() {
     if (!confirm('Delete this record?')) return
     await fetch(`${API}/api/petty-cash/${id}`, { method:'DELETE', headers:hdr() })
     load()
+  }
+
+  function toggleSelect(id) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+  function exitSelectMode() { setSelectMode(false); setSelectedIds(new Set()) }
+  async function handleBulkDelete() {
+    if (!selectedIds.size) return
+    if (!confirm(`Delete ${selectedIds.size} record${selectedIds.size!==1?'s':''}? This cannot be undone.`)) return
+    setBulkDeleting(true)
+    try {
+      await fetch(`${API}/api/petty-cash/delete-bulk`, { method:'POST', headers:hdr(), body: JSON.stringify({ ids:[...selectedIds] }) })
+    } finally {
+      setBulkDeleting(false)
+      exitSelectMode()
+      load()
+    }
   }
 
   const filteredSummary = useMemo(() => {
@@ -822,10 +911,24 @@ export default function PettyCashPage() {
             <div>
               <div style={{ padding:'13px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid var(--border)' }}>
                 <span style={{ fontWeight:700, fontSize:13, color:'var(--text)' }}>Transaction History</span>
-                {myData?.records?.length > 0 && (
-                  <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>{myData.records.length} records</span>
-                )}
+                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                  {myData?.records?.length > 0 && (
+                    <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>{myData.records.length} records</span>
+                  )}
+                  {canDelete && myData?.records?.length > 0 && (
+                    <button onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
+                      style={{ fontSize:11.5, fontWeight:700, color: selectMode?'var(--text-muted)':'#DC2626', background:'none', border:'none', cursor:'pointer', fontFamily:'inherit' }}>
+                      {selectMode ? 'Cancel' : 'Select'}
+                    </button>
+                  )}
+                </div>
               </div>
+              {selectMode && (
+                <BulkSelectBar count={selectedIds.size} total={myData?.records?.length||0}
+                  onSelectAll={() => setSelectedIds(new Set(myData.records.map(r=>r.id)))}
+                  onClear={() => setSelectedIds(new Set())}
+                  onDelete={handleBulkDelete} deleting={bulkDeleting}/>
+              )}
               {!myData?.records?.length ? (
                 <div style={{ padding:'52px 20px', textAlign:'center', color:'var(--text-muted)' }}>
                   <Wallet size={36} style={{ margin:'0 auto 14px', display:'block', opacity:0.12 }}/>
@@ -833,7 +936,10 @@ export default function PettyCashPage() {
                   <div style={{ fontSize:11, marginTop:4 }}>Record an expense or receive cash to get started</div>
                 </div>
               ) : (
-                myData.records.map(r => <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDeleteMy} onEdit={setEditRecord}/>)
+                myData.records.map(r => (
+                  <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDeleteMy} onEdit={setEditRecord}
+                    selectMode={selectMode} selected={selectedIds.has(r.id)} onToggleSelect={toggleSelect}/>
+                ))
               )}
             </div>
           )}
