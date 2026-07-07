@@ -67,11 +67,11 @@ export default function ExpenseModal({ expense, employees = [], lockEmpId, onSav
     if (!form.emp_id || !form.amount) return setErr('Employee and amount are required')
     setSaving(true); setErr(null)
     try {
-      if (isEdit) {
-        await fetch(`${API}/api/expenses/${expense.id}`, { method: 'PUT', headers: hdr(), body: JSON.stringify(form) })
-      } else {
-        await fetch(`${API}/api/expenses`, { method: 'POST', headers: hdr(), body: JSON.stringify(form) })
-      }
+      const url    = isEdit ? `${API}/api/expenses/${expense.id}` : `${API}/api/expenses`
+      const method = isEdit ? 'PUT' : 'POST'
+      const res    = await fetch(url, { method, headers: hdr(), body: JSON.stringify(form) })
+      const data   = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Failed to save expense')
       onSave()
     } catch (e) { setErr(e.message) } finally { setSaving(false) }
   }
