@@ -31,6 +31,12 @@ function fmt(n) {
   return `AED ${Math.abs(Number(n || 0)).toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
+function monthLabel(dateStr) {
+  const d = new Date(dateStr)
+  if (isNaN(d)) return ''
+  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+}
+
 function Lbl({ children }) {
   return (
     <label style={{ display:'block', fontSize:10.5, fontWeight:700, letterSpacing:'0.07em', textTransform:'uppercase', color:'var(--text-muted)', marginBottom:5 }}>
@@ -784,6 +790,9 @@ export default function PettyCashPage() {
   // Admins/accountants distribute cash rather than hold it personally, so they get
   // an all-users "Recent Entries" feed instead of the "My Balance" tab.
   const isCashManager = canDelete
+  // Accountant's Recent Entries feed is scoped server-side to only the cash
+  // allocations she personally gave out (see GET /api/petty-cash/all), grouped by month.
+  const isAccountant = user?.role === 'accountant'
 
   const load = useCallback(async (isRefresh=false) => {
     if (isRefresh) setRefreshing(true)
@@ -1045,13 +1054,28 @@ export default function PettyCashPage() {
                 <div style={{ padding:'52px 20px', textAlign:'center', color:'var(--text-muted)' }}>
                   <Wallet size={36} style={{ margin:'0 auto 14px', display:'block', opacity:0.12 }}/>
                   <div style={{ fontWeight:600, fontSize:13 }}>No transactions yet</div>
-                  <div style={{ fontSize:11, marginTop:4 }}>Record an expense or give cash to get started</div>
+                  <div style={{ fontSize:11, marginTop:4 }}>{isAccountant ? 'Give cash to a team member to get started' : 'Record an expense or give cash to get started'}</div>
                 </div>
               ) : (
-                recentData.records.map(r => (
-                  <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDeleteRecent} onEdit={setEditRecord}
-                    selectMode={recentSelectMode} selected={recentSelectedIds.has(r.id)} onToggleSelect={toggleRecentSelect} showUser/>
-                ))
+                (() => {
+                  let lastMonth = null
+                  return recentData.records.map(r => {
+                    const m = monthLabel(r.date)
+                    const showMonthHeader = isAccountant && m !== lastMonth
+                    lastMonth = m
+                    return (
+                      <React.Fragment key={r.id}>
+                        {showMonthHeader && (
+                          <div style={{ padding:'9px 16px', fontSize:10.5, fontWeight:800, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.08em', background:'var(--bg-alt)', borderBottom:'1px solid var(--border)' }}>
+                            {m}
+                          </div>
+                        )}
+                        <TxRow record={r} canDelete={canDelete} onDelete={handleDeleteRecent} onEdit={setEditRecord}
+                          selectMode={recentSelectMode} selected={recentSelectedIds.has(r.id)} onToggleSelect={toggleRecentSelect} showUser/>
+                      </React.Fragment>
+                    )
+                  })
+                })()
               )}
               <Pagination page={recentPage} totalPages={recentData?.totalPages||1}
                 onChange={p => loadRecent(p)} loading={recentLoading}/>
