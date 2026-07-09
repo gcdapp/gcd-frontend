@@ -128,7 +128,7 @@ function ExpenseModal({ drivers, onSave, onClose }) {
   return (
     <div style={{ position:'fixed', top:0, right:0, bottom:0, left:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
       onClick={onClose}>
-      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:460, maxHeight:'90vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
+      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:600, maxHeight:'90vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
         onClick={e => e.stopPropagation()}>
         <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#FDF6E3', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
@@ -386,7 +386,7 @@ function GiveCashModal({ users, onSave, onClose }) {
   return (
     <div style={{ position:'fixed', top:0, right:0, bottom:0, left:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
       onClick={onClose}>
-      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:460, maxHeight:'90vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
+      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:600, maxHeight:'90vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
         onClick={e => e.stopPropagation()}>
         <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#ECFDF5', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
@@ -482,7 +482,7 @@ function EditModal({ record, drivers, onSave, onClose }) {
   return (
     <div style={{ position:'fixed', top:0, right:0, bottom:0, left:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
       onClick={onClose}>
-      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:460, maxHeight:'90vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
+      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:600, maxHeight:'90vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
         onClick={e => e.stopPropagation()}>
         <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#EFF6FF', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
