@@ -560,8 +560,26 @@ function BulkSelectBar({ count, total, onSelectAll, onClear, onDelete, deleting 
   )
 }
 
+/* ── Pagination ─────────────────────────────────────────────── */
+function Pagination({ page, totalPages, onChange, loading }) {
+  if (totalPages <= 1) return null
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', borderTop:'1px solid var(--border)' }}>
+      <button onClick={() => onChange(page - 1)} disabled={page <= 1 || loading}
+        style={{ display:'flex', alignItems:'center', gap:4, padding:'7px 12px', borderRadius:8, border:'1px solid var(--border)', background:'var(--bg-alt)', color:'var(--text)', fontWeight:600, fontSize:12, fontFamily:'inherit', cursor: page <= 1 || loading ? 'not-allowed' : 'pointer', opacity: page <= 1 ? 0.5 : 1 }}>
+        <ChevronLeft size={13}/> Prev
+      </button>
+      <span style={{ fontSize:12, color:'var(--text-muted)', fontWeight:600 }}>Page {page} of {totalPages}</span>
+      <button onClick={() => onChange(page + 1)} disabled={page >= totalPages || loading}
+        style={{ display:'flex', alignItems:'center', gap:4, padding:'7px 12px', borderRadius:8, border:'1px solid var(--border)', background:'var(--bg-alt)', color:'var(--text)', fontWeight:600, fontSize:12, fontFamily:'inherit', cursor: page >= totalPages || loading ? 'not-allowed' : 'pointer', opacity: page >= totalPages ? 0.5 : 1 }}>
+        Next <ChevronRight size={13}/>
+      </button>
+    </div>
+  )
+}
+
 /* ── Transaction Row ────────────────────────────────────────── */
-function TxRow({ record, canDelete, onDelete, onEdit, selectMode, selected, onToggleSelect }) {
+function TxRow({ record, canDelete, onDelete, onEdit, selectMode, selected, onToggleSelect, showUser }) {
   const isAlloc = record.type === 'allocation'
   return (
     <div onClick={selectMode ? () => onToggleSelect(record.id) : undefined}
@@ -578,6 +596,9 @@ function TxRow({ record, canDelete, onDelete, onEdit, selectMode, selected, onTo
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>
           {isAlloc ? 'Cash Received' : record.expense_type}
+          {showUser && record.user_name && (
+            <span style={{ fontWeight:500, color:'var(--text-muted)' }}> · {record.user_name}</span>
+          )}
         </div>
         <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2, display:'flex', gap:6, flexWrap:'wrap', alignItems:'baseline' }}>
           {record.emp_name && (
@@ -744,16 +765,25 @@ export default function PettyCashPage() {
   const [refreshing,setRefreshing]= useState(false)
   const [modal,     setModal]     = useState(null)
   const [drillUser, setDrillUser] = useState(null)
-  const [tab,       setTab]       = useState('my')
+  const [tab,       setTab]       = useState(null)
   const [search,    setSearch]    = useState('')
   const [editRecord,setEditRecord]= useState(null)
   const [selectMode,   setSelectMode]   = useState(false)
   const [selectedIds,  setSelectedIds]  = useState(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [recentData,    setRecentData]    = useState(null)
+  const [recentPage,    setRecentPage]    = useState(1)
+  const [recentLoading, setRecentLoading] = useState(false)
+  const [recentSelectMode,   setRecentSelectMode]   = useState(false)
+  const [recentSelectedIds,  setRecentSelectedIds]  = useState(new Set())
+  const [recentBulkDeleting, setRecentBulkDeleting] = useState(false)
 
   const canGiveCash = ['admin','accountant'].includes(user?.role)
   const canViewTeam = ['admin','accountant','general_manager','manager'].includes(user?.role)
   const canDelete   = ['admin','accountant'].includes(user?.role)
+  // Admins/accountants distribute cash rather than hold it personally, so they get
+  // an all-users "Recent Entries" feed instead of the "My Balance" tab.
+  const isCashManager = canDelete
 
   const load = useCallback(async (isRefresh=false) => {
     if (isRefresh) setRefreshing(true)
@@ -781,10 +811,59 @@ export default function PettyCashPage() {
 
   useEffect(() => { load() }, [load])
 
+  const loadRecent = useCallback(async (page = 1) => {
+    setRecentLoading(true)
+    try {
+      const res  = await fetch(`${API}/api/petty-cash/all?page=${page}&limit=20`, { headers: hdr() })
+      const data = await res.json()
+      setRecentData(data)
+      setRecentPage(data.page || page)
+    } catch {} finally { setRecentLoading(false) }
+  }, [])
+
+  const activeTab = tab || (isCashManager ? 'recent' : 'my')
+
+  useEffect(() => {
+    if (isCashManager && activeTab === 'recent') loadRecent(recentPage)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCashManager, activeTab])
+
   async function handleDeleteMy(id) {
     if (!confirm('Delete this record?')) return
     await fetch(`${API}/api/petty-cash/${id}`, { method:'DELETE', headers:hdr() })
     load()
+  }
+
+  async function handleDeleteRecent(id) {
+    if (!confirm('Delete this record?')) return
+    await fetch(`${API}/api/petty-cash/${id}`, { method:'DELETE', headers:hdr() })
+    loadRecent(recentPage)
+  }
+
+  function toggleRecentSelect(id) {
+    setRecentSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+  function exitRecentSelectMode() { setRecentSelectMode(false); setRecentSelectedIds(new Set()) }
+  async function handleRecentBulkDelete() {
+    if (!recentSelectedIds.size) return
+    if (!confirm(`Delete ${recentSelectedIds.size} record${recentSelectedIds.size!==1?'s':''}? This cannot be undone.`)) return
+    setRecentBulkDeleting(true)
+    try {
+      await fetch(`${API}/api/petty-cash/delete-bulk`, { method:'POST', headers:hdr(), body: JSON.stringify({ ids:[...recentSelectedIds] }) })
+    } finally {
+      setRecentBulkDeleting(false)
+      exitRecentSelectMode()
+      loadRecent(recentPage)
+    }
+  }
+
+  function refreshAll() {
+    load()
+    if (isCashManager) loadRecent(recentPage)
   }
 
   function toggleSelect(id) {
@@ -929,14 +1008,58 @@ export default function PettyCashPage() {
           {/* Tabs */}
           {canViewTeam && (
             <div style={{ padding:'0 16px', borderBottom:'1px solid var(--border)', display:'flex', gap:2 }}>
-              {[['my','My Balance'],['team','Team Overview']].map(([v,l]) => (
-                <button key={v} onClick={() => setTab(v)} className={`pc-tab${tab===v?' active':''}`}>{l}</button>
+              {(isCashManager ? [['recent','Recent Entries'],['team','Team Overview']] : [['my','My Balance'],['team','Team Overview']]).map(([v,l]) => (
+                <button key={v} onClick={() => setTab(v)} className={`pc-tab${activeTab===v?' active':''}`}>{l}</button>
               ))}
             </div>
           )}
 
+          {/* ── Recent Entries (admin/accountant) ── */}
+          {activeTab === 'recent' && isCashManager && (
+            <div>
+              <div style={{ padding:'13px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid var(--border)' }}>
+                <span style={{ fontWeight:700, fontSize:13, color:'var(--text)' }}>Recent Entries</span>
+                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                  {recentData?.total > 0 && (
+                    <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>{recentData.total} records</span>
+                  )}
+                  {canDelete && recentData?.records?.length > 0 && (
+                    <button onClick={() => recentSelectMode ? exitRecentSelectMode() : setRecentSelectMode(true)}
+                      style={{ fontSize:11.5, fontWeight:700, color: recentSelectMode?'var(--text-muted)':'#DC2626', background:'none', border:'none', cursor:'pointer', fontFamily:'inherit' }}>
+                      {recentSelectMode ? 'Cancel' : 'Select'}
+                    </button>
+                  )}
+                </div>
+              </div>
+              {recentSelectMode && (
+                <BulkSelectBar count={recentSelectedIds.size} total={recentData?.records?.length||0}
+                  onSelectAll={() => setRecentSelectedIds(new Set(recentData.records.map(r=>r.id)))}
+                  onClear={() => setRecentSelectedIds(new Set())}
+                  onDelete={handleRecentBulkDelete} deleting={recentBulkDeleting}/>
+              )}
+              {recentLoading && !recentData ? (
+                <div style={{ padding:32 }}>
+                  {[0,1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height:56, borderRadius:10, marginBottom:10 }}/>)}
+                </div>
+              ) : !recentData?.records?.length ? (
+                <div style={{ padding:'52px 20px', textAlign:'center', color:'var(--text-muted)' }}>
+                  <Wallet size={36} style={{ margin:'0 auto 14px', display:'block', opacity:0.12 }}/>
+                  <div style={{ fontWeight:600, fontSize:13 }}>No transactions yet</div>
+                  <div style={{ fontSize:11, marginTop:4 }}>Record an expense or give cash to get started</div>
+                </div>
+              ) : (
+                recentData.records.map(r => (
+                  <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDeleteRecent} onEdit={setEditRecord}
+                    selectMode={recentSelectMode} selected={recentSelectedIds.has(r.id)} onToggleSelect={toggleRecentSelect} showUser/>
+                ))
+              )}
+              <Pagination page={recentPage} totalPages={recentData?.totalPages||1}
+                onChange={p => loadRecent(p)} loading={recentLoading}/>
+            </div>
+          )}
+
           {/* ── My Balance ── */}
-          {tab === 'my' && (
+          {activeTab === 'my' && !isCashManager && (
             <div>
               <div style={{ padding:'13px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid var(--border)' }}>
                 <span style={{ fontWeight:700, fontSize:13, color:'var(--text)' }}>Transaction History</span>
@@ -974,7 +1097,7 @@ export default function PettyCashPage() {
           )}
 
           {/* ── Team Overview ── */}
-          {tab === 'team' && (
+          {activeTab === 'team' && (
             <div>
               {/* Team KPIs */}
               <div style={{ padding:'14px 16px', display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, borderBottom:'1px solid var(--border)', background:'var(--bg-alt)' }}>
@@ -1042,10 +1165,10 @@ export default function PettyCashPage() {
         </div>
       </div>
 
-      {modal==='expense' && <ExpenseModal drivers={drivers} onSave={() => { setModal(null); load() }} onClose={() => setModal(null)}/>}
-      {modal==='bulk'    && <BulkUploadModal drivers={drivers} onSave={() => { setModal(null); load() }} onClose={() => setModal(null)}/>}
-      {modal==='give'    && <GiveCashModal users={allUsers} onSave={() => { setModal(null); load() }} onClose={() => setModal(null)}/>}
-      {editRecord && <EditModal record={editRecord} drivers={drivers} onSave={() => { setEditRecord(null); load() }} onClose={() => setEditRecord(null)}/>}
+      {modal==='expense' && <ExpenseModal drivers={drivers} onSave={() => { setModal(null); refreshAll() }} onClose={() => setModal(null)}/>}
+      {modal==='bulk'    && <BulkUploadModal drivers={drivers} onSave={() => { setModal(null); refreshAll() }} onClose={() => setModal(null)}/>}
+      {modal==='give'    && <GiveCashModal users={allUsers} onSave={() => { setModal(null); refreshAll() }} onClose={() => setModal(null)}/>}
+      {editRecord && <EditModal record={editRecord} drivers={drivers} onSave={() => { setEditRecord(null); refreshAll() }} onClose={() => setEditRecord(null)}/>}
     </>
   )
 }
