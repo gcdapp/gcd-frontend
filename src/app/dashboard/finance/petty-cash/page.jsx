@@ -128,9 +128,9 @@ function ExpenseModal({ drivers, onSave, onClose }) {
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
       onClick={onClose}>
-      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:460, border:'1px solid var(--border)', overflow:'hidden', animation:'slideUp 0.2s ease' }}
+      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:460, maxHeight:'90vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
         onClick={e => e.stopPropagation()}>
-        <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#FDF6E3', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#FDF6E3', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
             <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(184,134,11,0.3)' }}>
               <Receipt size={17} color="white"/>
@@ -142,7 +142,7 @@ function ExpenseModal({ drivers, onSave, onClose }) {
           </div>
           <button onClick={onClose} style={{ background:'rgba(184,134,11,0.1)', border:'1px solid #F0D78C', cursor:'pointer', color:'#B8860B', display:'flex', padding:6, borderRadius:'50%' }}><X size={16}/></button>
         </div>
-        <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14 }}>
+        <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14, overflowY:'auto' }}>
           {err && (
             <div style={{ background:'#FEF2F2', border:'1px solid #FCA5A5', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#DC2626', display:'flex', gap:8, alignItems:'center' }}>
               <AlertCircle size={14}/> {err}
@@ -386,9 +386,9 @@ function GiveCashModal({ users, onSave, onClose }) {
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
       onClick={onClose}>
-      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:460, border:'1px solid var(--border)', overflow:'hidden', animation:'slideUp 0.2s ease' }}
+      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:460, maxHeight:'90vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
         onClick={e => e.stopPropagation()}>
-        <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#ECFDF5', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#ECFDF5', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
             <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#2E7D52,#22C55E)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(46,125,82,0.3)' }}>
               <HandCoins size={17} color="white"/>
@@ -400,7 +400,7 @@ function GiveCashModal({ users, onSave, onClose }) {
           </div>
           <button onClick={onClose} style={{ background:'rgba(46,125,82,0.1)', border:'1px solid #A7F3D0', cursor:'pointer', color:'#2E7D52', display:'flex', padding:6, borderRadius:'50%' }}><X size={16}/></button>
         </div>
-        <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14 }}>
+        <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14, overflowY:'auto' }}>
           {err && (
             <div style={{ background:'#FEF2F2', border:'1px solid #FCA5A5', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#DC2626', display:'flex', gap:8, alignItems:'center' }}>
               <AlertCircle size={14}/> {err}
@@ -482,9 +482,9 @@ function EditModal({ record, drivers, onSave, onClose }) {
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
       onClick={onClose}>
-      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:460, border:'1px solid var(--border)', overflow:'hidden', animation:'slideUp 0.2s ease' }}
+      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:460, maxHeight:'90vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
         onClick={e => e.stopPropagation()}>
-        <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#EFF6FF', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#EFF6FF', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
             <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#2563EB,#3B82F6)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(37,99,235,0.3)' }}>
               <Pencil size={16} color="white"/>
@@ -496,7 +496,7 @@ function EditModal({ record, drivers, onSave, onClose }) {
           </div>
           <button onClick={onClose} style={{ background:'rgba(37,99,235,0.1)', border:'1px solid #BFDBFE', cursor:'pointer', color:'#2563EB', display:'flex', padding:6, borderRadius:'50%' }}><X size={16}/></button>
         </div>
-        <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14 }}>
+        <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14, overflowY:'auto' }}>
           {err && (
             <div style={{ background:'#FEF2F2', border:'1px solid #FCA5A5', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#DC2626', display:'flex', gap:8, alignItems:'center' }}>
               <AlertCircle size={14}/> {err}
