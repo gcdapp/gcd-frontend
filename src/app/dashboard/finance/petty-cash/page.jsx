@@ -126,7 +126,7 @@ function ExpenseModal({ drivers, onSave, onClose }) {
   }
 
   return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
+    <div style={{ position:'fixed', top:0, right:0, bottom:0, left:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
       onClick={onClose}>
       <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:460, maxHeight:'90vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
         onClick={e => e.stopPropagation()}>
@@ -263,7 +263,7 @@ function BulkUploadModal({ drivers, onSave, onClose }) {
   }
 
   return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
+    <div style={{ position:'fixed', top:0, right:0, bottom:0, left:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
       onClick={onClose}>
       <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:640, maxHeight:'85vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
         onClick={e => e.stopPropagation()}>
@@ -384,7 +384,7 @@ function GiveCashModal({ users, onSave, onClose }) {
   const selected = users.find(u => u.id === form.user_id)
 
   return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
+    <div style={{ position:'fixed', top:0, right:0, bottom:0, left:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
       onClick={onClose}>
       <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:460, maxHeight:'90vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
         onClick={e => e.stopPropagation()}>
@@ -480,7 +480,7 @@ function EditModal({ record, drivers, onSave, onClose }) {
   }
 
   return (
-    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
+    <div style={{ position:'fixed', top:0, right:0, bottom:0, left:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
       onClick={onClose}>
       <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:460, maxHeight:'90vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
         onClick={e => e.stopPropagation()}>
