@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { API } from '@/lib/api'
 import {
   X, AlertCircle, ParkingCircle, Banknote, Plane, Fuel, HeartPulse,
@@ -78,7 +79,7 @@ export default function ExpenseModal({ expense, employees = [], lockEmpId, onSav
 
   const lockedEmpName = lockEmpId ? (employees.find(e => e.id === lockEmpId)?.name || expense?.emp_name) : null
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 480, padding: 0, overflow: 'hidden' }}>
         {/* Header */}
@@ -164,6 +165,7 @@ export default function ExpenseModal({ expense, employees = [], lockEmpId, onSav
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
