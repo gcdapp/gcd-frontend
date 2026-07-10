@@ -91,6 +91,8 @@ function ExpensesPageInner() {
   const [month,       setMonth]       = useState(MONTHS[0])
   const [userRole,    setUserRole]    = useState(null)
   const [showCharts,  setShowCharts]  = useState(true)
+  const [page,        setPage]        = useState(1)
+  const PAGE_SIZE = 20
 
   useEffect(() => { setUserRole(getUserRole()) }, [])
 
@@ -154,6 +156,11 @@ function ExpensesPageInner() {
       return new Date(b.date || b.created_at) - new Date(a.date || a.created_at)
     })
   }, [expenses, search, catFilter, empFilter, sortBy])
+
+  useEffect(() => { setPage(1) }, [search, catFilter, empFilter, sortBy, month])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paginated  = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page])
 
   const canEdit     = ['accountant', 'admin', 'general_manager', 'manager'].includes(userRole)
   const canApprove  = ['admin', 'manager', 'accountant'].includes(userRole)
@@ -464,7 +471,7 @@ function ExpensesPageInner() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {filtered.map((exp, i) => {
+            {paginated.map((exp, i) => {
               const cat       = CAT_MAP[exp.category] || { c: '#94A3B8', I: Tag }
               const CatIcon   = cat.I
               const isPending  = exp.status === 'pending'
@@ -549,6 +556,21 @@ function ExpensesPageInner() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* ── Pagination ── */}
+        {!loading && totalPages > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 2px' }}>
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+              style={{ padding: '7px 14px', borderRadius: 20, border: '1.5px solid var(--border)', background: 'var(--card)', color: page <= 1 ? 'var(--text-muted)' : 'var(--text)', fontWeight: 600, fontSize: 12.5, cursor: page <= 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: page <= 1 ? 0.5 : 1 }}>
+              ← Prev
+            </button>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>Page {page} of {totalPages}</span>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
+              style={{ padding: '7px 14px', borderRadius: 20, border: '1.5px solid var(--border)', background: 'var(--card)', color: page >= totalPages ? 'var(--text-muted)' : 'var(--text)', fontWeight: 600, fontSize: 12.5, cursor: page >= totalPages ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: page >= totalPages ? 0.5 : 1 }}>
+              Next →
+            </button>
           </div>
         )}
 
