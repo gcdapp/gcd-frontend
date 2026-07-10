@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect, useCallback, memo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import { payrollApi, empApi } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { useSocket } from '@/lib/socket'
@@ -246,11 +246,18 @@ function generateAllPayslips(slips, month, payMethod='bank') {
 }
 
 function exportCSV(payroll, month, single=null) {
-  const rows=single?[single]:payroll
+  const rows = single ? [single] : payroll
+  const calc = rows.map(s => ({ s, c: slipData(s, month) }))
   const lines=[['GOLDEN CRESCENT DELIVERY SERVICES LLC'],[`Payroll Report — ${month}`],[`Generated: ${new Date().toLocaleDateString('en-AE')} | v${APP_VERSION}`],[],
-    ['Employee','ID','Role','Station','Project','Base (AED)','Bonuses (AED)','Deductions (AED)','Net Pay (AED)','Status'],
-    ...rows.map(s=>{const net=Number(s.net_pay||(Number(s.base_salary)+Number(s.bonus_total||0)-Number(s.deduction_total||0)));return[s.name,s.id,ROLE_CFG[s.role]?.l||s.role||'',s.station_code||'',(s.project_type||'pulser').toUpperCase(),Number(s.base_salary||0),Number(s.bonus_total||0),Number(s.deduction_total||0),net,s.payroll_status==='paid'?'PAID':'PENDING']}),
-    [],[  '','','','','TOTALS',rows.reduce((a,s)=>a+Number(s.base_salary||0),0),rows.reduce((a,s)=>a+Number(s.bonus_total||0),0),rows.reduce((a,s)=>a+Number(s.deduction_total||0),0),rows.reduce((a,s)=>a+Number(s.net_pay||(Number(s.base_salary)+Number(s.bonus_total||0)-Number(s.deduction_total||0))),0),`${rows.filter(s=>s.payroll_status==='paid').length}/${rows.length} paid`]]
+    ['Employee','ID','Role','Station','Project','Base (AED)','Hours/Shipment Earnings (AED)','Bonuses (AED)','Deductions (AED)','Net Pay (AED)','Status'],
+    ...calc.map(({s,c})=>[s.name,s.id,ROLE_CFG[s.role]?.l||s.role||'',s.station_code||'',(s.project_type||'pulser').toUpperCase(),c.base,c.hoursEarnings,c.totalAdd-c.base-c.hoursEarnings,c.totalDed,c.net,s.payroll_status==='paid'?'PAID':'PENDING']),
+    [],['','','','','TOTALS',
+      calc.reduce((a,{c})=>a+c.base,0),
+      calc.reduce((a,{c})=>a+c.hoursEarnings,0),
+      calc.reduce((a,{c})=>a+(c.totalAdd-c.base-c.hoursEarnings),0),
+      calc.reduce((a,{c})=>a+c.totalDed,0),
+      calc.reduce((a,{c})=>a+c.net,0),
+      `${rows.filter(s=>s.payroll_status==='paid').length}/${rows.length} paid`]]
   const csv=lines.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n')
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}));a.download=single?`payslip_${single.id}_${month}.csv`:`payroll_${month}.csv`;a.click()
 }
@@ -530,6 +537,13 @@ const PAY_CSS = `
   /* Spinner */
   .py-spin { display:inline-block; width:10px; height:10px; border:2px solid rgba(255,255,255,0.35); border-top-color:white; border-radius:50%; animation:pySpin 0.7s linear infinite; }
 
+  /* Pagination */
+  .py-pagination { display:flex; align-items:center; justify-content:space-between; padding:10px 4px 4px; margin-top:2px; }
+  .py-page-btn { padding:7px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-weight:600; font-size:12px; cursor:pointer; font-family:Poppins,sans-serif; transition:opacity 0.15s; }
+  .py-page-btn:disabled { opacity:0.4; cursor:not-allowed; }
+  .py-page-btn:not(:disabled):hover { opacity:0.8; }
+  .py-page-label { font-size:11.5px; color:var(--text-muted); font-weight:600; }
+
   /* Responsive */
   @media(max-width:640px) {
     .py-kpi-grid  { grid-template-columns:repeat(2,1fr); }
@@ -544,7 +558,8 @@ const PAY_CSS = `
 const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, markingPaid, onEditSalary, onRemoveDed, onRemoveBonus, month, index, canPay}) {
   const [open,      setOpen]      = useState(false)
   const [payMethod, setPayMethod] = useState('bank')
-  const net    = Number(slip.net_pay || (Number(slip.base_salary) + Number(slip.bonus_total||0) - Number(slip.deduction_total||0)))
+  const calc   = slip._calc
+  const net    = calc.net
   const isPaid = slip.payroll_status === 'paid'
   const role   = resolveRole(slip.role)
 
@@ -577,8 +592,16 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
         <div className="py-expanded">
           <div className="py-actions">
             <button onClick={()=>onEditSalary(slip)} className="py-act">
-              <Wallet size={11}/> Base: AED {fmt(slip.base_salary)}
+              <Wallet size={11}/> Base: AED {fmt(calc.base)}
             </button>
+            <span className="py-act" style={{cursor:'default'}} title={`${calc.rateLabel}: AED ${calc.hourlyRate}`}>
+              {calc.hoursLabel}: AED {fmt(calc.hoursEarnings)}
+            </span>
+            {calc.isCret && (
+              <span className="py-act" style={{cursor:'default',color:'#7C3AED',borderColor:'rgba(124,58,237,0.3)'}}>
+                Method {calc.cretMethod}
+              </span>
+            )}
             {/* Payment method selector + generate payslip */}
             <div style={{display:'flex',alignItems:'center',gap:0,border:'1px solid rgba(29,111,164,0.3)',borderRadius:8,overflow:'hidden',background:'rgba(29,111,164,0.05)'}}>
               <select value={payMethod} onChange={e=>setPayMethod(e.target.value)}
@@ -654,8 +677,16 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
 })
 
 /* ── Section ── */
+const SECTION_PAGE_SIZE = 20
+
 function Section({title, slips, onMarkAllPaid, ...cardProps}) {
+  const [page, setPage] = useState(1)
+  useEffect(() => { setPage(1) }, [slips])
+
   const unpaidCount = slips.filter(s=>s.payroll_status!=='paid').length
+  const totalPages  = Math.max(1, Math.ceil(slips.length / SECTION_PAGE_SIZE))
+  const pageSlips   = slips.slice((page-1)*SECTION_PAGE_SIZE, page*SECTION_PAGE_SIZE)
+
   return (
     <>
       <div className="py-sec-hdr">
@@ -671,10 +702,17 @@ function Section({title, slips, onMarkAllPaid, ...cardProps}) {
         )}
       </div>
       <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:8}}>
-        {slips.map((slip,i)=>(
+        {pageSlips.map((slip,i)=>(
           <PayrollCard key={slip.id||slip.emp_id} slip={slip} index={i} {...cardProps}/>
         ))}
       </div>
+      {totalPages > 1 && (
+        <div className="py-pagination">
+          <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1} className="py-page-btn">← Prev</button>
+          <span className="py-page-label">Page {page} of {totalPages}</span>
+          <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page>=totalPages} className="py-page-btn">Next →</button>
+        </div>
+      )}
     </>
   )
 }
@@ -766,22 +804,26 @@ export default function PayrollPage() {
     })
   }
 
-  const filtered   = payroll.filter(s=>!search||s.name?.toLowerCase().includes(search.toLowerCase())||s.id?.toLowerCase().includes(search.toLowerCase()))
-  const staffSlips = filtered.filter(s=>s.role!=='driver')
-  const driverSlips= filtered.filter(s=>s.role==='driver')
+  // Wire the real Pulser (hourly) / CRET (per-shipment) formula in everywhere —
+  // slipData() was previously only used for the printable payslip.
+  const payrollCalc = useMemo(() => payroll.map(s => ({ ...s, _calc: slipData(s, month) })), [payroll, month])
 
-  const totalBase  = payroll.reduce((s,p)=>s+Number(p.base_salary||0),0)
-  const totalBonus = payroll.reduce((s,p)=>s+Number(p.bonus_total||0),0)
-  const totalDed   = payroll.reduce((s,p)=>s+Number(p.deduction_total||0),0)
-  const totalNet   = payroll.reduce((s,p)=>s+Number(p.net_pay||(Number(p.base_salary)+Number(p.bonus_total||0)-Number(p.deduction_total||0))),0)
-  const paidCount  = payroll.filter(p=>p.payroll_status==='paid').length
+  const filtered   = useMemo(() => payrollCalc.filter(s=>!search||s.name?.toLowerCase().includes(search.toLowerCase())||s.id?.toLowerCase().includes(search.toLowerCase())), [payrollCalc, search])
+  const staffSlips = useMemo(() => filtered.filter(s=>s.role!=='driver'), [filtered])
+  const driverSlips= useMemo(() => filtered.filter(s=>s.role==='driver'), [filtered])
 
-  const chartData = filtered.slice(0,30).map(s=>({
+  const totalEarned = payrollCalc.reduce((s,p)=>s+p._calc.base+p._calc.hoursEarnings,0)
+  const totalBonus  = payrollCalc.reduce((s,p)=>s+(p._calc.totalAdd-p._calc.base-p._calc.hoursEarnings),0)
+  const totalDed    = payrollCalc.reduce((s,p)=>s+p._calc.totalDed,0)
+  const totalNet    = payrollCalc.reduce((s,p)=>s+p._calc.net,0)
+  const paidCount   = payroll.filter(p=>p.payroll_status==='paid').length
+
+  const chartData = useMemo(() => filtered.slice(0,30).map(s=>({
     name:s.name?.split(' ')[0],
-    Base:Number(s.base_salary||0),
-    Bonus:Number(s.bonus_total||0),
-  }))
-  const pieData = [{name:'Base',value:totalBase,color:'#B8860B'},{name:'Bonus',value:totalBonus,color:'#10B981'},{name:'Deductions',value:totalDed,color:'#EF4444'}].filter(d=>d.value>0)
+    Earned:s._calc.base+s._calc.hoursEarnings,
+    Bonus:s._calc.totalAdd-s._calc.base-s._calc.hoursEarnings,
+  })), [filtered])
+  const pieData = [{name:'Earned',value:totalEarned,color:'#B8860B'},{name:'Bonus',value:totalBonus,color:'#10B981'},{name:'Deductions',value:totalDed,color:'#EF4444'}].filter(d=>d.value>0)
 
   const cardProps = {month, onMarkPaid:markPaidSlip, onMarkUnpaid:markUnpaidSlip, onEditSalary:s=>setModal({type:'salary',emp:s}), onRemoveDed:removeDed, onRemoveBonus:removeBonus, canPay}
 
@@ -805,7 +847,7 @@ export default function PayrollPage() {
           <div className="py-net-label">NET PAYROLL — {month}</div>
           <div className="py-net-value">AED {fmt(totalNet)}</div>
           <div className="py-kpi-grid">
-            <div className="py-kpi"><div className="py-kpi-val" style={{color:'rgba(255,255,255,0.9)'}}>{fmt(totalBase)}</div><div className="py-kpi-label">Base</div></div>
+            <div className="py-kpi"><div className="py-kpi-val" style={{color:'rgba(255,255,255,0.9)'}}>{fmt(totalEarned)}</div><div className="py-kpi-label">Earned</div></div>
             <div className="py-kpi"><div className="py-kpi-val" style={{color:'#34D399'}}>+{fmt(totalBonus)}</div><div className="py-kpi-label">Bonuses</div></div>
             <div className="py-kpi"><div className="py-kpi-val" style={{color:'#F87171'}}>-{fmt(totalDed)}</div><div className="py-kpi-label">Deductions</div></div>
             <div className="py-kpi"><div className="py-kpi-val" style={{color:'#FCD34D'}}>{paidCount}/{payroll.length}</div><div className="py-kpi-label">Paid</div></div>
@@ -823,7 +865,7 @@ export default function PayrollPage() {
                   <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false}/>
                   <YAxis stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false}/>
                   <Tooltip content={<GlassTip/>} cursor={{fill:'rgba(0,0,0,0.03)'}}/>
-                  <Bar dataKey="Base"  name="Base"  fill="#B8860B" radius={[3,3,0,0]}/>
+                  <Bar dataKey="Earned" name="Earned" fill="#B8860B" radius={[3,3,0,0]}/>
                   <Bar dataKey="Bonus" name="Bonus" fill="#10B981" radius={[3,3,0,0]}/>
                 </BarChart>
               </ResponsiveContainer>
