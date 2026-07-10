@@ -5,7 +5,7 @@ import { useSocket } from '@/lib/socket'
 import {
   Plus, X, Receipt, Search, Trash2, Pencil, Check,
   Users, Tag, Download, TrendingUp,
-  ChevronDown, Filter,
+  ChevronDown, Filter, ArrowUp, ArrowDown,
 } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { API } from '@/lib/api'
@@ -15,6 +15,9 @@ const MONTHS  = Array.from({ length: 6 }, (_, i) => {
   const d = new Date(); d.setMonth(d.getMonth() - i); return d.toISOString().slice(0, 7)
 })
 const EMP_COLORS = ['#FBBF24','#818CF8','#34D399','#F87171','#38BDF8','#A78BFA','#FB923C','#4ADE80']
+// Each sort field has a "natural" default direction (newest/highest/A-Z first) —
+// applied whenever the field changes, so switching fields doesn't feel backwards.
+const SORT_DEFAULT_DIR = { date: 'desc', amount: 'desc', emp: 'asc', cat: 'asc' }
 
 // ── Helpers ───────────────────────────────────────────────────────
 function hdr(json = true) {
@@ -88,6 +91,7 @@ function ExpensesPageInner() {
   const [catFilter,   setCatFilter]   = useState('all')
   const [empFilter,   setEmpFilter]   = useState(searchParams.get('emp_id') || 'all')
   const [sortBy,      setSortBy]      = useState('date')
+  const [sortDir,     setSortDir]     = useState('desc')
   const [month,       setMonth]       = useState(MONTHS[0])
   const [userRole,    setUserRole]    = useState(null)
   const [showCharts,  setShowCharts]  = useState(true)
@@ -150,14 +154,16 @@ function ExpensesPageInner() {
       )
     })
     return [...list].sort((a, b) => {
-      if (sortBy === 'amount') return Number(b.amount) - Number(a.amount)
-      if (sortBy === 'emp')    return (a.emp_name || '').localeCompare(b.emp_name || '')
-      if (sortBy === 'cat')    return a.category.localeCompare(b.category)
-      return new Date(b.date || b.created_at) - new Date(a.date || a.created_at)
+      let cmp = 0
+      if (sortBy === 'amount')      cmp = Number(a.amount) - Number(b.amount)
+      else if (sortBy === 'emp')    cmp = (a.emp_name || '').localeCompare(b.emp_name || '')
+      else if (sortBy === 'cat')    cmp = a.category.localeCompare(b.category)
+      else                          cmp = new Date(a.date || a.created_at) - new Date(b.date || b.created_at)
+      return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [expenses, search, catFilter, empFilter, sortBy])
+  }, [expenses, search, catFilter, empFilter, sortBy, sortDir])
 
-  useEffect(() => { setPage(1) }, [search, catFilter, empFilter, sortBy, month])
+  useEffect(() => { setPage(1) }, [search, catFilter, empFilter, sortBy, sortDir, month])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated  = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page])
@@ -431,12 +437,17 @@ function ExpensesPageInner() {
             <option value="all">All Categories</option>
             {CATEGORIES.map(c => <option key={c.v} value={c.v}>{c.v}</option>)}
           </select>
-          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="ex-select">
+          <select value={sortBy} onChange={e => { setSortBy(e.target.value); setSortDir(SORT_DEFAULT_DIR[e.target.value] || 'desc') }} className="ex-select">
             <option value="date">Sort: Date</option>
             <option value="amount">Sort: Amount</option>
             <option value="emp">Sort: Employee</option>
             <option value="cat">Sort: Category</option>
           </select>
+          <button onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+            title={sortDir === 'asc' ? 'Ascending — click to reverse' : 'Descending — click to reverse'}
+            style={{ width: 34, height: 34, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', border: '1.5px solid var(--border)', background: 'var(--card)', color: 'var(--text)', cursor: 'pointer' }}>
+            {sortDir === 'asc' ? <ArrowUp size={13}/> : <ArrowDown size={13}/>}
+          </button>
           {filtered.length > 0 && (
             <span style={{ fontSize: 11.5, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
               {filtered.length} result{filtered.length !== 1 ? 's' : ''}

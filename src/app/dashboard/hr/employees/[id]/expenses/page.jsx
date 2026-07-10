@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { empApi, expenseApi, API } from '@/lib/api'
 import { getEmp, setEmp as cacheEmp } from '@/lib/empCache'
@@ -7,7 +7,11 @@ import { hdr, getUserRole, fmt } from '@/lib/employees'
 import PageHero from '@/components/employees/PageHero'
 import BackLink from '@/components/employees/BackLink'
 import ExpenseModal, { CAT_MAP } from '@/components/expenses/ExpenseModal'
-import { Plus, Pencil, Trash2, Check, X, Receipt, Tag } from 'lucide-react'
+import { Plus, Pencil, Trash2, Check, X, Receipt, Tag, ArrowUp, ArrowDown } from 'lucide-react'
+
+// Natural default direction per field (newest/highest/A-Z first) — applied
+// whenever the field changes, so switching fields doesn't feel backwards.
+const SORT_DEFAULT_DIR = { date: 'desc', amount: 'desc', cat: 'asc' }
 
 export default function DriverExpensesPage() {
   const { id } = useParams()
@@ -17,6 +21,8 @@ export default function DriverExpensesPage() {
   const [loading,   setLoading]  = useState(true)
   const [modal,     setModal]    = useState(null) // 'add' | expense object
   const [userRole,  setUserRole] = useState(null)
+  const [sortBy,    setSortBy]   = useState('date')
+  const [sortDir,   setSortDir]  = useState('desc')
 
   useEffect(() => { setUserRole(getUserRole()) }, [])
   useEffect(() => { empApi.get(id).then(d => { setEmp(d.employee); cacheEmp(d.employee) }).catch(() => setEmp(prev => prev)) }, [id])
@@ -43,6 +49,16 @@ export default function DriverExpensesPage() {
   const total    = expenses.reduce((s, e) => s + Number(e.amount || 0), 0)
   const approved = expenses.filter(e => e.status === 'approved').reduce((s, e) => s + Number(e.amount || 0), 0)
   const pending  = expenses.filter(e => e.status === 'pending').length
+
+  const sorted = useMemo(() => {
+    return [...expenses].sort((a, b) => {
+      let cmp = 0
+      if (sortBy === 'amount')   cmp = Number(a.amount) - Number(b.amount)
+      else if (sortBy === 'cat') cmp = a.category.localeCompare(b.category)
+      else                       cmp = new Date(a.date || a.created_at) - new Date(b.date || b.created_at)
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [expenses, sortBy, sortDir])
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14, animation:'slideUp 0.3s ease' }}>
@@ -71,6 +87,23 @@ export default function DriverExpensesPage() {
         </div>
       </PageHero>
 
+      {/* Sort controls */}
+      {!loading && expenses.length > 0 && (
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <select value={sortBy} onChange={e => { setSortBy(e.target.value); setSortDir(SORT_DEFAULT_DIR[e.target.value] || 'desc') }}
+            className="input" style={{ width:'auto', padding:'8px 30px 8px 12px', borderRadius:24, fontSize:12.5 }}>
+            <option value="date">Sort: Date</option>
+            <option value="amount">Sort: Amount</option>
+            <option value="cat">Sort: Category</option>
+          </select>
+          <button onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+            title={sortDir === 'asc' ? 'Ascending — click to reverse' : 'Descending — click to reverse'}
+            style={{ width:34, height:34, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'50%', border:'1.5px solid var(--border)', background:'var(--card)', color:'var(--text)', cursor:'pointer' }}>
+            {sortDir === 'asc' ? <ArrowUp size={13}/> : <ArrowDown size={13}/>}
+          </button>
+        </div>
+      )}
+
       {/* List */}
       {loading ? (
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
@@ -84,7 +117,7 @@ export default function DriverExpensesPage() {
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-          {expenses.map((ex, i) => {
+          {sorted.map((ex, i) => {
             const cat        = CAT_MAP[ex.category] || { c:'#94A3B8', I:Tag }
             const CatIcon    = cat.I
             const isPending  = ex.status === 'pending'
