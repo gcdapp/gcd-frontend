@@ -128,7 +128,7 @@ function ExpensesPageInner() {
     // Build from expense records — no employees API needed
     const empMap = {}
     for (const exp of expenses) {
-      const name = exp.emp_name || exp.emp_id || 'Unknown'
+      const name = exp.emp_name || exp.emp_id || 'Company Expense'
       if (!empMap[name]) empMap[name] = { name, id: exp.emp_id, value: 0, count: 0 }
       empMap[name].value += Number(exp.amount || 0)
       empMap[name].count++
@@ -489,7 +489,7 @@ function ExpensesPageInner() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', lineHeight: 1.2 }}>
-                            {exp.emp_name || exp.emp_id}
+                            {exp.emp_name || exp.emp_id || 'Company Expense'}
                           </div>
                           <div style={{ fontSize: 11, color: cat.c, fontWeight: 600, marginTop: 2 }}>
                             {exp.category}

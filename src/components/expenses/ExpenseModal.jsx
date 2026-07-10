@@ -65,7 +65,7 @@ export default function ExpenseModal({ expense, employees = [], lockEmpId, onSav
   const cat  = CAT_MAP[form.category] || CATEGORIES[0]
 
   async function handleSave() {
-    if (!form.emp_id || !form.amount) return setErr('Employee and amount are required')
+    if (!form.amount) return setErr('Amount is required')
     setSaving(true); setErr(null)
     try {
       const url    = isEdit ? `${API}/api/expenses/${expense.id}` : `${API}/api/expenses`
@@ -93,18 +93,18 @@ export default function ExpenseModal({ expense, employees = [], lockEmpId, onSav
               <X size={14}/>
             </button>
           </div>
-          {/* Category pills */}
-          <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
-            <div style={{ display: 'flex', gap: 7, width: 'max-content' }}>
-              {CATEGORIES.map(c => { const CI2 = c.I; return (
-                <button key={c.v} onClick={() => set('category', c.v)} type="button"
-                  style={{ padding: '6px 12px', borderRadius: 20, border: `2px solid ${form.category === c.v ? c.c : 'var(--border)'}`, background: form.category === c.v ? `${c.c}18` : 'var(--card)', color: form.category === c.v ? c.c : 'var(--text-muted)', fontWeight: form.category === c.v ? 700 : 500, fontSize: 11.5, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <CI2 size={11}/>{c.v}
-                </button>
-              )})}
+          {/* Expense type */}
+          <div>
+            <label className="input-label">Expense Type *</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, background: `${cat.c}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <cat.I size={15} color={cat.c}/>
+              </div>
+              <select className="input" value={form.category} onChange={e => set('category', e.target.value)} style={{ flex: 1 }}>
+                {CATEGORIES.map(c => <option key={c.v} value={c.v}>{c.v}</option>)}
+              </select>
             </div>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 5, textAlign: 'center', opacity: 0.6 }}>← scroll for all categories →</div>
         </div>
 
         <div style={{ padding: '16px 22px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -117,9 +117,9 @@ export default function ExpenseModal({ expense, employees = [], lockEmpId, onSav
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {!lockEmpId ? (
               <div>
-                <label className="input-label">Employee *</label>
+                <label className="input-label">Employee (optional)</label>
                 <select className="input" value={form.emp_id} onChange={e => set('emp_id', e.target.value)}>
-                  <option value="">Select employee…</option>
+                  <option value="">No employee (company expense)</option>
                   {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                 </select>
               </div>
