@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import {
   Users, Car, Wallet, ChevronRight, Smartphone,
-  Receipt, ScrollText, Activity, Package, RefreshCw,
+  Receipt, ScrollText, Activity, RefreshCw,
 } from 'lucide-react'
 import Link from 'next/link'
 import { API } from '@/lib/api'
@@ -35,7 +35,7 @@ export default function OverviewPage() {
   }, [user, router])
 
   const [summary,        setSummary]        = useState(null)
-  const [chart,          setChart]          = useState([])
+  const [expChart,       setExpChart]       = useState([])
   const [expenses,       setExpenses]       = useState([])
   const [simStats,       setSimStats]       = useState(null)
   const [simByStation,   setSimByStation]   = useState([])
@@ -46,7 +46,7 @@ export default function OverviewPage() {
   // Per-section loading flags — each resolves independently
   const [loadingExp,   setLoadingExp]   = useState(true)
   const [loadingSim,   setLoadingSim]   = useState(true)
-  const [loadingChart, setLoadingChart] = useState(true)
+  const [loadingExpChart, setLoadingExpChart] = useState(true)
   const [refreshing,   setRefreshing]   = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
@@ -62,7 +62,7 @@ export default function OverviewPage() {
 
     // Reset per-section flags
     setSummary(null); setFleetStats(null)
-    setLoadingExp(true); setLoadingSim(true); setLoadingChart(true)
+    setLoadingExp(true); setLoadingSim(true); setLoadingExpChart(true)
 
     // ── All 6 fire immediately in parallel ──
     // Each updates state as soon as IT resolves — no blocking on the slowest
@@ -83,9 +83,9 @@ export default function OverviewPage() {
         if (isRefresh) setRefreshing(false)
       }).catch(() => { setFleetStats({ total:0, active:0, grounded:0, maintenance:0 }); setRefreshing(false) })
 
-    fetch(`${API}/api/analytics/deliveries-chart?months=6`, h)
-      .then(r => r.json()).then(d => { setChart(d.chart || []); setLoadingChart(false) })
-      .catch(() => setLoadingChart(false))
+    fetch(`${API}/api/analytics/expenses-chart?months=6`, h)
+      .then(r => r.json()).then(d => { setExpChart(d.chart || []); setLoadingExpChart(false) })
+      .catch(() => setLoadingExpChart(false))
 
     fetch(`${API}/api/expenses?month=${month}`, h)
       .then(r => r.json()).then(d => { setExpenses(d.expenses || []); setLoadingExp(false) })
@@ -332,25 +332,15 @@ export default function OverviewPage() {
           </Link>
         )}
 
-        {/* ══ DELIVERY CHART ════════════════════════════════════════ */}
+        {/* ══ EXPENSE CHART ═════════════════════════════════════════ */}
         <div className="ov-card">
-          <div style={{ padding:'20px 24px 0', display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12 }}>
-            <div>
-              <div className="ov-card-title">Delivery Trend — Last 6 Months</div>
-              <div className="ov-card-sub">Project-wise comparison · DDB1 vs DXE6</div>
-            </div>
-            <div style={{ display:'flex', gap:8, flexShrink:0 }}>
-              {[{c:'#F59E0B',label:'DDB1 (Pulser)'},{c:'#38BDF8',label:'DXE6 (CRET)'}].map(({ c, label }) => (
-                <div key={label} style={{ display:'flex', alignItems:'center', gap:6, padding:'5px 11px', borderRadius:20, background:`${c}12`, border:`1px solid ${c}30` }}>
-                  <div style={{ width:8, height:8, borderRadius:2, background:c }}/>
-                  <span style={{ fontSize:11, color:c, fontWeight:700 }}>{label}</span>
-                </div>
-              ))}
-            </div>
+          <div style={{ padding:'20px 24px 0' }}>
+            <div className="ov-card-title">Expense Trend — Last 6 Months</div>
+            <div className="ov-card-sub">Total company spend by month</div>
           </div>
 
           <div style={{ padding:'16px 12px 8px' }}>
-            {loadingChart ? (
+            {loadingExpChart ? (
               <div style={{ padding:'20px 12px', display:'flex', flexDirection:'column', gap:8 }}>
                 {[80,65,90,55,75,85].map((w,i) => (
                   <div key={i} style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -359,25 +349,21 @@ export default function OverviewPage() {
                   </div>
                 ))}
               </div>
-            ) : !mounted || chart.length === 0 ? (
+            ) : !mounted || expChart.length === 0 ? (
               <div style={{ display:'flex', flexDirection:'column', alignItems:'center', padding:'40px 24px', textAlign:'center' }}>
                 <div style={{ width:52, height:52, borderRadius:16, background:'var(--bg-alt)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12 }}>
-                  <Package size={22} color="var(--text-muted)"/>
+                  <Receipt size={22} color="var(--text-muted)"/>
                 </div>
-                <div style={{ fontWeight:800, fontSize:15, color:'var(--text)', marginBottom:4 }}>No delivery data yet</div>
-                <div style={{ fontSize:12.5, color:'var(--text-muted)' }}>Records will appear once deliveries are logged.</div>
+                <div style={{ fontWeight:800, fontSize:15, color:'var(--text)', marginBottom:4 }}>No expense data yet</div>
+                <div style={{ fontSize:12.5, color:'var(--text-muted)' }}>Records will appear once expenses are logged.</div>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={chart} barSize={22} barCategoryGap="36%" margin={{ top:8, right:8, left:0, bottom:0 }}>
+                <BarChart data={expChart} barSize={28} barCategoryGap="36%" margin={{ top:8, right:8, left:0, bottom:0 }}>
                   <defs>
-                    <linearGradient id="gradDDB1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%"   stopColor="#F59E0B" stopOpacity={1}/>
-                      <stop offset="100%" stopColor="#F59E0B" stopOpacity={0.5}/>
-                    </linearGradient>
-                    <linearGradient id="gradDXE6" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%"   stopColor="#38BDF8" stopOpacity={1}/>
-                      <stop offset="100%" stopColor="#38BDF8" stopOpacity={0.5}/>
+                    <linearGradient id="gradExp" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor="#FCD34D" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#FCD34D" stopOpacity={0.5}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 4" strokeOpacity={0.7}/>
@@ -390,24 +376,25 @@ export default function OverviewPage() {
                     contentStyle={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, fontSize:12, boxShadow:'0 8px 24px rgba(0,0,0,0.10)', padding:'10px 14px' }}
                     labelStyle={{ fontWeight:700, color:'var(--text)', marginBottom:6, fontSize:12 }}
                     labelFormatter={v => { const [y,m] = v.split('-'); return new Date(+y,+m-1).toLocaleDateString('en-US',{month:'long',year:'numeric'}) }}
-                    formatter={(val, name) => [Number(val).toLocaleString(), name]}
+                    formatter={val => [`AED ${Number(val).toLocaleString()}`, 'Expenses']}
                   />
-                  <Bar dataKey="DDB1" name="DDB1 (Pulser)" fill="url(#gradDDB1)" radius={[7,7,0,0]}/>
-                  <Bar dataKey="DXE6" name="DXE6 (CRET)"  fill="url(#gradDXE6)" radius={[7,7,0,0]}/>
+                  <Bar dataKey="total" name="Expenses" fill="url(#gradExp)" radius={[7,7,0,0]}/>
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
 
-          {chart.length > 0 && (() => {
-            const totDDB1 = chart.reduce((s,r) => s + (r.DDB1||0), 0)
-            const totDXE6 = chart.reduce((s,r) => s + (r.DXE6||0), 0)
+          {expChart.length > 0 && (() => {
+            const totalExp6 = expChart.reduce((s,r) => s + (r.total||0), 0)
+            const avgExp6   = totalExp6 / expChart.length
+            const peak      = expChart.reduce((max,r) => (r.total||0) > (max?.total||0) ? r : max, expChart[0])
+            const peakLabel = (() => { const [y,m] = peak.month.split('-'); return new Date(+y,+m-1).toLocaleDateString('en-US',{month:'short'}) })()
             return (
               <div style={{ display:'flex', borderTop:'1px solid var(--border)', background:'var(--bg-alt)' }}>
                 {[
-                  { label:'Total DDB1',  value:totDDB1.toLocaleString(),          c:'#F59E0B' },
-                  { label:'Total DXE6',  value:totDXE6.toLocaleString(),          c:'#38BDF8' },
-                  { label:'Combined',    value:(totDDB1+totDXE6).toLocaleString(), c:'var(--text)' },
+                  { label:'Total (6 months)',      value:`AED ${totalExp6.toLocaleString()}`,             c:'var(--text)' },
+                  { label:'Monthly Average',        value:`AED ${Math.round(avgExp6).toLocaleString()}`,   c:'#FCD34D' },
+                  { label:`Peak Month (${peakLabel})`, value:`AED ${peak.total.toLocaleString()}`,          c:'#F59E0B' },
                 ].map(({ label, value, c }) => (
                   <div key={label} style={{ flex:1, padding:'12px 20px', borderRight:'1px solid var(--border)', textAlign:'center' }}>
                     <div style={{ fontWeight:800, fontSize:16, color:c, letterSpacing:'-0.03em' }}>{value}</div>
