@@ -1,11 +1,12 @@
 'use client'
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
+import Papa from 'papaparse'
 import { payrollApi, empApi } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { useSocket } from '@/lib/socket'
 import {
   Plus, X, Download, Check, Search, Wallet, FileText,
-  AlertCircle, Users, ChevronDown, Undo2
+  AlertCircle, Users, ChevronDown, Undo2, UploadCloud
 } from 'lucide-react'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import {
@@ -70,14 +71,17 @@ function slipData(slip, month) {
   const bonuses = slip.bonuses||[]; const deductions = slip.deductions||[]
   const totalHours = Number(slip.total_hours||0)
 
-  // ── CRET variable-pay logic ───────────────────────────────────
-  // For CRET project drivers, cycle_hours = shipment count.
-  // Old driver (base_salary > 0): pay = max(base + 0.5×S, 2×S)   [Method 3]
-  // New driver (base_salary = 0): pay = 2×S only                  [Method 2]
-  const isCret      = (slip.project_type||'').toLowerCase() === 'cret'
-  const rawBase     = Number(slip.base_salary||0)
-  const perShipRate = Number(slip.per_shipment_rate||0)
-  const isOldCret   = isCret && rawBase > 0
+  // ── CRET / External variable-pay logic ─────────────────────────
+  // For CRET and External project drivers, total_hours = shipment count.
+  // CRET old driver (base_salary > 0): pay = max(base + rate×S, 2×S)   [Method 1 vs 2]
+  // CRET new driver (base_salary = 0): pay = 2×S only                   [Method 2]
+  // External (subcontracted, no GCD base salary): pay = rate × S
+  const projectType = (slip.project_type||'').toLowerCase()
+  const isCret       = projectType === 'cret'
+  const isExternal   = projectType === 'external'
+  const rawBase      = Number(slip.base_salary||0)
+  const perShipRate  = Number(slip.per_shipment_rate||0)
+  const isOldCret    = isCret && rawBase > 0
 
   let effectiveBase, hoursEarnings, cretMethod, displayRate, rateLabel, hoursLabel
 
@@ -85,13 +89,8 @@ function slipData(slip, month) {
     const S  = totalHours                         // shipment count
     const m1 = rawBase + S * perShipRate          // Method 1 total
     const m2 = S * 2                              // Method 2 total
-    if (isOldCret && m2 > m1) {
-      // Method 2 wins for old driver → replace base entirely
-      cretMethod    = 2; effectiveBase = 0
-      hoursEarnings = parseFloat(m2.toFixed(2))
-      displayRate   = 2.00
-    } else if (isCret && !isOldCret) {
-      // New driver → Method 2 only
+    if (!isOldCret || m2 > m1) {
+      // Method 2 wins (or only option for a new driver) → replace base entirely
       cretMethod    = 2; effectiveBase = 0
       hoursEarnings = parseFloat(m2.toFixed(2))
       displayRate   = 2.00
@@ -103,6 +102,12 @@ function slipData(slip, month) {
     }
     rateLabel  = 'Shipment Rate'
     hoursLabel = `Total Shipments (${totalHours})`
+  } else if (isExternal) {
+    effectiveBase = 0
+    hoursEarnings = parseFloat((totalHours * perShipRate).toFixed(2))
+    displayRate   = perShipRate
+    rateLabel     = 'Shipment Rate'
+    hoursLabel    = `Total Shipments (${totalHours})`
   } else {
     const hourlyRate_ = Number(slip.hourly_rate||3.85)
     effectiveBase = rawBase
@@ -138,7 +143,7 @@ function slipData(slip, month) {
   return {fmtN,totalHours,hoursEarnings,incentive,perfBonus,monthBonus,otherAddition,monthBonusLabel,
     cashAdv,trafficFine,absentDays,otherDed,base,hourlyRate:displayRate,
     totalAdd,totalDed,net,isPaid,paidOn,monthShort,roleLabel,row,
-    isCret,cretMethod,rateLabel,hoursLabel}
+    isCret,isExternal,cretMethod,rateLabel,hoursLabel}
 }
 
 function slipInnerHtml(slip, month, logoUrl, payMethod='bank') {
@@ -425,6 +430,225 @@ function DeductionModal({employees, month, onSave, onClose}) {
   )
 }
 
+/* ── Add Driver Pay Modal (manual) ── */
+function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
+  const isExternal = projectType === 'external'
+  const label = projectType==='pulser' ? 'Pulser' : projectType==='cret' ? 'CRET' : 'External'
+  const unitLabel = projectType==='pulser' ? 'Hours Worked' : 'Shipments'
+  const driverOptions = employees.filter(e => (e.role||'').toLowerCase()==='driver' && (e.project_type||'pulser').toLowerCase()===projectType)
+
+  const [empId,   setEmpId]   = useState('')
+  const [name,    setName]    = useState('')
+  const [company, setCompany] = useState('')
+  const [rate,    setRate]    = useState('0.5')
+  const [units,   setUnits]   = useState('')
+  const [saving,  setSaving]  = useState(false)
+  const [err,     setErr]     = useState(null)
+
+  async function handleSave() {
+    const u = parseFloat(units)
+    if (isNaN(u) || u < 0) return setErr(`Enter a valid ${unitLabel.toLowerCase()} value`)
+    if (!empId && (!isExternal || !name)) return setErr(isExternal ? 'Select a driver or enter a name for a new one' : 'Select a driver')
+    setSaving(true); setErr(null)
+    try {
+      await payrollApi.addUnits({
+        month, units: u,
+        emp_id: empId || undefined,
+        name: !empId ? name : undefined,
+        external_company: !empId ? (company||undefined) : undefined,
+        per_shipment_rate: !empId ? (parseFloat(rate)||0.5) : undefined,
+      })
+      onSave()
+    } catch(e) { setErr(e.message) } finally { setSaving(false) }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:420,padding:0,overflow:'hidden'}}>
+        <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(184,134,11,0.1),transparent)'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div><h3 style={{fontWeight:900,fontSize:16,color:'var(--text)',margin:0}}>Add {label} Driver Pay</h3><p style={{fontSize:12,color:'var(--text-muted)',marginTop:2}}>{month}</p></div>
+            <button onClick={onClose} style={{width:28,height:28,borderRadius:'50%',background:'rgba(0,0,0,0.06)',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={13}/></button>
+          </div>
+        </div>
+        <div style={{padding:'16px 22px 20px',display:'flex',flexDirection:'column',gap:12}}>
+          {err&&<div style={{background:'#FEF2F2',border:'1px solid #FCA5A5',borderRadius:9,padding:'8px 12px',fontSize:12,color:'#EF4444',display:'flex',gap:6,alignItems:'center'}}><AlertCircle size={12}/>{err}</div>}
+
+          <div><label className="input-label">{isExternal ? 'Existing Driver (optional)' : 'Driver *'}</label>
+            <select className="input" value={empId} onChange={e=>setEmpId(e.target.value)}>
+              <option value="">{isExternal ? '— Create new driver —' : 'Select…'}</option>
+              {driverOptions.map(e=><option key={e.id} value={e.id}>{e.name} — {e.id}</option>)}
+            </select></div>
+
+          {isExternal && !empId && (<>
+            <div><label className="input-label">Driver Name *</label>
+              <input className="input" value={name} onChange={e=>setName(e.target.value)} placeholder="Full name"/></div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+              <div><label className="input-label">Company</label>
+                <input className="input" value={company} onChange={e=>setCompany(e.target.value)} placeholder="JNT, iMile, Le Chocolat…"/></div>
+              <div><label className="input-label">Rate / Shipment (AED)</label>
+                <input className="input" type="number" step="0.01" value={rate} onChange={e=>setRate(e.target.value)}/></div>
+            </div>
+          </>)}
+
+          <div><label className="input-label">{unitLabel} *</label>
+            <input className="input" type="number" step="0.01" min="0" value={units} onChange={e=>setUnits(e.target.value)} placeholder="0"/></div>
+
+          <div style={{display:'flex',gap:10,marginTop:4}}>
+            <button onClick={onClose} className="btn btn-secondary" style={{flex:1,justifyContent:'center'}}>Cancel</button>
+            <button onClick={handleSave} disabled={saving} style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'11px',borderRadius:100,background:'linear-gradient(135deg,#B8860B,#D4A017)',color:'white',fontWeight:700,fontSize:13,border:'none',cursor:'pointer',fontFamily:'Poppins,sans-serif',opacity:saving?0.7:1}}>
+              {saving?'Saving…':'Save'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── Bulk Upload Driver Pay Modal ── */
+function BulkUnitsModal({month, projectType, onSave, onClose}) {
+  const isExternal = projectType === 'external'
+  const label = projectType==='pulser' ? 'Pulser' : projectType==='cret' ? 'CRET' : 'External'
+  const unitLabel = projectType==='pulser' ? 'hours' : 'shipments'
+
+  const [rows,      setRows]      = useState([])
+  const [fileName,  setFileName]  = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [err,       setErr]       = useState(null)
+  const [result,    setResult]    = useState(null)
+
+  function downloadTemplate() {
+    const csv = isExternal
+      ? `name,external_company,units,per_shipment_rate\nJohn Doe,JNT,120,0.75\n`
+      : `emp_id,units\nE001,${projectType==='pulser'?160:900}\n`
+    const blob = new Blob([csv], { type:'text/csv' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href = url; a.download = `${projectType}_pay_template.csv`
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  function handleFile(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setFileName(file.name); setErr(null); setResult(null)
+    Papa.parse(file, {
+      header: true, skipEmptyLines: true,
+      complete: (res) => {
+        const parsed = res.data.map((r,i) => {
+          const units = parseFloat(r.units)
+          const emp_id = (r.emp_id||'').trim()
+          const name   = (r.name||'').trim()
+          const errors = []
+          if (isNaN(units) || units < 0) errors.push('units must be a non-negative number')
+          if (isExternal && !emp_id && !name) errors.push('name required (or emp_id for an existing driver)')
+          if (!isExternal && !emp_id) errors.push('emp_id required')
+          return {
+            row: i+2, emp_id, name,
+            external_company: (r.external_company||'').trim(),
+            per_shipment_rate: r.per_shipment_rate ? parseFloat(r.per_shipment_rate) : undefined,
+            units, errors,
+          }
+        })
+        setRows(parsed)
+      },
+      error: (e) => setErr(e.message),
+    })
+  }
+
+  const validRows = rows.filter(r => r.errors.length === 0)
+
+  async function handleUpload() {
+    if (!validRows.length) return
+    setUploading(true); setErr(null)
+    try {
+      const data = await payrollApi.addUnitsBulk(month, validRows.map(({row,errors,...r}) => r))
+      setResult(data)
+    } catch(e) { setErr(e.message) } finally { setUploading(false) }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:600,maxHeight:'85vh',padding:0,overflow:'hidden',display:'flex',flexDirection:'column'}}>
+        <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(184,134,11,0.1),transparent)',flexShrink:0}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div><h3 style={{fontWeight:900,fontSize:16,color:'var(--text)',margin:0}}>Bulk Upload {label} Driver Pay</h3><p style={{fontSize:12,color:'var(--text-muted)',marginTop:2}}>{month}</p></div>
+            <button onClick={onClose} style={{width:28,height:28,borderRadius:'50%',background:'rgba(0,0,0,0.06)',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={13}/></button>
+          </div>
+        </div>
+
+        <div style={{padding:'16px 22px 20px',display:'flex',flexDirection:'column',gap:14,overflowY:'auto',flex:1}}>
+          {err&&<div style={{background:'#FEF2F2',border:'1px solid #FCA5A5',borderRadius:9,padding:'8px 12px',fontSize:12,color:'#EF4444',display:'flex',gap:6,alignItems:'center'}}><AlertCircle size={12}/>{err}</div>}
+
+          {result ? (
+            <div style={{textAlign:'center',padding:'16px 8px'}}>
+              <div style={{width:48,height:48,borderRadius:'50%',background:'#ECFDF5',border:'1px solid #A7F3D0',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px'}}>
+                <Check size={22} color="#22C55E"/>
+              </div>
+              <div style={{fontWeight:800,fontSize:15,color:'var(--text)',marginBottom:6}}>{result.recorded} driver{result.recorded!==1?'s':''} updated</div>
+              {result.created > 0 && <div style={{fontSize:12.5,color:'var(--text-muted)'}}>{result.created} new external driver{result.created!==1?'s':''} created</div>}
+              {result.failures?.length > 0 && (
+                <div style={{marginTop:12,textAlign:'left',maxHeight:160,overflowY:'auto',border:'1px solid var(--border)',borderRadius:10}}>
+                  {result.failures.map((f,i)=>(
+                    <div key={i} style={{padding:'7px 12px',fontSize:11.5,color:'#DC2626',borderTop:i>0?'1px solid var(--border)':'none'}}>Row {f.row}: {f.reason}</div>
+                  ))}
+                </div>
+              )}
+              <button onClick={onSave} className="btn btn-primary" style={{marginTop:16}}>Done</button>
+            </div>
+          ) : (
+            <>
+              <div style={{fontSize:12.5,color:'var(--text-muted)',lineHeight:1.5}}>
+                {isExternal
+                  ? <>Download the template, fill one row per driver (<code>name, external_company, units, per_shipment_rate</code> — leave an <code>emp_id</code> column value to add {unitLabel} to an existing external driver instead of creating a new one), then upload it back here.</>
+                  : <>Download the template, fill one row per driver (<code>emp_id, units</code> — {unitLabel} for {label}), then upload it back here.</>}
+              </div>
+              <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}>
+                <button onClick={downloadTemplate} type="button"
+                  style={{display:'flex',alignItems:'center',gap:6,padding:'9px 14px',borderRadius:10,border:'1px solid var(--border)',background:'var(--bg-alt)',color:'var(--text)',fontWeight:600,fontSize:12.5,cursor:'pointer',fontFamily:'inherit'}}>
+                  <Download size={13}/> Download Template
+                </button>
+                <label style={{display:'flex',alignItems:'center',gap:6,padding:'9px 14px',borderRadius:10,border:'1px solid rgba(184,134,11,0.5)',background:'rgba(184,134,11,0.15)',color:'#B8860B',fontWeight:700,fontSize:12.5,cursor:'pointer'}}>
+                  <UploadCloud size={13}/> Choose CSV File
+                  <input type="file" accept=".csv" onChange={handleFile} style={{display:'none'}}/>
+                </label>
+                {fileName && <span style={{fontSize:11.5,color:'var(--text-muted)'}}>{fileName}</span>}
+              </div>
+
+              {rows.length > 0 && (
+                <div style={{border:'1px solid var(--border)',borderRadius:12,overflow:'hidden'}}>
+                  <div style={{padding:'9px 14px',background:'var(--bg-alt)',fontSize:11.5,fontWeight:700,color:'var(--text-muted)',display:'flex',justifyContent:'space-between'}}>
+                    <span>{rows.length} row{rows.length!==1?'s':''} parsed</span>
+                    <span style={{color:validRows.length===rows.length?'#22C55E':'#D97706'}}>{validRows.length} valid</span>
+                  </div>
+                  <div style={{maxHeight:220,overflowY:'auto'}}>
+                    {rows.map((r,i)=>(
+                      <div key={i} title={r.errors.join(', ')}
+                        style={{display:'flex',gap:10,alignItems:'center',padding:'8px 14px',borderTop:'1px solid var(--border)',fontSize:12,background:r.errors.length?'#FEF2F2':'transparent'}}>
+                        <span style={{width:26,color:'var(--text-muted)',flexShrink:0}}>#{r.row}</span>
+                        <span style={{flex:1,minWidth:0,color:'var(--text)',fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.emp_id||r.name||'—'}</span>
+                        <span style={{width:90,textAlign:'right',color:'var(--text)',flexShrink:0}}>{isNaN(r.units)?'—':`${r.units} ${unitLabel}`}</span>
+                        {r.errors.length>0 && <AlertCircle size={12} color="#DC2626" style={{flexShrink:0}}/>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button onClick={handleUpload} disabled={uploading||!validRows.length}
+                style={{padding:'13px',borderRadius:12,border:'none',cursor:(uploading||!validRows.length)?'not-allowed':'pointer',background:(uploading||!validRows.length)?'var(--border)':'linear-gradient(135deg,#B8860B,#D4A017)',color:(uploading||!validRows.length)?'var(--text-muted)':'white',fontWeight:700,fontSize:14,fontFamily:'Poppins,sans-serif',marginTop:4,transition:'all 0.2s'}}>
+                {uploading?'Uploading…':validRows.length?`Upload ${validRows.length} Driver${validRows.length!==1?'s':''}`:'Choose a file to continue'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ── CSS ── */
 const PAY_CSS = `
   @keyframes pySlide { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
@@ -537,6 +761,15 @@ const PAY_CSS = `
   /* Spinner */
   .py-spin { display:inline-block; width:10px; height:10px; border:2px solid rgba(255,255,255,0.35); border-top-color:white; border-radius:50%; animation:pySpin 0.7s linear infinite; }
 
+  /* Driver tabs */
+  .py-driver-tabs { display:flex; align-items:center; gap:4px; padding:4px; background:var(--bg-alt); border:1px solid var(--border); border-radius:12px; margin-bottom:10px; flex-wrap:wrap; }
+  .py-driver-tab { display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:9px; border:none; background:transparent; color:var(--text-muted); font-weight:700; font-size:12.5px; cursor:pointer; font-family:Poppins,sans-serif; transition:all 0.15s; }
+  .py-driver-tab:hover:not(.active) { color:var(--text); }
+  .py-driver-tab.active { background:var(--card); color:#B8860B; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+  .py-driver-tab-count { font-size:10px; font-weight:700; background:rgba(0,0,0,0.06); color:inherit; border-radius:20px; padding:1px 7px; }
+  .py-driver-tab.active .py-driver-tab-count { background:rgba(184,134,11,0.15); }
+  .py-driver-tab-actions { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
+
   /* Pagination */
   .py-pagination { display:flex; align-items:center; justify-content:space-between; padding:10px 4px 4px; margin-top:2px; }
   .py-page-btn { padding:7px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-weight:600; font-size:12px; cursor:pointer; font-family:Poppins,sans-serif; transition:opacity 0.15s; }
@@ -591,9 +824,11 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
       {open && (
         <div className="py-expanded">
           <div className="py-actions">
-            <button onClick={()=>onEditSalary(slip)} className="py-act">
-              <Wallet size={11}/> Base: AED {fmt(calc.base)}
-            </button>
+            {!calc.isExternal && (
+              <button onClick={()=>onEditSalary(slip)} className="py-act">
+                <Wallet size={11}/> Base: AED {fmt(calc.base)}
+              </button>
+            )}
             <span className="py-act" style={{cursor:'default'}} title={`${calc.rateLabel}: AED ${calc.hourlyRate}`}>
               {calc.hoursLabel}: AED {fmt(calc.hoursEarnings)}
             </span>
@@ -809,8 +1044,16 @@ export default function PayrollPage() {
   const payrollCalc = useMemo(() => payroll.map(s => ({ ...s, _calc: slipData(s, month) })), [payroll, month])
 
   const filtered   = useMemo(() => payrollCalc.filter(s=>!search||s.name?.toLowerCase().includes(search.toLowerCase())||s.id?.toLowerCase().includes(search.toLowerCase())), [payrollCalc, search])
-  const staffSlips = useMemo(() => filtered.filter(s=>s.role!=='driver'), [filtered])
-  const driverSlips= useMemo(() => filtered.filter(s=>s.role==='driver'), [filtered])
+  // role is stored as 'Driver' (capitalized) — compare case-insensitively, or every
+  // driver silently falls into Staff & Admins instead of the driver tabs below.
+  const isDriverRole = s => (s.role||'').toLowerCase() === 'driver'
+  const staffSlips   = useMemo(() => filtered.filter(s=>!isDriverRole(s)), [filtered])
+  const driverSlips  = useMemo(() => filtered.filter(isDriverRole), [filtered])
+  const pulserSlips   = useMemo(() => driverSlips.filter(s=>(s.project_type||'pulser').toLowerCase()==='pulser'), [driverSlips])
+  const cretSlips     = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='cret'), [driverSlips])
+  const externalSlips = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='external'), [driverSlips])
+  const [driverTab, setDriverTab] = useState('pulser')
+  const activeDriverSlips = driverTab==='pulser' ? pulserSlips : driverTab==='cret' ? cretSlips : externalSlips
 
   const totalEarned = payrollCalc.reduce((s,p)=>s+p._calc.base+p._calc.hoursEarnings,0)
   const totalBonus  = payrollCalc.reduce((s,p)=>s+(p._calc.totalAdd-p._calc.base-p._calc.hoursEarnings),0)
@@ -932,21 +1175,51 @@ export default function PayrollPage() {
             <div style={{fontWeight:600,color:'var(--text)'}}>No payroll data for {month}</div>
           </div>
         ) : (
-          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          <div style={{display:'flex',flexDirection:'column',gap:16}}>
             {staffSlips.length > 0 && (
               <Section title="Staff & Admins" slips={staffSlips} onMarkAllPaid={markAllPaidInGroup} {...cardProps}
                 markingPaid={(id)=>markingPaid.has(id)}/>
             )}
-            {driverSlips.length > 0 && (
-              <Section title="Delivery Associates" slips={driverSlips} onMarkAllPaid={markAllPaidInGroup} {...cardProps}
-                markingPaid={(id)=>markingPaid.has(id)}/>
-            )}
+
+            {/* Drivers — tabbed by project, hidden until pay is explicitly added */}
+            <div>
+              <div className="py-driver-tabs">
+                {[['pulser','Pulser',pulserSlips.length],['cret','CRET',cretSlips.length],['external','External',externalSlips.length]].map(([v,l,c])=>(
+                  <button key={v} onClick={()=>setDriverTab(v)} className={`py-driver-tab${driverTab===v?' active':''}`}>
+                    {l} <span className="py-driver-tab-count">{c}</span>
+                  </button>
+                ))}
+                {canAddMod && (
+                  <div className="py-driver-tab-actions">
+                    <button onClick={()=>setModal({type:'addUnits',projectType:driverTab})} className="py-tbtn py-tbtn-bonus" style={{padding:'6px 12px'}}>
+                      <Plus size={12}/> Add Manually
+                    </button>
+                    <button onClick={()=>setModal({type:'bulkUnits',projectType:driverTab})} className="py-tbtn py-tbtn-csv" style={{padding:'6px 12px'}}>
+                      <UploadCloud size={12}/> Bulk Upload
+                    </button>
+                  </div>
+                )}
+              </div>
+              {activeDriverSlips.length > 0 ? (
+                <Section title={driverTab==='pulser'?'Pulser Drivers':driverTab==='cret'?'CRET Drivers':'External Drivers'}
+                  slips={activeDriverSlips} onMarkAllPaid={markAllPaidInGroup} {...cardProps}
+                  markingPaid={(id)=>markingPaid.has(id)}/>
+              ) : (
+                <div style={{textAlign:'center',padding:'40px 20px',color:'var(--text-muted)',background:'var(--card)',border:'1px solid var(--border)',borderRadius:12}}>
+                  <Wallet size={28} style={{margin:'0 auto 10px',display:'block',opacity:0.2}}/>
+                  <div style={{fontWeight:700,fontSize:13,color:'var(--text)',marginBottom:4}}>No {driverTab==='external'?'External':driverTab==='cret'?'CRET':'Pulser'} drivers added for {month}</div>
+                  <div style={{fontSize:12}}>Use Add Manually or Bulk Upload to add {driverTab==='pulser'?'hours worked':'shipments'} — a driver only appears here once their pay is entered.</div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {modal==='bonus'        && <BonusModal     employees={employees} month={month} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
         {modal==='deduction'    && <DeductionModal employees={employees} month={month} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
         {modal?.type==='salary' && <SalaryModal    emp={modal.emp}       onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
+        {modal?.type==='addUnits' && <AddUnitsModal employees={employees} month={month} projectType={modal.projectType} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
+        {modal?.type==='bulkUnits' && <BulkUnitsModal month={month} projectType={modal.projectType} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
 
         <ConfirmDialog
           open={!!confirmDlg}
