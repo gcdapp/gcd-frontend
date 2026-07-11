@@ -1356,15 +1356,11 @@ export default function PayrollPage() {
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
             {Array(5).fill(0).map((_,i)=><div key={i} className="py-sk" style={{height:72,opacity:1-i*0.12}}/>)}
           </div>
-        ) : filtered.length === 0 ? (
-          <div style={{textAlign:'center',padding:'60px 20px',color:'var(--text-muted)'}}>
-            <Wallet size={40} style={{margin:'0 auto 12px',display:'block',opacity:0.2}}/>
-            <div style={{fontWeight:600,color:'var(--text)'}}>No payroll data for {month}</div>
-          </div>
         ) : (
           <div>
-            {/* Everyone — staff/admins and drivers alike — is tabbed and hidden until
-                pay is explicitly added for the month. */}
+            {/* Everyone — staff/admins and drivers alike — is tabbed and hidden until pay
+                is explicitly added for the month. Tabs + Add buttons always render here
+                (even with zero entries this month) since they're how anyone gets added. */}
             <div className="py-driver-tabs">
               {PAY_TABS.map(([v,l,c])=>(
                 <button key={v} onClick={()=>setPayTab(v)} className={`py-driver-tab${payTab===v?' active':''}`}>
