@@ -83,6 +83,7 @@ export const payrollApi = {
   addUnits:       (data)        => api.post('/api/payroll/units', data),
   addUnitsBulk:   (month, records) => api.post('/api/payroll/units/bulk', { month, records }),
   pendingDeduction: (emp_id, month) => api.get(`/api/payroll/pending-deduction/${emp_id}?month=${month}`),
+  getEntry:       (emp_id, month) => api.get(`/api/payroll/entry/${emp_id}?month=${month}`),
 }
 
 // Leaves

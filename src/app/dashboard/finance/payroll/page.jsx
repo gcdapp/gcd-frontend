@@ -128,20 +128,26 @@ function slipData(slip, month) {
   }
 
   const incentive    = bonuses.filter(b=>b.type==='kpi').reduce((s,b)=>s+Number(b.amount),0)
-  const perfBonus    = Number(slip.performance_bonus||0)+bonuses.filter(b=>b.type==='performance').reduce((s,b)=>s+Number(b.amount),0)
+  // performance bonus is now purely a monthly sheet-entry/ad-hoc figure (bonuses array) —
+  // employees.performance_bonus is only a default used to prefill the entry form, never
+  // auto-added here, or a $100-default + form-entry double count would show on every slip.
+  const perfBonus    = bonuses.filter(b=>b.type==='performance').reduce((s,b)=>s+Number(b.amount),0)
   const otherBon     = bonuses.filter(b=>b.type==='other')
   const monthBonus   = otherBon.length ? Number(otherBon[otherBon.length-1].amount) : 0
   const otherAddition= otherBon.slice(0,-1).reduce((s,b)=>s+Number(b.amount),0)
   const monthBonusLabel = otherBon.length&&otherBon[otherBon.length-1].description
     ? otherBon[otherBon.length-1].description
     : new Date(month+'-01').toLocaleString('en-US',{month:'long'})+' Bonus'
-  const cashAdv     = deductions.filter(d=>d.type==='cash_variance').reduce((s,d)=>s+Number(d.amount),0)
+  // cash_advance and cash_variance are distinct sheet columns — cash_advance gets its own
+  // labeled slot on the payslip; cash_variance/ILOE fee/fine fold into the "Other" slot
+  // since the printable layout only has 4 named deduction rows.
+  const cashAdv     = deductions.filter(d=>d.type==='cash_advance').reduce((s,d)=>s+Number(d.amount),0)
   const trafficFine = deductions.filter(d=>d.type==='traffic_fine').reduce((s,d)=>s+Number(d.amount),0)
-  const absentDays  = deductions.filter(d=>d.type==='iloe_fee'||d.type==='iloe_fine').reduce((s,d)=>s+Number(d.amount),0)
-  const otherDed    = deductions.filter(d=>d.type==='other').reduce((s,d)=>s+Number(d.amount),0)
+  const absentDays  = deductions.filter(d=>d.type==='absent_days').reduce((s,d)=>s+Number(d.amount),0)
+  const otherDed    = deductions.filter(d=>['other','cash_variance','iloe_fee','iloe_fine'].includes(d.type)).reduce((s,d)=>s+Number(d.amount),0)
 
   const base     = effectiveBase
-  const totalAdd = base + hoursEarnings + Number(slip.bonus_total||0) + Number(slip.performance_bonus||0)
+  const totalAdd = base + hoursEarnings + Number(slip.bonus_total||0)
   // deduction_total from the backend is what's actually applied this month (the
   // accountant's chosen amount, defaulting to the full pending balance) -- deductions
   // are a running ledger, not a one-off subtraction. pendingDeduction is the balance
@@ -446,7 +452,24 @@ function DeductionModal({employees, month, onSave, onClose}) {
   )
 }
 
-/* ── Add Driver Pay Modal (manual) ── */
+/* ── Add Driver/Staff Pay Modal (manual, sheet-style) ──
+   Mirrors the real accountant salary sheet: base units/amount plus named, selectable
+   bonus & deduction columns (rather than a generic type+amount pair). Prefills from
+   GET /api/payroll/entry when re-opened for someone already entered this month. */
+const SHEET_BONUS_FIELDS = [
+  {k:'perfBonus',     f:'performance_bonus', l:'Performance Bonus'},
+  {k:'incentive',     f:'incentive',         l:'Incentive'},
+  {k:'otherAddition', f:'other_addition',    l:'Other Addition'},
+]
+const SHEET_DEDUCTION_FIELDS = [
+  {k:'trafficFine',  f:'traffic_fine',  l:'Traffic Fine'},
+  {k:'cashAdvance',  f:'cash_advance',  l:'Cash Advance'},
+  {k:'cashVariance', f:'cash_variance', l:'Cash Variance'},
+  {k:'absentDaysDed',f:'absent_days',   l:'Absent Days'},
+  {k:'others',       f:'others',        l:'Others'},
+]
+const emptySheetFields = () => ({perfBonus:'',incentive:'',otherAddition:'',trafficFine:'',cashAdvance:'',cashVariance:'',absentDaysDed:'',others:''})
+
 function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
   const isStaff    = projectType === 'staff'
   const isExternal = projectType === 'external'
@@ -466,28 +489,52 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
   const [workingDays, setWorkingDays] = useState('')
   const [cretRate,    setCretRate]    = useState('0.5')
   const [pending,        setPending]        = useState(null)
-  const [loadingPending, setLoadingPending] = useState(false)
+  const [loadingEntry,   setLoadingEntry]   = useState(false)
   const [dedDone,     setDedDone]     = useState('')
+  const [sheet,        setSheet]        = useState(emptySheetFields())
   const [saving,      setSaving]      = useState(false)
   const [err,         setErr]         = useState(null)
+  const setSheetField = (k,v) => setSheet(p=>({...p,[k]:v}))
 
-  // Prefill with the employee's currently stored salary when picking a staff member,
-  // and look up their current outstanding deduction balance either way.
+  // Prefill with any existing entry for this employee+month (units, working days, cret
+  // rate, deductions-to-apply, and every sheet bonus/deduction field), or with sensible
+  // defaults for a brand-new entry (employee's stored salary/performance-bonus default).
   async function pickEmp(id) {
-    setEmpId(id); setPending(null); setDedDone('')
-    if (isStaff && id) {
-      const e = empOptions.find(o=>o.id===id)
-      setValue(e ? String(e.salary||'') : '')
-    }
-    if (!id) return
-    setLoadingPending(true)
+    setEmpId(id); setPending(null); setDedDone(''); setSheet(emptySheetFields())
+    setWorkingDays(''); setCretRate('0.5')
+    if (!id) { setValue(''); return }
+    const e = empOptions.find(o=>o.id===id)
+    setValue(isStaff ? String(e?.salary||'') : '')
+    setLoadingEntry(true)
     try {
-      const d = await payrollApi.pendingDeduction(id, month)
+      const d = await payrollApi.getEntry(id, month)
       setPending(d.pending)
-      if (d.pending > 0) setDedDone(String(d.pending))
-    } catch(e) { /* non-fatal — deduction lookup is a convenience, not required */ }
-    finally { setLoadingPending(false) }
+      const entry = d.entry
+      if (entry) {
+        if (!isStaff) setValue(entry.units!=null ? String(entry.units) : '')
+        else if (entry.amount!=null) setValue(String(entry.amount))
+        if (entry.working_days!=null) setWorkingDays(String(entry.working_days))
+        if (entry.cret_rate!=null) setCretRate(String(entry.cret_rate))
+        setDedDone(entry.deductions_done!=null ? String(entry.deductions_done) : (d.pending>0?String(d.pending):''))
+      } else {
+        setDedDone(d.pending>0 ? String(d.pending) : '')
+      }
+      setSheet({
+        perfBonus:     d.bonuses.performance != null ? String(d.bonuses.performance) : (!entry && isPulser ? String(e?.performance_bonus||'') : ''),
+        incentive:     d.bonuses.kpi   != null ? String(d.bonuses.kpi)   : '',
+        otherAddition: d.bonuses.other != null ? String(d.bonuses.other) : '',
+        trafficFine:   d.deductions.traffic_fine  != null ? String(d.deductions.traffic_fine)  : '',
+        cashAdvance:   d.deductions.cash_advance  != null ? String(d.deductions.cash_advance)  : '',
+        cashVariance:  d.deductions.cash_variance != null ? String(d.deductions.cash_variance) : '',
+        absentDaysDed: d.deductions.absent_days   != null ? String(d.deductions.absent_days)   : '',
+        others:        d.deductions.other != null ? String(d.deductions.other) : '',
+      })
+    } catch(e) { /* non-fatal — prefill is a convenience, not required */ }
+    finally { setLoadingEntry(false) }
   }
+
+  const fieldMap = { perfBonus:'performance_bonus', incentive:'incentive', otherAddition:'other_addition',
+    trafficFine:'traffic_fine', cashAdvance:'cash_advance', cashVariance:'cash_variance', absentDaysDed:'absent_days', others:'others' }
 
   async function handleSave() {
     const v = parseFloat(value)
@@ -495,6 +542,8 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
     if (!empId && (!isExternal || !name)) return setErr(isExternal ? 'Select a driver or enter a name for a new one' : `Select a ${isStaff?'staff member':'driver'}`)
     setSaving(true); setErr(null)
     try {
+      const sheetPayload = {}
+      for (const [k,f] of Object.entries(fieldMap)) sheetPayload[f] = sheet[k]===''?0:parseFloat(sheet[k])||0
       await payrollApi.addUnits({
         month,
         units:  isStaff ? undefined : v,
@@ -506,14 +555,17 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
         name: !empId ? name : undefined,
         external_company: !empId ? (company||undefined) : undefined,
         per_shipment_rate: !empId ? (parseFloat(rate)||0.5) : undefined,
+        ...sheetPayload,
       })
       onSave()
     } catch(e) { setErr(e.message) } finally { setSaving(false) }
   }
 
+  const newDedTotal = SHEET_DEDUCTION_FIELDS.reduce((s,{k})=>s+(parseFloat(sheet[k])||0),0)
+
   return (
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="modal" style={{maxWidth:440,maxHeight:'85vh',padding:0,overflow:'hidden',display:'flex',flexDirection:'column'}}>
+      <div className="modal" style={{maxWidth:480,maxHeight:'85vh',padding:0,overflow:'hidden',display:'flex',flexDirection:'column'}}>
         <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(184,134,11,0.1),transparent)',flexShrink:0}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <div><h3 style={{fontWeight:900,fontSize:16,color:'var(--text)',margin:0}}>Add {label} Pay</h3><p style={{fontSize:12,color:'var(--text-muted)',marginTop:2}}>{month}</p></div>
@@ -557,14 +609,36 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
           <div><label className="input-label">{valueLabel} *</label>
             <input className="input" type="number" step="0.01" min="0" value={value} onChange={e=>setValue(e.target.value)} placeholder="0"/></div>
 
+          {loadingEntry && <div style={{fontSize:11.5,color:'var(--text-muted)'}}>Loading existing entry…</div>}
+
+          <div style={{borderTop:'1px solid var(--border)',paddingTop:10}}>
+            <div style={{fontSize:11.5,fontWeight:800,color:'#10B981',textTransform:'uppercase',letterSpacing:'0.03em',marginBottom:8}}>Bonuses</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+              {SHEET_BONUS_FIELDS.map(({k,l})=>(
+                <div key={k}><label className="input-label" style={{fontSize:10.5}}>{l}</label>
+                  <input className="input" type="number" step="0.01" min="0" value={sheet[k]} onChange={e=>setSheetField(k,e.target.value)} placeholder="0" style={{padding:'8px 10px',fontSize:12.5}}/></div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{borderTop:'1px solid var(--border)',paddingTop:10}}>
+            <div style={{fontSize:11.5,fontWeight:800,color:'#EF4444',textTransform:'uppercase',letterSpacing:'0.03em',marginBottom:8}}>Deductions</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+              {SHEET_DEDUCTION_FIELDS.map(({k,l})=>(
+                <div key={k}><label className="input-label" style={{fontSize:10.5}}>{l}</label>
+                  <input className="input" type="number" step="0.01" min="0" value={sheet[k]} onChange={e=>setSheetField(k,e.target.value)} placeholder="0" style={{padding:'8px 10px',fontSize:12.5}}/></div>
+              ))}
+            </div>
+          </div>
+
           {empId && (
             <div>
               <label className="input-label">Deductions to Apply This Month</label>
               <input className="input" type="number" step="0.01" min="0" value={dedDone} onChange={e=>setDedDone(e.target.value)} placeholder="0"/>
               <div style={{fontSize:11,color:'var(--text-muted)',marginTop:4}}>
-                {loadingPending ? 'Loading pending balance…' : pending!=null
-                  ? `Pending balance: AED ${pending.toLocaleString()} — leave as-is to pay it off in full, or lower it to carry the rest to next month.`
-                  : ''}
+                {pending!=null && (
+                  <>Pending balance before this entry: AED {pending.toLocaleString()}{newDedTotal>0?` · new deductions above: AED ${newDedTotal.toLocaleString()}`:''} — adjust the amount above to decide how much comes out of pay this month; the rest carries forward.</>
+                )}
               </div>
             </div>
           )}
@@ -580,6 +654,11 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
     </div>
   )
 }
+
+// Optional named bonus/deduction columns appended to every bulk template — mirrors the
+// real salary sheet's selectable columns. Blank/omitted cells clear that field for the
+// month (bulk upload replaces the whole monthly entry, same as the manual form).
+const SHEET_CSV_COLS = ['performance_bonus','incentive','other_addition','traffic_fine','cash_advance','cash_variance','absent_days','others']
 
 /* ── Bulk Upload Pay Modal ── */
 function BulkUnitsModal({month, projectType, onSave, onClose}) {
@@ -597,13 +676,16 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
   const [result,    setResult]    = useState(null)
 
   function downloadTemplate() {
-    const csv = isStaff
-      ? `emp_id,amount,deductions_done\nE001,5000,0\n`
+    const base = isStaff
+      ? ['emp_id,amount,deductions_done', 'E001,5000,0']
       : isExternal
-      ? `name,external_company,units,per_shipment_rate,deductions_done\nJohn Doe,JNT,120,0.75,0\n`
+      ? ['name,external_company,units,per_shipment_rate,deductions_done', 'John Doe,JNT,120,0.75,0']
       : isCret
-      ? `emp_id,units,working_days,cret_rate,deductions_done\nE001,900,31,0.5,0\n`
-      : `emp_id,units,working_days,deductions_done\nE001,160,31,0\n`
+      ? ['emp_id,units,working_days,cret_rate,deductions_done', 'E001,900,31,0.5,0']
+      : ['emp_id,units,working_days,deductions_done', 'E001,160,31,0']
+    const header = `${base[0]},${SHEET_CSV_COLS.join(',')}`
+    const sample  = `${base[1]},${SHEET_CSV_COLS.map(()=>'0').join(',')}`
+    const csv = `${header}\n${sample}\n`
     const blob = new Blob([csv], { type:'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
@@ -629,6 +711,8 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
           if (isExternal && !emp_id && !name) errors.push('name required (or emp_id for an existing driver)')
           if (!isStaff && !isExternal && !emp_id) errors.push('emp_id required')
           if (isCret && r.cret_rate && isNaN(parseFloat(r.cret_rate))) errors.push('cret_rate must be a number')
+          const sheetCols = {}
+          for (const col of SHEET_CSV_COLS) if (r[col] !== undefined) sheetCols[col] = parseFloat(r[col])||0
           return {
             row: i+2, emp_id, name,
             external_company: (r.external_company||'').trim(),
@@ -638,6 +722,7 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
             deductions_done: r.deductions_done !== undefined && r.deductions_done !== '' ? parseFloat(r.deductions_done) : undefined,
             units:  isStaff ? undefined : value,
             amount: isStaff ? value : undefined,
+            ...sheetCols,
             errors,
           }
         })
@@ -697,6 +782,7 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
                   : isCret
                   ? <>Download the template, fill one row per driver (<code>emp_id, units, working_days, cret_rate</code> — rate is 0.5, 2, or 3 — plus optional <code>deductions_done</code>), then upload it back here.</>
                   : <>Download the template, fill one row per driver (<code>emp_id, units, working_days</code>, plus optional <code>deductions_done</code>), then upload it back here.</>}
+                {' '}The template also includes selectable bonus columns (<code>performance_bonus, incentive, other_addition</code>) and deduction columns (<code>traffic_fine, cash_advance, cash_variance, absent_days, others</code>) matching the salary sheet — leave any of them at 0 or blank to skip.
               </div>
               <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}>
                 <button onClick={downloadTemplate} type="button"
