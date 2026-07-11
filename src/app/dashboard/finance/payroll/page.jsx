@@ -764,11 +764,16 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
               <div style={{fontWeight:800,fontSize:15,color:'var(--text)',marginBottom:6}}>{result.recorded} record{result.recorded!==1?'s':''} updated</div>
               {result.created > 0 && <div style={{fontSize:12.5,color:'var(--text-muted)'}}>{result.created} new external driver{result.created!==1?'s':''} created</div>}
               {result.failures?.length > 0 && (
-                <div style={{marginTop:12,textAlign:'left',maxHeight:160,overflowY:'auto',border:'1px solid var(--border)',borderRadius:10}}>
-                  {result.failures.map((f,i)=>(
-                    <div key={i} style={{padding:'7px 12px',fontSize:11.5,color:'#DC2626',borderTop:i>0?'1px solid var(--border)':'none'}}>Row {f.row}: {f.reason}</div>
-                  ))}
-                </div>
+                <>
+                  <div style={{marginTop:12,textAlign:'left',fontSize:12,fontWeight:700,color:'#DC2626'}}>{result.failures.length} row{result.failures.length!==1?'s':''} failed — fix these and re-upload just those rows:</div>
+                  <div style={{marginTop:6,textAlign:'left',maxHeight:220,overflowY:'auto',border:'1px solid var(--border)',borderRadius:10}}>
+                    {result.failures.map((f,i)=>(
+                      <div key={i} style={{padding:'7px 12px',fontSize:11.5,color:'#DC2626',borderTop:i>0?'1px solid var(--border)':'none'}}>
+                        Row {f.row}{f.emp_id?` (${f.emp_id})`:''}: {f.reason}
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
               <button onClick={onSave} className="btn btn-primary" style={{marginTop:16}}>Done</button>
             </div>
