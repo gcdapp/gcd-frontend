@@ -22,9 +22,11 @@ const MONTHS = Array.from({length:12},(_,i)=>{
 })
 const DED_TYPES = [
   {v:'traffic_fine',  l:'Traffic Fine',  c:'#EF4444'},
+  {v:'cash_advance',  l:'Cash Advance',  c:'#D97706'},
   {v:'iloe_fee',      l:'ILOE Fee',      c:'#3B82F6'},
   {v:'iloe_fine',     l:'ILOE Fine',     c:'#EF4444'},
   {v:'cash_variance', l:'Cash Variance', c:'#F59E0B'},
+  {v:'absent_days',   l:'Absent Days',   c:'#7C3AED'},
   {v:'other',         l:'Other',         c:'#6B5D4A'},
 ]
 const BON_TYPES = [
@@ -82,6 +84,7 @@ function slipData(slip, month) {
   const projectType = (slip.project_type||'').toLowerCase()
   const isCret       = projectType === 'cret'
   const isExternal   = projectType === 'external'
+  const isTradelink  = projectType === 'tradelink'
   const rawBase      = Number(slip.base_salary||0)
   const perShipRate  = Number(slip.per_shipment_rate||0)
 
@@ -118,6 +121,14 @@ function slipData(slip, month) {
     displayRate   = perShipRate
     rateLabel     = 'Shipment Rate'
     hoursLabel    = `Total Shipments (${totalHours})`
+  } else if (isTradelink) {
+    // Flat prorated base, no hours/shipments component at all — confirmed against the
+    // real accountant sheet's dedicated TRADELINK tab (Basic Salary + bonuses only).
+    effectiveBase = proratedBase
+    hoursEarnings = 0
+    displayRate   = null
+    rateLabel     = null
+    hoursLabel    = null
   } else {
     const hourlyRate_ = Number(slip.hourly_rate||3.85)
     effectiveBase = proratedBase
@@ -128,6 +139,7 @@ function slipData(slip, month) {
   }
 
   const incentive    = bonuses.filter(b=>b.type==='kpi').reduce((s,b)=>s+Number(b.amount),0)
+  const eidOt        = bonuses.filter(b=>b.type==='eid_ot').reduce((s,b)=>s+Number(b.amount),0)
   // performance bonus is now purely a monthly sheet-entry/ad-hoc figure (bonuses array) —
   // employees.performance_bonus is only a default used to prefill the entry form, never
   // auto-added here, or a $100-default + form-entry double count would show on every slip.
@@ -162,19 +174,20 @@ function slipData(slip, month) {
   const roleLabel  = {driver:'Driver',admin:'Admin',hr:'HR Manager',poc:'POC',accountant:'Accountant',manager:'Manager',general_manager:'General Manager'}[slip.role]||slip.role||'Staff'
   const row = (l1,v1,l2,v2) => `<tr><td class="lbl">${l1}</td><td class="val">${fmtN(v1)}</td><td class="lbl">${l2}</td><td class="val">${fmtN(v2)}</td></tr>`
 
-  return {fmtN,totalHours,hoursEarnings,incentive,perfBonus,monthBonus,otherAddition,monthBonusLabel,
+  return {fmtN,totalHours,hoursEarnings,incentive,perfBonus,eidOt,monthBonus,otherAddition,monthBonusLabel,
     cashAdv,trafficFine,absentDays,otherDed,base,hourlyRate:displayRate,
     totalAdd,totalDed,pendingDeduction,carryForward,net,isPaid,paidOn,monthShort,roleLabel,row,
-    isCret,isExternal,rateLabel,hoursLabel,hasOverride}
+    isCret,isExternal,isTradelink,rateLabel,hoursLabel,hasOverride}
 }
 
 function slipInnerHtml(slip, month, logoUrl, payMethod='bank') {
-  const {fmtN,totalHours,hoursEarnings,incentive,perfBonus,monthBonus,otherAddition,monthBonusLabel,
+  const {fmtN,totalHours,hoursEarnings,incentive,perfBonus,eidOt,monthBonus,otherAddition,monthBonusLabel,
     cashAdv,trafficFine,absentDays,otherDed,base,hourlyRate,totalAdd,totalDed,pendingDeduction,carryForward,net,paidOn,monthShort,
     roleLabel,row,isCret,rateLabel,hoursLabel}=slipData(slip,month)
   const cashTick = payMethod==='cash' ? '&#10003;' : ''
   const bankTick = payMethod==='bank' ? '&#10003;' : ''
   const cretNote = isCret ? `<tr><td class="lbl" style="color:#7C3AED;font-weight:700;">Shipment Rate Used</td><td class="val" style="color:#7C3AED;">AED ${hourlyRate}/shipment</td><td></td><td></td></tr>` : ''
+  const eidOtRow = eidOt > 0 ? `<tr><td class="lbl">Eid OT</td><td class="val">${fmtN(eidOt)}</td><td></td><td></td></tr>` : ''
   return `
   <div class="hdr">
     <img src="${logoUrl}" alt="GCD" onerror="this.style.display='none'"/>
@@ -188,12 +201,13 @@ function slipInnerHtml(slip, month, logoUrl, payMethod='bank') {
   <table class="main-tbl">
     <tr><th colspan="2">Earnings</th><th colspan="2">Deductions</th></tr>
     ${row('Basic Salary',base,'Cash Advance',cashAdv)}
-    ${row(rateLabel,hourlyRate,'Traffic Fine',trafficFine)}
-    ${row(hoursLabel,hoursEarnings,'Absent Days',absentDays)}
+    ${row(rateLabel||'',rateLabel?hourlyRate:'','Traffic Fine',trafficFine)}
+    ${row(hoursLabel||'',hoursLabel?hoursEarnings:'','Absent Days',absentDays)}
     ${row('Incentive',incentive,'Other',otherDed)}
     ${row('Performance Bonus',perfBonus,'Pending Deductions',pendingDeduction)}
     ${row('Other Addition',otherAddition,'Carry Forwarded',carryForward)}
     ${cretNote}
+    ${eidOtRow}
     <tr><td class="lbl">${monthBonusLabel}</td><td class="val">${fmtN(monthBonus)}</td><td></td><td></td></tr>
     <tr class="total-row"><td>TOTAL ADDITION</td><td style="text-align:right;font-weight:bold;">${fmtN(totalAdd)}</td><td>TOTAL DEDUCTION</td><td style="text-align:right;font-weight:bold;">${fmtN(totalDed)}</td></tr>
     <tr class="net-row"><td colspan="2" style="text-align:center;font-weight:bold;">Net Salary</td><td colspan="2" style="text-align:center;font-weight:bold;">${fmtN(net)}</td></tr>
@@ -399,14 +413,14 @@ function BonusModal({employees, month, onSave, onClose}) {
 
 /* ── Deduction Modal ── */
 function DeductionModal({employees, month, onSave, onClose}) {
-  const [form,setForm]=useState({emp_id:'',type:'traffic_fine',amount:'',description:'',reference:''})
+  const [form,setForm]=useState({emp_id:'',type:'traffic_fine',amount:'',description:'',reference:'',installments:''})
   const [saving,setSaving]=useState(false)
   const [err,setErr]=useState(null)
   const set=(k,v)=>setForm(p=>({...p,[k]:v}))
   async function handleSave() {
     if (!form.emp_id||!form.amount) return setErr('Employee and amount required')
     setSaving(true);setErr(null)
-    try {await payrollApi.addDeduction({...form,month,amount:parseFloat(form.amount)});onSave()}
+    try {await payrollApi.addDeduction({...form,month,amount:parseFloat(form.amount),installments:form.installments||undefined});onSave()}
     catch(e){setErr(e.message)}finally{setSaving(false)}
   }
   return (
@@ -436,6 +450,11 @@ function DeductionModal({employees, month, onSave, onClose}) {
           <div><label className="input-label">Amount (AED)</label>
             <div style={{position:'relative'}}><span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:13,color:'var(--text-muted)',fontWeight:600}}>AED</span>
               <input className="input" type="number" value={form.amount} onChange={e=>set('amount',e.target.value)} style={{paddingLeft:50,fontSize:16,fontWeight:700}}/></div></div>
+          {form.type==='cash_advance' && (
+            <div><label className="input-label">Repay Over (months)</label>
+              <input className="input" type="number" min="1" step="1" value={form.installments} onChange={e=>set('installments',e.target.value)} placeholder="Leave blank to deduct in full whenever there's room"/>
+            </div>
+          )}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
             <div><label className="input-label">Description</label><input className="input" value={form.description} onChange={e=>set('description',e.target.value)} placeholder="Visible to DA"/></div>
             <div><label className="input-label">Reference No.</label><input className="input" value={form.reference} onChange={e=>set('reference',e.target.value)} placeholder="Fine / ticket no."/></div>
@@ -460,6 +479,7 @@ const SHEET_BONUS_FIELDS = [
   {k:'perfBonus',     f:'performance_bonus', l:'Performance Bonus'},
   {k:'incentive',     f:'incentive',         l:'Incentive'},
   {k:'otherAddition', f:'other_addition',    l:'Other Addition'},
+  {k:'eidOt',         f:'eid_ot',            l:'Eid OT'},
 ]
 const SHEET_DEDUCTION_FIELDS = [
   {k:'trafficFine',  f:'traffic_fine',  l:'Traffic Fine'},
@@ -468,18 +488,31 @@ const SHEET_DEDUCTION_FIELDS = [
   {k:'absentDaysDed',f:'absent_days',   l:'Absent Days'},
   {k:'others',       f:'others',        l:'Others'},
 ]
-const emptySheetFields = () => ({perfBonus:'',incentive:'',otherAddition:'',trafficFine:'',cashAdvance:'',cashVariance:'',absentDaysDed:'',others:''})
+const emptySheetFields = () => ({perfBonus:'',incentive:'',otherAddition:'',eidOt:'',trafficFine:'',cashAdvance:'',cashVariance:'',absentDaysDed:'',others:''})
 
+const PROJECT_TYPE_LABELS = { staff:'Staff/Admin', pulser:'Pulser', cret:'CRET', tradelink:'Tradelink', external:'External' }
 function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
-  const isStaff    = projectType === 'staff'
-  const isExternal = projectType === 'external'
+  const isStaff     = projectType === 'staff'
+  const isExternal  = projectType === 'external'
   const isCret      = projectType === 'cret'
   const isPulser    = projectType === 'pulser'
-  const label = isStaff ? 'Staff/Admin' : projectType==='pulser' ? 'Pulser' : projectType==='cret' ? 'CRET' : 'External'
-  const valueLabel = isStaff ? 'Salary Amount (AED)' : projectType==='pulser' ? 'Hours Worked' : 'Shipments'
+  const isTradelink = projectType === 'tradelink'
+  const isDriverTab = isExternal || isCret || isPulser || isTradelink
+  const label = PROJECT_TYPE_LABELS[projectType] || projectType
+  const valueLabel = isStaff ? 'Salary Amount (AED)' : isPulser ? 'Hours Worked' : 'Shipments'
+  // Drivers genuinely move between Pulser/CRET/Tradelink/External month to month (the
+  // real accountant sheet proves this — same driver, different formula, different
+  // months), so every driver tab lists ALL drivers rather than only ones whose stored
+  // default happens to match. Drivers already defaulting to this tab's category sort
+  // first since that's the common case; everyone else follows, alphabetically.
   const empOptions = isStaff
     ? employees.filter(e => (e.role||'').toLowerCase()!=='driver')
-    : employees.filter(e => (e.role||'').toLowerCase()==='driver' && (e.project_type||'pulser').toLowerCase()===projectType)
+    : employees.filter(e => (e.role||'').toLowerCase()==='driver').sort((a,b) => {
+        const aMatch = (a.project_type||'pulser').toLowerCase()===projectType
+        const bMatch = (b.project_type||'pulser').toLowerCase()===projectType
+        if (aMatch !== bMatch) return aMatch ? -1 : 1
+        return (a.name||'').localeCompare(b.name||'')
+      })
 
   const [empId,       setEmpId]       = useState('')
   const [name,        setName]        = useState('')
@@ -489,9 +522,11 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
   const [workingDays, setWorkingDays] = useState('')
   const [cretRate,    setCretRate]    = useState('0.5')
   const [pending,        setPending]        = useState(null)
+  const [schedule,       setSchedule]       = useState([])
   const [loadingEntry,   setLoadingEntry]   = useState(false)
   const [dedDone,     setDedDone]     = useState('')
   const [sheet,        setSheet]        = useState(emptySheetFields())
+  const [cashAdvMonths, setCashAdvMonths] = useState('')
   const [saving,      setSaving]      = useState(false)
   const [err,         setErr]         = useState(null)
   const setSheetField = (k,v) => setSheet(p=>({...p,[k]:v}))
@@ -500,7 +535,7 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
   // rate, deductions-to-apply, and every sheet bonus/deduction field), or with sensible
   // defaults for a brand-new entry (employee's stored salary/performance-bonus default).
   async function pickEmp(id) {
-    setEmpId(id); setPending(null); setDedDone(''); setSheet(emptySheetFields())
+    setEmpId(id); setPending(null); setSchedule([]); setDedDone(''); setSheet(emptySheetFields()); setCashAdvMonths('')
     setWorkingDays(''); setCretRate('0.5')
     if (!id) { setValue(''); return }
     const e = empOptions.find(o=>o.id===id)
@@ -508,53 +543,60 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
     setLoadingEntry(true)
     try {
       const d = await payrollApi.getEntry(id, month)
-      setPending(d.pending)
+      setPending(d.pending); setSchedule(d.schedule||[])
       const entry = d.entry
       if (entry) {
-        if (!isStaff) setValue(entry.units!=null ? String(entry.units) : '')
+        if (!isStaff && !isTradelink) setValue(entry.units!=null ? String(entry.units) : '')
         else if (entry.amount!=null) setValue(String(entry.amount))
         if (entry.working_days!=null) setWorkingDays(String(entry.working_days))
         if (entry.cret_rate!=null) setCretRate(String(entry.cret_rate))
-        setDedDone(entry.deductions_done!=null ? String(entry.deductions_done) : (d.pending>0?String(d.pending):''))
+        setDedDone(entry.deductions_done!=null ? String(entry.deductions_done) : (d.suggested>0?String(d.suggested):''))
       } else {
-        setDedDone(d.pending>0 ? String(d.pending) : '')
+        setDedDone(d.suggested>0 ? String(d.suggested) : '')
       }
       setSheet({
         perfBonus:     d.bonuses.performance != null ? String(d.bonuses.performance) : (!entry && isPulser ? String(e?.performance_bonus||'') : ''),
         incentive:     d.bonuses.kpi   != null ? String(d.bonuses.kpi)   : '',
         otherAddition: d.bonuses.other != null ? String(d.bonuses.other) : '',
+        eidOt:         d.bonuses.eid_ot != null ? String(d.bonuses.eid_ot) : '',
         trafficFine:   d.deductions.traffic_fine  != null ? String(d.deductions.traffic_fine)  : '',
         cashAdvance:   d.deductions.cash_advance  != null ? String(d.deductions.cash_advance)  : '',
         cashVariance:  d.deductions.cash_variance != null ? String(d.deductions.cash_variance) : '',
         absentDaysDed: d.deductions.absent_days   != null ? String(d.deductions.absent_days)   : '',
         others:        d.deductions.other != null ? String(d.deductions.other) : '',
       })
+      if (d.deduction_installments?.cash_advance) setCashAdvMonths(String(d.deduction_installments.cash_advance))
     } catch(e) { /* non-fatal — prefill is a convenience, not required */ }
     finally { setLoadingEntry(false) }
   }
 
-  const fieldMap = { perfBonus:'performance_bonus', incentive:'incentive', otherAddition:'other_addition',
+  const fieldMap = { perfBonus:'performance_bonus', incentive:'incentive', otherAddition:'other_addition', eidOt:'eid_ot',
     trafficFine:'traffic_fine', cashAdvance:'cash_advance', cashVariance:'cash_variance', absentDaysDed:'absent_days', others:'others' }
 
   async function handleSave() {
-    const v = parseFloat(value)
-    if (isNaN(v) || v < 0) return setErr(`Enter a valid ${valueLabel.toLowerCase()} value`)
+    let v = 0
+    if (!isTradelink) {
+      v = parseFloat(value)
+      if (isNaN(v) || v < 0) return setErr(`Enter a valid ${valueLabel.toLowerCase()} value`)
+    }
     if (!empId && (!isExternal || !name)) return setErr(isExternal ? 'Select a driver or enter a name for a new one' : `Select a ${isStaff?'staff member':'driver'}`)
     setSaving(true); setErr(null)
     try {
       const sheetPayload = {}
       for (const [k,f] of Object.entries(fieldMap)) sheetPayload[f] = sheet[k]===''?0:parseFloat(sheet[k])||0
+      if (parseFloat(sheet.cashAdvance) > 0 && cashAdvMonths) sheetPayload.cash_advance_installments = parseInt(cashAdvMonths, 10)
       await payrollApi.addUnits({
         month,
-        units:  isStaff ? undefined : v,
+        units:  isStaff ? undefined : (isTradelink ? 0 : v),
         amount: isStaff ? v : undefined,
-        working_days: (isPulser||isCret) && workingDays!=='' ? workingDays : undefined,
+        working_days: (isPulser||isCret||isTradelink) && workingDays!=='' ? workingDays : undefined,
         cret_rate: isCret ? cretRate : undefined,
         deductions_done: dedDone!=='' ? dedDone : undefined,
         emp_id: empId || undefined,
         name: !empId ? name : undefined,
         external_company: !empId ? (company||undefined) : undefined,
         per_shipment_rate: !empId ? (parseFloat(rate)||0.5) : undefined,
+        project_type: isDriverTab ? projectType : undefined,
         ...sheetPayload,
       })
       onSave()
@@ -592,7 +634,7 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
             </div>
           </>)}
 
-          {(isPulser || isCret) && (
+          {(isPulser || isCret || isTradelink) && (
             <div><label className="input-label">Working Days (this month)</label>
               <input className="input" type="number" step="0.5" min="0" max="31" value={workingDays} onChange={e=>setWorkingDays(e.target.value)} placeholder="e.g. 31"/></div>
           )}
@@ -606,8 +648,10 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
               </select></div>
           )}
 
-          <div><label className="input-label">{valueLabel} *</label>
-            <input className="input" type="number" step="0.01" min="0" value={value} onChange={e=>setValue(e.target.value)} placeholder="0"/></div>
+          {!isTradelink && (
+            <div><label className="input-label">{valueLabel} *</label>
+              <input className="input" type="number" step="0.01" min="0" value={value} onChange={e=>setValue(e.target.value)} placeholder="0"/></div>
+          )}
 
           {loadingEntry && <div style={{fontSize:11.5,color:'var(--text-muted)'}}>Loading existing entry…</div>}
 
@@ -625,8 +669,15 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
             <div style={{fontSize:11.5,fontWeight:800,color:'#EF4444',textTransform:'uppercase',letterSpacing:'0.03em',marginBottom:8}}>Deductions</div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
               {SHEET_DEDUCTION_FIELDS.map(({k,l})=>(
-                <div key={k}><label className="input-label" style={{fontSize:10.5}}>{l}</label>
-                  <input className="input" type="number" step="0.01" min="0" value={sheet[k]} onChange={e=>setSheetField(k,e.target.value)} placeholder="0" style={{padding:'8px 10px',fontSize:12.5}}/></div>
+                <div key={k}>
+                  <label className="input-label" style={{fontSize:10.5}}>{l}</label>
+                  <input className="input" type="number" step="0.01" min="0" value={sheet[k]} onChange={e=>setSheetField(k,e.target.value)} placeholder="0" style={{padding:'8px 10px',fontSize:12.5}}/>
+                  {k==='cashAdvance' && parseFloat(sheet.cashAdvance)>0 && (
+                    <input className="input" type="number" step="1" min="1" value={cashAdvMonths} onChange={e=>setCashAdvMonths(e.target.value)}
+                      placeholder="Repay over (months)" title="How many months to spread this cash advance's deduction over — leave blank to deduct it in full whenever there's room"
+                      style={{padding:'8px 10px',fontSize:11.5,marginTop:5}}/>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -637,9 +688,20 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
               <input className="input" type="number" step="0.01" min="0" value={dedDone} onChange={e=>setDedDone(e.target.value)} placeholder="0"/>
               <div style={{fontSize:11,color:'var(--text-muted)',marginTop:4}}>
                 {pending!=null && (
-                  <>Pending balance before this entry: AED {pending.toLocaleString()}{newDedTotal>0?` · new deductions above: AED ${newDedTotal.toLocaleString()}`:''} — adjust the amount above to decide how much comes out of pay this month; the rest carries forward.</>
+                  <>Pending balance before this entry: AED {pending.toLocaleString()}{newDedTotal>0?` · new deductions above: AED ${newDedTotal.toLocaleString()}`:''} — this defaults to the installment-aware suggested amount; adjust it to decide how much actually comes out of pay this month, the rest carries forward.</>
                 )}
               </div>
+              {schedule.some(s=>s.installments) && (
+                <div style={{marginTop:8,border:'1px solid var(--border)',borderRadius:8,overflow:'hidden'}}>
+                  <div style={{padding:'6px 10px',background:'var(--bg-alt)',fontSize:10.5,fontWeight:700,color:'var(--text-muted)'}}>Active repayment plans</div>
+                  {schedule.filter(s=>s.installments).map(s=>(
+                    <div key={s.id} style={{padding:'6px 10px',fontSize:11,borderTop:'1px solid var(--border)',display:'flex',justifyContent:'space-between',color:'var(--text)'}}>
+                      <span>{s.type.replace('_',' ')} — AED {s.amount.toLocaleString()} / {s.installments} mo.</span>
+                      <span style={{fontWeight:700}}>AED {s.due_this_month.toLocaleString()} due · {s.remaining.toLocaleString()} left</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -658,16 +720,18 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
 // Optional named bonus/deduction columns appended to every bulk template — mirrors the
 // real salary sheet's selectable columns. Blank/omitted cells clear that field for the
 // month (bulk upload replaces the whole monthly entry, same as the manual form).
-const SHEET_CSV_COLS = ['performance_bonus','incentive','other_addition','traffic_fine','cash_advance','cash_variance','absent_days','others']
+const SHEET_CSV_COLS = ['performance_bonus','incentive','other_addition','eid_ot','traffic_fine','cash_advance','cash_advance_installments','cash_variance','absent_days','others']
 
 /* ── Bulk Upload Pay Modal ── */
 function BulkUnitsModal({month, projectType, onSave, onClose}) {
-  const isStaff    = projectType === 'staff'
-  const isExternal = projectType === 'external'
-  const isCret      = projectType === 'cret'
-  const isPulser    = projectType === 'pulser'
-  const label = isStaff ? 'Staff/Admin' : projectType==='pulser' ? 'Pulser' : projectType==='cret' ? 'CRET' : 'External'
-  const valueLabel = isStaff ? 'AED' : projectType==='pulser' ? 'hours' : 'shipments'
+  const isStaff     = projectType === 'staff'
+  const isExternal  = projectType === 'external'
+  const isCret       = projectType === 'cret'
+  const isPulser     = projectType === 'pulser'
+  const isTradelink  = projectType === 'tradelink'
+  const isDriverTab  = isExternal || isCret || isPulser || isTradelink
+  const label = PROJECT_TYPE_LABELS[projectType] || projectType
+  const valueLabel = isStaff ? 'AED' : isPulser ? 'hours' : 'shipments'
 
   const [rows,      setRows]      = useState([])
   const [fileName,  setFileName]  = useState('')
@@ -682,6 +746,8 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
       ? ['name,external_company,units,per_shipment_rate,deductions_done', 'John Doe,JNT,120,0.75,0']
       : isCret
       ? ['emp_id,units,working_days,cret_rate,deductions_done', 'E001,900,31,0.5,0']
+      : isTradelink
+      ? ['emp_id,working_days,deductions_done', 'E001,31,0']
       : ['emp_id,units,working_days,deductions_done', 'E001,160,31,0']
     const header = `${base[0]},${SHEET_CSV_COLS.join(',')}`
     const sample  = `${base[1]},${SHEET_CSV_COLS.map(()=>'0').join(',')}`
@@ -702,22 +768,22 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
       header: true, skipEmptyLines: true,
       complete: (res) => {
         const parsed = res.data.map((r,i) => {
-          const value  = parseFloat(isStaff ? r.amount : r.units)
+          const value  = isTradelink ? 0 : parseFloat(isStaff ? r.amount : r.units)
           const emp_id = (r.emp_id||'').trim()
           const name   = (r.name||'').trim()
           const errors = []
-          if (isNaN(value) || value < 0) errors.push(`${isStaff?'amount':'units'} must be a non-negative number`)
+          if (!isTradelink && (isNaN(value) || value < 0)) errors.push(`${isStaff?'amount':'units'} must be a non-negative number`)
           if (isStaff && !emp_id) errors.push('emp_id required')
           if (isExternal && !emp_id && !name) errors.push('name required (or emp_id for an existing driver)')
           if (!isStaff && !isExternal && !emp_id) errors.push('emp_id required')
           if (isCret && r.cret_rate && isNaN(parseFloat(r.cret_rate))) errors.push('cret_rate must be a number')
           const sheetCols = {}
-          for (const col of SHEET_CSV_COLS) if (r[col] !== undefined) sheetCols[col] = parseFloat(r[col])||0
+          for (const col of SHEET_CSV_COLS) if (r[col] !== undefined) sheetCols[col] = col === 'cash_advance_installments' ? (parseInt(r[col],10)||undefined) : (parseFloat(r[col])||0)
           return {
             row: i+2, emp_id, name,
             external_company: (r.external_company||'').trim(),
             per_shipment_rate: r.per_shipment_rate ? parseFloat(r.per_shipment_rate) : undefined,
-            working_days: (isPulser||isCret) && r.working_days ? parseFloat(r.working_days) : undefined,
+            working_days: (isPulser||isCret||isTradelink) && r.working_days ? parseFloat(r.working_days) : undefined,
             cret_rate: isCret && r.cret_rate ? parseFloat(r.cret_rate) : undefined,
             deductions_done: r.deductions_done !== undefined && r.deductions_done !== '' ? parseFloat(r.deductions_done) : undefined,
             units:  isStaff ? undefined : value,
@@ -738,7 +804,7 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
     if (!validRows.length) return
     setUploading(true); setErr(null)
     try {
-      const data = await payrollApi.addUnitsBulk(month, validRows.map(({row,errors,...r}) => r))
+      const data = await payrollApi.addUnitsBulk(month, validRows.map(({row,errors,...r}) => r), isDriverTab ? projectType : undefined)
       setResult(data)
     } catch(e) { setErr(e.message) } finally { setUploading(false) }
   }
@@ -786,8 +852,10 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
                   ? <>Download the template, fill one row per driver (<code>name, external_company, units, per_shipment_rate</code>, plus optional <code>emp_id</code> to update an existing external driver instead of creating a new one, and optional <code>deductions_done</code>), then upload it back here.</>
                   : isCret
                   ? <>Download the template, fill one row per driver (<code>emp_id, units, working_days, cret_rate</code> — rate is 0.5, 2, or 3 — plus optional <code>deductions_done</code>), then upload it back here.</>
+                  : isTradelink
+                  ? <>Download the template, fill one row per driver (<code>emp_id, working_days</code> — a flat prorated salary, no hours/shipments — plus optional <code>deductions_done</code>), then upload it back here.</>
                   : <>Download the template, fill one row per driver (<code>emp_id, units, working_days</code>, plus optional <code>deductions_done</code>), then upload it back here.</>}
-                {' '}The template also includes selectable bonus columns (<code>performance_bonus, incentive, other_addition</code>) and deduction columns (<code>traffic_fine, cash_advance, cash_variance, absent_days, others</code>) matching the salary sheet — leave any of them at 0 or blank to skip.
+                {' '}The template also includes selectable bonus columns (<code>performance_bonus, incentive, other_addition, eid_ot</code>) and deduction columns (<code>traffic_fine, cash_advance, cash_variance, absent_days, others</code>) matching the salary sheet — leave any of them at 0 or blank to skip. Add <code>cash_advance_installments</code> to spread a cash advance's deduction over that many months instead of it being due in full immediately.
               </div>
               <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}>
                 <button onClick={downloadTemplate} type="button"
@@ -1238,14 +1306,15 @@ export default function PayrollPage() {
   // role is stored as 'Driver' (capitalized) — compare case-insensitively, or every
   // driver silently falls into Staff & Admins instead of the driver tabs below.
   const isDriverRole = s => (s.role||'').toLowerCase() === 'driver'
-  const staffSlips    = useMemo(() => filtered.filter(s=>!isDriverRole(s)), [filtered])
-  const driverSlips   = useMemo(() => filtered.filter(isDriverRole), [filtered])
-  const pulserSlips   = useMemo(() => driverSlips.filter(s=>(s.project_type||'pulser').toLowerCase()==='pulser'), [driverSlips])
-  const cretSlips     = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='cret'), [driverSlips])
-  const externalSlips = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='external'), [driverSlips])
+  const staffSlips     = useMemo(() => filtered.filter(s=>!isDriverRole(s)), [filtered])
+  const driverSlips    = useMemo(() => filtered.filter(isDriverRole), [filtered])
+  const pulserSlips    = useMemo(() => driverSlips.filter(s=>(s.project_type||'pulser').toLowerCase()==='pulser'), [driverSlips])
+  const cretSlips      = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='cret'), [driverSlips])
+  const externalSlips  = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='external'), [driverSlips])
+  const tradelinkSlips = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='tradelink'), [driverSlips])
   const [payTab, setPayTab] = useState('staff')
-  const PAY_TABS = [['staff','Staff & Admins',staffSlips.length],['pulser','Pulser',pulserSlips.length],['cret','CRET',cretSlips.length],['external','External',externalSlips.length]]
-  const activeTabSlips = payTab==='staff' ? staffSlips : payTab==='pulser' ? pulserSlips : payTab==='cret' ? cretSlips : externalSlips
+  const PAY_TABS = [['staff','Staff & Admins',staffSlips.length],['pulser','Pulser',pulserSlips.length],['cret','CRET',cretSlips.length],['tradelink','Tradelink',tradelinkSlips.length],['external','External',externalSlips.length]]
+  const activeTabSlips = payTab==='staff' ? staffSlips : payTab==='pulser' ? pulserSlips : payTab==='cret' ? cretSlips : payTab==='tradelink' ? tradelinkSlips : externalSlips
 
   const totalEarned = payrollCalc.reduce((s,p)=>s+p._calc.base+p._calc.hoursEarnings,0)
   const totalBonus  = payrollCalc.reduce((s,p)=>s+(p._calc.totalAdd-p._calc.base-p._calc.hoursEarnings),0)
@@ -1391,7 +1460,7 @@ export default function PayrollPage() {
               <div style={{textAlign:'center',padding:'40px 20px',color:'var(--text-muted)',background:'var(--card)',border:'1px solid var(--border)',borderRadius:12}}>
                 <Wallet size={28} style={{margin:'0 auto 10px',display:'block',opacity:0.2}}/>
                 <div style={{fontWeight:700,fontSize:13,color:'var(--text)',marginBottom:4}}>No {PAY_TABS.find(([v])=>v===payTab)[1].toLowerCase()} added for {month}</div>
-                <div style={{fontSize:12}}>Use Add Manually or Bulk Upload to add {payTab==='staff'?'salary':payTab==='pulser'?'hours worked':'shipments'} — nobody appears here until their pay is entered.</div>
+                <div style={{fontSize:12}}>Use Add Manually or Bulk Upload to add {payTab==='staff'||payTab==='tradelink'?'salary':payTab==='pulser'?'hours worked':'shipments'} — nobody appears here until their pay is entered.</div>
               </div>
             )}
           </div>

@@ -225,7 +225,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
                 <label style={{ fontSize:11, fontWeight:800, letterSpacing:'0.06em', textTransform:'uppercase', color:'#7C3AED', marginBottom:10, display:'block' }}>Project & Salary Type</label>
                 <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'2px 0 6px' }}>Amazon</div>
                 <div className="modal-proj-col" style={{ marginBottom:10 }}>
-                  {[{v:'pulser',l:'Pulser',d:'Base + Hours × Rate + Bonus'},{v:'cret',l:'CRET',d:'Base + Shipments × Rate'},{v:'office',l:'Office',d:'Fixed Base Salary'}].map(p=>(
+                  {[{v:'pulser',l:'Pulser',d:'Base + Hours × Rate + Bonus'},{v:'cret',l:'CRET',d:'Base + Shipments × Rate'},{v:'tradelink',l:'Tradelink',d:'Fixed prorated base, no hours/shipments'}].map(p=>(
                     <button key={p.v} onClick={e=>{e.stopPropagation();set('project_type',p.v)}} type="button"
                       style={{ padding:'11px', borderRadius:10, border:`2px solid ${form.project_type===p.v?'#7C3AED':'var(--border)'}`, background:form.project_type===p.v?'var(--purple-bg)':'var(--card)', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
                       <div style={{ fontWeight:700, fontSize:13, color:form.project_type===p.v?'#7C3AED':'var(--text)' }}>{p.l}</div>

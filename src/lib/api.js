@@ -81,7 +81,7 @@ export const payrollApi = {
   markPaid:       (emp_id, month) => api.post('/api/payroll/mark-paid',   { emp_id, month }),
   markUnpaid:     (emp_id, month) => api.post('/api/payroll/mark-unpaid', { emp_id, month }),
   addUnits:       (data)        => api.post('/api/payroll/units', data),
-  addUnitsBulk:   (month, records) => api.post('/api/payroll/units/bulk', { month, records }),
+  addUnitsBulk:   (month, records, project_type) => api.post('/api/payroll/units/bulk', { month, records, project_type }),
   pendingDeduction: (emp_id, month) => api.get(`/api/payroll/pending-deduction/${emp_id}?month=${month}`),
   getEntry:       (emp_id, month) => api.get(`/api/payroll/entry/${emp_id}?month=${month}`),
 }
