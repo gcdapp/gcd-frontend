@@ -65,25 +65,35 @@ const GlassTip = ({active,payload,label}) => {
   )
 }
 
-/* ── Payslip data extractor ── */
+function daysInMonth(month) {
+  const [y, m] = String(month||'').split('-').map(Number)
+  if (!y || !m) return 30
+  return new Date(y, m, 0).getDate()
+}
+
+/* ── Payslip data extractor ──
+   Rebuilt to match the real accountant salary sheet (GCD MAY 2026 SALARY GLCR and
+   CSDS.xlsx) exactly. Mirrors backend/src/lib/payrollCalc.js — keep both in sync. */
 function slipData(slip, month) {
   const fmtN = n => Number(n||0).toLocaleString('en-AE',{minimumFractionDigits:2,maximumFractionDigits:2})
   const bonuses = slip.bonuses||[]; const deductions = slip.deductions||[]
   const totalHours = Number(slip.total_hours||0)
 
-  // ── CRET / External variable-pay logic ─────────────────────────
-  // For CRET and External project drivers, total_hours = shipment count.
-  // CRET old driver (base_salary > 0): pay = max(base + rate×S, 2×S)   [Method 1 vs 2]
-  // CRET new driver (base_salary = 0): pay = 2×S only                   [Method 2]
-  // External (subcontracted, no GCD base salary): pay = rate × S
   const projectType = (slip.project_type||'').toLowerCase()
   const isCret       = projectType === 'cret'
   const isExternal   = projectType === 'external'
   const rawBase      = Number(slip.base_salary||0)
   const perShipRate  = Number(slip.per_shipment_rate||0)
-  const isOldCret    = isCret && rawBase > 0
 
-  let effectiveBase, hoursEarnings, cretMethod, displayRate, rateLabel, hoursLabel
+  // Basic salary is prorated by working days out of the days in the month —
+  // e.g. 29 working days in a 31-day month = base × 29/31.
+  let proratedBase = rawBase
+  if (slip.working_days !== undefined && slip.working_days !== null) {
+    const dim = daysInMonth(month)
+    if (dim > 0) proratedBase = Math.round((rawBase / dim) * Number(slip.working_days) * 100) / 100
+  }
+
+  let effectiveBase, hoursEarnings, displayRate, rateLabel, hoursLabel
 
   // Staff/Admins: a flat amount entered directly for the month, no formula.
   const hasOverride = slip.entry_amount !== undefined && slip.entry_amount !== null
@@ -94,22 +104,14 @@ function slipData(slip, month) {
     rateLabel     = null
     hoursLabel    = null
   } else if (isCret) {
-    const S  = totalHours                         // shipment count
-    const m1 = rawBase + S * perShipRate          // Method 1 total
-    const m2 = S * 2                              // Method 2 total
-    if (!isOldCret || m2 > m1) {
-      // Method 2 wins (or only option for a new driver) → replace base entirely
-      cretMethod    = 2; effectiveBase = 0
-      hoursEarnings = parseFloat(m2.toFixed(2))
-      displayRate   = 2.00
-    } else {
-      // Method 1 wins (or only option for old driver)
-      cretMethod    = 1; effectiveBase = rawBase
-      hoursEarnings = parseFloat((S * perShipRate).toFixed(2))
-      displayRate   = perShipRate
-    }
-    rateLabel  = 'Shipment Rate'
-    hoursLabel = `Total Shipments (${totalHours})`
+    // The accountant picks the per-shipment rate each month (0.5, 2, or 3) — not
+    // derived automatically. 0.5 (or any rate <1) adds to base; 2/3 replace it entirely.
+    const rate = slip.cret_rate !== undefined && slip.cret_rate !== null ? Number(slip.cret_rate) : (perShipRate||0.5)
+    effectiveBase = rate < 1 ? proratedBase : 0
+    hoursEarnings = parseFloat((totalHours * rate).toFixed(2))
+    displayRate   = rate
+    rateLabel     = 'Shipment Rate'
+    hoursLabel    = `Total Shipments (${totalHours})`
   } else if (isExternal) {
     effectiveBase = 0
     hoursEarnings = parseFloat((totalHours * perShipRate).toFixed(2))
@@ -118,7 +120,7 @@ function slipData(slip, month) {
     hoursLabel    = `Total Shipments (${totalHours})`
   } else {
     const hourlyRate_ = Number(slip.hourly_rate||3.85)
-    effectiveBase = rawBase
+    effectiveBase = proratedBase
     hoursEarnings = parseFloat((totalHours * hourlyRate_).toFixed(2))
     displayRate   = hourlyRate_
     rateLabel     = 'Rate Per Hour'
@@ -140,7 +142,13 @@ function slipData(slip, month) {
 
   const base     = effectiveBase
   const totalAdd = base + hoursEarnings + Number(slip.bonus_total||0) + Number(slip.performance_bonus||0)
-  const totalDed = Number(slip.deduction_total||0)
+  // deduction_total from the backend is what's actually applied this month (the
+  // accountant's chosen amount, defaulting to the full pending balance) -- deductions
+  // are a running ledger, not a one-off subtraction. pendingDeduction is the balance
+  // going into this month; carryForward is what's left after this month's payment.
+  const totalDed          = Number(slip.deduction_total||0)
+  const pendingDeduction  = Number(slip.pending_deduction||0)
+  const carryForward      = Number(slip.deduction_carry_fwd||0)
   const net      = Number(slip.net_pay||(totalAdd-totalDed))
   const isPaid   = slip.payroll_status==='paid'
   const paidOn   = slip.paid_on ? new Date(slip.paid_on).toLocaleDateString('en-GB') : '—'
@@ -150,17 +158,17 @@ function slipData(slip, month) {
 
   return {fmtN,totalHours,hoursEarnings,incentive,perfBonus,monthBonus,otherAddition,monthBonusLabel,
     cashAdv,trafficFine,absentDays,otherDed,base,hourlyRate:displayRate,
-    totalAdd,totalDed,net,isPaid,paidOn,monthShort,roleLabel,row,
-    isCret,isExternal,cretMethod,rateLabel,hoursLabel,hasOverride}
+    totalAdd,totalDed,pendingDeduction,carryForward,net,isPaid,paidOn,monthShort,roleLabel,row,
+    isCret,isExternal,rateLabel,hoursLabel,hasOverride}
 }
 
 function slipInnerHtml(slip, month, logoUrl, payMethod='bank') {
   const {fmtN,totalHours,hoursEarnings,incentive,perfBonus,monthBonus,otherAddition,monthBonusLabel,
-    cashAdv,trafficFine,absentDays,otherDed,base,hourlyRate,totalAdd,totalDed,net,paidOn,monthShort,
-    roleLabel,row,isCret,cretMethod,rateLabel,hoursLabel}=slipData(slip,month)
+    cashAdv,trafficFine,absentDays,otherDed,base,hourlyRate,totalAdd,totalDed,pendingDeduction,carryForward,net,paidOn,monthShort,
+    roleLabel,row,isCret,rateLabel,hoursLabel}=slipData(slip,month)
   const cashTick = payMethod==='cash' ? '&#10003;' : ''
   const bankTick = payMethod==='bank' ? '&#10003;' : ''
-  const cretNote = isCret ? `<tr><td class="lbl" style="color:#7C3AED;font-weight:700;">Payment Method</td><td class="val" style="color:#7C3AED;">Method ${cretMethod}${cretMethod===2&&Number(slip.base_salary||0)>0?' (higher)':''}</td><td></td><td></td></tr>` : ''
+  const cretNote = isCret ? `<tr><td class="lbl" style="color:#7C3AED;font-weight:700;">Shipment Rate Used</td><td class="val" style="color:#7C3AED;">AED ${hourlyRate}/shipment</td><td></td><td></td></tr>` : ''
   return `
   <div class="hdr">
     <img src="${logoUrl}" alt="GCD" onerror="this.style.display='none'"/>
@@ -177,8 +185,8 @@ function slipInnerHtml(slip, month, logoUrl, payMethod='bank') {
     ${row(rateLabel,hourlyRate,'Traffic Fine',trafficFine)}
     ${row(hoursLabel,hoursEarnings,'Absent Days',absentDays)}
     ${row('Incentive',incentive,'Other',otherDed)}
-    ${row('Performance Bonus',perfBonus,'Pending Deductions',0)}
-    ${row('Other Addition',otherAddition,'Carry Forwarded',0)}
+    ${row('Performance Bonus',perfBonus,'Pending Deductions',pendingDeduction)}
+    ${row('Other Addition',otherAddition,'Carry Forwarded',carryForward)}
     ${cretNote}
     <tr><td class="lbl">${monthBonusLabel}</td><td class="val">${fmtN(monthBonus)}</td><td></td><td></td></tr>
     <tr class="total-row"><td>TOTAL ADDITION</td><td style="text-align:right;font-weight:bold;">${fmtN(totalAdd)}</td><td>TOTAL DEDUCTION</td><td style="text-align:right;font-weight:bold;">${fmtN(totalDed)}</td></tr>
@@ -442,27 +450,43 @@ function DeductionModal({employees, month, onSave, onClose}) {
 function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
   const isStaff    = projectType === 'staff'
   const isExternal = projectType === 'external'
+  const isCret      = projectType === 'cret'
+  const isPulser    = projectType === 'pulser'
   const label = isStaff ? 'Staff/Admin' : projectType==='pulser' ? 'Pulser' : projectType==='cret' ? 'CRET' : 'External'
   const valueLabel = isStaff ? 'Salary Amount (AED)' : projectType==='pulser' ? 'Hours Worked' : 'Shipments'
   const empOptions = isStaff
     ? employees.filter(e => (e.role||'').toLowerCase()!=='driver')
     : employees.filter(e => (e.role||'').toLowerCase()==='driver' && (e.project_type||'pulser').toLowerCase()===projectType)
 
-  const [empId,   setEmpId]   = useState('')
-  const [name,    setName]    = useState('')
-  const [company, setCompany] = useState('')
-  const [rate,    setRate]    = useState('0.5')
-  const [value,   setValue]   = useState('')
-  const [saving,  setSaving]  = useState(false)
-  const [err,     setErr]     = useState(null)
+  const [empId,       setEmpId]       = useState('')
+  const [name,        setName]        = useState('')
+  const [company,     setCompany]     = useState('')
+  const [rate,        setRate]        = useState('0.5')
+  const [value,       setValue]       = useState('')
+  const [workingDays, setWorkingDays] = useState('')
+  const [cretRate,    setCretRate]    = useState('0.5')
+  const [pending,        setPending]        = useState(null)
+  const [loadingPending, setLoadingPending] = useState(false)
+  const [dedDone,     setDedDone]     = useState('')
+  const [saving,      setSaving]      = useState(false)
+  const [err,         setErr]         = useState(null)
 
-  // Prefill with the employee's currently stored salary when picking a staff member
-  function pickEmp(id) {
-    setEmpId(id)
+  // Prefill with the employee's currently stored salary when picking a staff member,
+  // and look up their current outstanding deduction balance either way.
+  async function pickEmp(id) {
+    setEmpId(id); setPending(null); setDedDone('')
     if (isStaff && id) {
       const e = empOptions.find(o=>o.id===id)
       setValue(e ? String(e.salary||'') : '')
     }
+    if (!id) return
+    setLoadingPending(true)
+    try {
+      const d = await payrollApi.pendingDeduction(id, month)
+      setPending(d.pending)
+      if (d.pending > 0) setDedDone(String(d.pending))
+    } catch(e) { /* non-fatal — deduction lookup is a convenience, not required */ }
+    finally { setLoadingPending(false) }
   }
 
   async function handleSave() {
@@ -475,6 +499,9 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
         month,
         units:  isStaff ? undefined : v,
         amount: isStaff ? v : undefined,
+        working_days: (isPulser||isCret) && workingDays!=='' ? workingDays : undefined,
+        cret_rate: isCret ? cretRate : undefined,
+        deductions_done: dedDone!=='' ? dedDone : undefined,
         emp_id: empId || undefined,
         name: !empId ? name : undefined,
         external_company: !empId ? (company||undefined) : undefined,
@@ -486,14 +513,14 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
 
   return (
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div className="modal" style={{maxWidth:420,padding:0,overflow:'hidden'}}>
-        <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(184,134,11,0.1),transparent)'}}>
+      <div className="modal" style={{maxWidth:440,maxHeight:'85vh',padding:0,overflow:'hidden',display:'flex',flexDirection:'column'}}>
+        <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(184,134,11,0.1),transparent)',flexShrink:0}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <div><h3 style={{fontWeight:900,fontSize:16,color:'var(--text)',margin:0}}>Add {label} Pay</h3><p style={{fontSize:12,color:'var(--text-muted)',marginTop:2}}>{month}</p></div>
             <button onClick={onClose} style={{width:28,height:28,borderRadius:'50%',background:'rgba(0,0,0,0.06)',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={13}/></button>
           </div>
         </div>
-        <div style={{padding:'16px 22px 20px',display:'flex',flexDirection:'column',gap:12}}>
+        <div style={{padding:'16px 22px 20px',display:'flex',flexDirection:'column',gap:12,overflowY:'auto'}}>
           {err&&<div style={{background:'#FEF2F2',border:'1px solid #FCA5A5',borderRadius:9,padding:'8px 12px',fontSize:12,color:'#EF4444',display:'flex',gap:6,alignItems:'center'}}><AlertCircle size={12}/>{err}</div>}
 
           <div><label className="input-label">{isExternal ? 'Existing Driver (optional)' : isStaff ? 'Staff / Admin *' : 'Driver *'}</label>
@@ -513,8 +540,34 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
             </div>
           </>)}
 
+          {(isPulser || isCret) && (
+            <div><label className="input-label">Working Days (this month)</label>
+              <input className="input" type="number" step="0.5" min="0" max="31" value={workingDays} onChange={e=>setWorkingDays(e.target.value)} placeholder="e.g. 31"/></div>
+          )}
+
+          {isCret && (
+            <div><label className="input-label">Shipment Rate — this driver, this month *</label>
+              <select className="input" value={cretRate} onChange={e=>setCretRate(e.target.value)}>
+                <option value="0.5">AED 0.5 / shipment (+ base salary)</option>
+                <option value="2">AED 2 / shipment (flat, no base)</option>
+                <option value="3">AED 3 / shipment (flat, no base)</option>
+              </select></div>
+          )}
+
           <div><label className="input-label">{valueLabel} *</label>
             <input className="input" type="number" step="0.01" min="0" value={value} onChange={e=>setValue(e.target.value)} placeholder="0"/></div>
+
+          {empId && (
+            <div>
+              <label className="input-label">Deductions to Apply This Month</label>
+              <input className="input" type="number" step="0.01" min="0" value={dedDone} onChange={e=>setDedDone(e.target.value)} placeholder="0"/>
+              <div style={{fontSize:11,color:'var(--text-muted)',marginTop:4}}>
+                {loadingPending ? 'Loading pending balance…' : pending!=null
+                  ? `Pending balance: AED ${pending.toLocaleString()} — leave as-is to pay it off in full, or lower it to carry the rest to next month.`
+                  : ''}
+              </div>
+            </div>
+          )}
 
           <div style={{display:'flex',gap:10,marginTop:4}}>
             <button onClick={onClose} className="btn btn-secondary" style={{flex:1,justifyContent:'center'}}>Cancel</button>
@@ -532,6 +585,8 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
 function BulkUnitsModal({month, projectType, onSave, onClose}) {
   const isStaff    = projectType === 'staff'
   const isExternal = projectType === 'external'
+  const isCret      = projectType === 'cret'
+  const isPulser    = projectType === 'pulser'
   const label = isStaff ? 'Staff/Admin' : projectType==='pulser' ? 'Pulser' : projectType==='cret' ? 'CRET' : 'External'
   const valueLabel = isStaff ? 'AED' : projectType==='pulser' ? 'hours' : 'shipments'
 
@@ -543,10 +598,12 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
 
   function downloadTemplate() {
     const csv = isStaff
-      ? `emp_id,amount\nE001,5000\n`
+      ? `emp_id,amount,deductions_done\nE001,5000,0\n`
       : isExternal
-      ? `name,external_company,units,per_shipment_rate\nJohn Doe,JNT,120,0.75\n`
-      : `emp_id,units\nE001,${projectType==='pulser'?160:900}\n`
+      ? `name,external_company,units,per_shipment_rate,deductions_done\nJohn Doe,JNT,120,0.75,0\n`
+      : isCret
+      ? `emp_id,units,working_days,cret_rate,deductions_done\nE001,900,31,0.5,0\n`
+      : `emp_id,units,working_days,deductions_done\nE001,160,31,0\n`
     const blob = new Blob([csv], { type:'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
@@ -571,10 +628,14 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
           if (isStaff && !emp_id) errors.push('emp_id required')
           if (isExternal && !emp_id && !name) errors.push('name required (or emp_id for an existing driver)')
           if (!isStaff && !isExternal && !emp_id) errors.push('emp_id required')
+          if (isCret && r.cret_rate && isNaN(parseFloat(r.cret_rate))) errors.push('cret_rate must be a number')
           return {
             row: i+2, emp_id, name,
             external_company: (r.external_company||'').trim(),
             per_shipment_rate: r.per_shipment_rate ? parseFloat(r.per_shipment_rate) : undefined,
+            working_days: (isPulser||isCret) && r.working_days ? parseFloat(r.working_days) : undefined,
+            cret_rate: isCret && r.cret_rate ? parseFloat(r.cret_rate) : undefined,
+            deductions_done: r.deductions_done !== undefined && r.deductions_done !== '' ? parseFloat(r.deductions_done) : undefined,
             units:  isStaff ? undefined : value,
             amount: isStaff ? value : undefined,
             errors,
@@ -630,10 +691,12 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
             <>
               <div style={{fontSize:12.5,color:'var(--text-muted)',lineHeight:1.5}}>
                 {isStaff
-                  ? <>Download the template, fill one row per person (<code>emp_id, amount</code> — their confirmed salary for {month}), then upload it back here.</>
+                  ? <>Download the template, fill one row per person (<code>emp_id, amount</code> — their confirmed salary for {month} — plus an optional <code>deductions_done</code> column), then upload it back here.</>
                   : isExternal
-                  ? <>Download the template, fill one row per driver (<code>name, external_company, units, per_shipment_rate</code> — leave an <code>emp_id</code> column value to add {valueLabel} to an existing external driver instead of creating a new one), then upload it back here.</>
-                  : <>Download the template, fill one row per driver (<code>emp_id, units</code> — {valueLabel} for {label}), then upload it back here.</>}
+                  ? <>Download the template, fill one row per driver (<code>name, external_company, units, per_shipment_rate</code>, plus optional <code>emp_id</code> to update an existing external driver instead of creating a new one, and optional <code>deductions_done</code>), then upload it back here.</>
+                  : isCret
+                  ? <>Download the template, fill one row per driver (<code>emp_id, units, working_days, cret_rate</code> — rate is 0.5, 2, or 3 — plus optional <code>deductions_done</code>), then upload it back here.</>
+                  : <>Download the template, fill one row per driver (<code>emp_id, units, working_days</code>, plus optional <code>deductions_done</code>), then upload it back here.</>}
               </div>
               <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}>
                 <button onClick={downloadTemplate} type="button"
@@ -866,7 +929,12 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
             )}
             {calc.isCret && (
               <span className="py-act" style={{cursor:'default',color:'#7C3AED',borderColor:'rgba(124,58,237,0.3)'}}>
-                Method {calc.cretMethod}
+                Rate: AED {calc.hourlyRate}/shipment
+              </span>
+            )}
+            {calc.pendingDeduction > 0 && (
+              <span className="py-act" style={{cursor:'default',color:'#EF4444',borderColor:'rgba(239,68,68,0.3)'}} title="Balance owed before this month's deduction">
+                Pending Ded: AED {fmt(calc.pendingDeduction)}
               </span>
             )}
             {/* Payment method selector + generate payslip */}
