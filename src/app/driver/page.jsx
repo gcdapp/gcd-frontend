@@ -19,7 +19,11 @@ import { differenceInDays, parseISO } from 'date-fns'
 
 // ── Helpers ──────────────────────────────────────────────────────
 const TYPE_COLORS = { Annual:'#B8860B', Sick:'#2563EB', Emergency:'#DC2626', Unpaid:'#6B7280', Other:'#6B7280' }
-const DED_LABELS  = { traffic_fine:'Traffic Fine', iloe_fee:'ILOE Fee', iloe_fine:'ILOE Fine', cash_variance:'Cash Variance', other:'Other' }
+const DED_LABELS  = { traffic_fine:'Traffic Fine', iloe_fee:'ILOE Fee', iloe_fine:'ILOE Fine', cash_variance:'Cash Variance', cash_advance:'Cash Advance', absent_days:'Absent Days', other:'Other' }
+const PAY_MONTHS = Array.from({length:12},(_,i)=>{
+  const d = new Date(); d.setMonth(d.getMonth()-i)
+  return d.toISOString().slice(0,7)
+})
 
 function fmt(n)  { return Number(n || 0).toLocaleString('en-US') }
 function fmtA(n) { return `AED ${fmt(n)}` }
@@ -535,6 +539,8 @@ export default function DriverPortal() {
   const [loading,       setLoading]       = useState(true)
   const [profile,       setProfile]       = useState(null)
   const [payroll,       setPayroll]       = useState(null)
+  const [payMonth,      setPayMonth]      = useState(new Date().toISOString().slice(0, 7))
+  const [payslip,       setPayslip]       = useState(null)
   const [attEarnings,   setAttEarnings]   = useState(null)
   const [leaves,        setLeaves]        = useState([])
   const [notices,       setNotices]       = useState([])
@@ -594,21 +600,12 @@ export default function DriverPortal() {
     if (user.role !== 'driver') { router.replace('/dashboard/analytics'); return }
 
     const hdr   = authHeader()
-    const month = new Date().toISOString().slice(0, 7)
     const today = localDateKey()
     const ctrl  = new AbortController()
 
-    Promise.all([
-      fetch(`${API}/api/payroll?month=${month}`,             { headers: hdr, signal: ctrl.signal }).then(r => r.json()).catch(() => ({ payroll: [] })),
-      fetch(`${API}/api/employees/${user.emp_id}`,           { headers: hdr, signal: ctrl.signal }).then(r => r.json()).catch(() => ({ employee: null })),
-      fetch(`${API}/api/attendance/earnings?month=${month}`, { headers: hdr, signal: ctrl.signal }).then(r => r.json()).catch(() => null),
-    ]).then(([pr, emp, ae]) => {
-      const slip = (pr.payroll || []).find(p => p.id === user.emp_id || p.emp_id === user.emp_id)
-      setPayroll(slip || null)
-      setProfile(emp.employee || null)
-      setAttEarnings(ae || null)
-      setLoading(false)
-    })
+    fetch(`${API}/api/employees/${user.emp_id}`, { headers: hdr, signal: ctrl.signal })
+      .then(r => r.json()).catch(() => ({ employee: null }))
+      .then(emp => { setProfile(emp.employee || null); setLoading(false) })
 
     const bg = (url, onData) =>
       fetch(`${API}${url}`, { headers: hdr, signal: ctrl.signal })
@@ -638,6 +635,41 @@ export default function DriverPortal() {
 
     return () => ctrl.abort()
   }, [user, authLoading, router])
+
+  // Current month's payroll + attendance-earnings — feeds the Home hero card and the
+  // Attendance tab, both of which mean "right now," not whatever month is selected in
+  // the Payslip tab below.
+  useEffect(() => {
+    if (!user?.emp_id) return
+    const hdr   = authHeader()
+    const month = new Date().toISOString().slice(0, 7)
+    const ctrl  = new AbortController()
+    Promise.all([
+      fetch(`${API}/api/payroll?month=${month}`,             { headers: hdr, signal: ctrl.signal }).then(r => r.json()).catch(() => ({ payroll: [] })),
+      fetch(`${API}/api/attendance/earnings?month=${month}`, { headers: hdr, signal: ctrl.signal }).then(r => r.json()).catch(() => null),
+    ]).then(([pr, ae]) => {
+      const slip = (pr.payroll || []).find(p => p.id === user.emp_id || p.emp_id === user.emp_id)
+      setPayroll(slip || null)
+      setAttEarnings(ae || null)
+    })
+    return () => ctrl.abort()
+  }, [user?.emp_id])
+
+  // Payslip tab has its own selectable month, independent of "current month" above —
+  // drivers need to look back at last month's salary once it's been paid, not just
+  // whatever's in progress today.
+  useEffect(() => {
+    if (!user?.emp_id) return
+    const hdr  = authHeader()
+    const ctrl = new AbortController()
+    fetch(`${API}/api/payroll?month=${payMonth}`, { headers: hdr, signal: ctrl.signal })
+      .then(r => r.json()).catch(() => ({ payroll: [] }))
+      .then(pr => {
+        const slip = (pr.payroll || []).find(p => p.id === user.emp_id || p.emp_id === user.emp_id)
+        setPayslip(slip || null)
+      })
+    return () => ctrl.abort()
+  }, [user?.emp_id, payMonth])
 
   useSocket({
     'notification:new': (notif) => {
@@ -703,6 +735,9 @@ export default function DriverPortal() {
   )
 
   const net          = payroll ? Number(payroll.base_salary||0) + Number(payroll.bonus_total||0) - Number(payroll.deduction_total||0) : 0
+  const payslipNet   = payslip ? Number(payslip.base_salary||0) + Number(payslip.bonus_total||0) - Number(payslip.deduction_total||0) : 0
+  const isCurrentPayMonth = payMonth === new Date().toISOString().slice(0, 7)
+  const payMonthLabel = new Date(payMonth+'-01').toLocaleString('en-US',{month:'long',year:'numeric'}).toUpperCase()
   const isShipmentEmp = profile?.station_code === 'DXE6'
   const attRecords   = attEarnings?.records || []
   const attPresent   = attRecords.filter(r => r.status === 'present').length
@@ -1128,28 +1163,37 @@ export default function DriverPortal() {
         {/* ════ PAYSLIPS ════ */}
         {tab === 'pay' && (
           <div style={{ padding:'16px', display:'flex', flexDirection:'column', gap:14 }} className="fade">
-            <h2 style={{ fontWeight:800, fontSize:22, color:'#111', margin:0 }}>My Payslip</h2>
-            {!payroll ? (
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <h2 style={{ fontWeight:800, fontSize:22, color:'#111', margin:0 }}>My Payslip</h2>
+              <select value={payMonth} onChange={e=>setPayMonth(e.target.value)}
+                style={{ fontSize:12, fontWeight:700, color:'#111', background:'#FFF', border:'1px solid #E5E7EB', borderRadius:10, padding:'7px 10px', fontFamily:'inherit' }}>
+                {PAY_MONTHS.map(m => (
+                  <option key={m} value={m}>{new Date(m+'-01').toLocaleString('en-US',{month:'long',year:'numeric'})}</option>
+                ))}
+              </select>
+            </div>
+            {!payslip ? (
               <Card style={{ textAlign:'center', padding:'40px' }}>
                 <Wallet size={32} color="#D1D5DB" style={{ margin:'0 auto 10px', display:'block' }}/>
-                <div style={{ fontSize:14, color:'#9CA3AF', fontWeight:500 }}>No payroll data this month</div>
+                <div style={{ fontSize:14, color:'#9CA3AF', fontWeight:500 }}>No payroll data for {payMonthLabel}</div>
               </Card>
             ) : (
               <>
                 {/* Net salary hero */}
                 <div style={{ borderRadius:20, padding:'22px 20px', background:'linear-gradient(135deg,#FFFBEB,#FEF3C7)', border:'1.5px solid #FDE68A', boxShadow:'0 4px 16px rgba(184,134,11,0.12)' }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:'#B45309', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:8 }}>Net Salary</div>
-                  <div style={{ fontWeight:900, fontSize:36, color:'#92400E', letterSpacing:'-0.04em', marginBottom:10 }}>{fmtA(net)}</div>
-                  <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, color: payroll.payroll_status==='paid' ? '#16A34A' : '#B45309', fontWeight:600 }}>
-                    {payroll.payroll_status==='paid'
-                      ? <><Check size={14}/> Paid this month</>
+                  <div style={{ fontSize:10, fontWeight:700, color:'#B45309', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:8 }}>Net Salary · {payMonthLabel}</div>
+                  <div style={{ fontWeight:900, fontSize:36, color:'#92400E', letterSpacing:'-0.04em', marginBottom:10 }}>{fmtA(payslipNet)}</div>
+                  <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, color: payslip.payroll_status==='paid' ? '#16A34A' : '#B45309', fontWeight:600 }}>
+                    {payslip.payroll_status==='paid'
+                      ? <><Check size={14}/> Paid</>
                       : <><Clock size={14}/> Pending payment</>
                     }
                   </div>
                 </div>
 
-                {/* Variable pay from attendance */}
-                {attEarnings && variablePay > 0 && (
+                {/* Variable pay from attendance — only meaningful for the month in
+                    progress; a closed past month's totals are already in the breakdown below. */}
+                {isCurrentPayMonth && attEarnings && variablePay > 0 && (
                   <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:14, padding:'14px 16px' }}>
                     <div style={{ fontSize:10, fontWeight:700, color:'#065F46', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:6 }}>Variable Pay This Month</div>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -1166,9 +1210,9 @@ export default function DriverPortal() {
                 <Card>
                   <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:14 }}>Payroll Breakdown</div>
                   {[
-                    { l:'Base Salary', v:fmtA(payroll.base_salary),             c:'#111'    },
-                    { l:'Bonuses',     v:`+${fmtA(payroll.bonus_total||0)}`,     c:'#16A34A' },
-                    { l:'Deductions',  v:`−${fmtA(payroll.deduction_total||0)}`, c:'#DC2626' },
+                    { l:'Base Salary', v:fmtA(payslip.base_salary),             c:'#111'    },
+                    { l:'Bonuses',     v:`+${fmtA(payslip.bonus_total||0)}`,     c:'#16A34A' },
+                    { l:'Deductions',  v:`−${fmtA(payslip.deduction_total||0)}`, c:'#DC2626' },
                   ].map((r,i) => (
                     <div key={r.l} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'11px 0', borderBottom: i<2 ? '1px solid #F3F4F6' : 'none' }}>
                       <span style={{ fontSize:14, color:'#6B7280' }}>{r.l}</span>
@@ -1177,15 +1221,15 @@ export default function DriverPortal() {
                   ))}
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'13px 16px', background:'#FFFBEB', borderRadius:12, marginTop:10, border:'1px solid #FDE68A' }}>
                     <span style={{ fontWeight:700, fontSize:14, color:'#92400E' }}>Net Total</span>
-                    <span style={{ fontWeight:900, fontSize:18, color:'#B8860B' }}>{fmtA(net)}</span>
+                    <span style={{ fontWeight:900, fontSize:18, color:'#B8860B' }}>{fmtA(payslipNet)}</span>
                   </div>
                 </Card>
 
                 {/* Additions */}
-                {(payroll.bonuses||[]).length > 0 && (
+                {(payslip.bonuses||[]).length > 0 && (
                   <Card>
                     <div style={{ fontSize:10, fontWeight:800, color:'#16A34A', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:12 }}>Additions</div>
-                    {payroll.bonuses.map(b => (
+                    {payslip.bonuses.map(b => (
                       <div key={b.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:'#F0FDF4', borderRadius:10, marginBottom:6 }}>
                         <span style={{ fontSize:13, color:'#065F46', fontWeight:500 }}>{b.type?.charAt(0).toUpperCase()+b.type?.slice(1)}{b.description ? ` — ${b.description}` : ''}</span>
                         <span style={{ fontWeight:700, fontSize:13, color:'#16A34A' }}>+{fmtA(b.amount)}</span>
@@ -1195,10 +1239,10 @@ export default function DriverPortal() {
                 )}
 
                 {/* Deductions */}
-                {(payroll.deductions||[]).length > 0 && (
+                {(payslip.deductions||[]).length > 0 && (
                   <Card>
                     <div style={{ fontSize:10, fontWeight:800, color:'#DC2626', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:12 }}>Deductions</div>
-                    {payroll.deductions.map(d => (
+                    {payslip.deductions.map(d => (
                       <div key={d.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:'#FEF2F2', borderRadius:10, marginBottom:6 }}>
                         <span style={{ fontSize:13, color:'#991B1B', fontWeight:500 }}>{DED_LABELS[d.type]||d.type}{d.description ? ` — ${d.description}` : ''}</span>
                         <span style={{ fontWeight:700, fontSize:13, color:'#DC2626' }}>−{fmtA(d.amount)}</span>

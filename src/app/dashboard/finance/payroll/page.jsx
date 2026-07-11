@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
+import { createPortal } from 'react-dom'
 import Papa from 'papaparse'
 import { payrollApi, empApi } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
@@ -319,7 +320,7 @@ function SalaryModal({emp, onSave, onClose}) {
       onSave()
     } catch(e){setErr(e.message)}finally{setSaving(false)}
   }
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{maxWidth:360,padding:0,overflow:'hidden'}}>
         <div style={{padding:'22px 24px 18px',background:'linear-gradient(135deg,rgba(184,134,11,0.1),transparent)'}}>
@@ -342,7 +343,8 @@ function SalaryModal({emp, onSave, onClose}) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -365,7 +367,7 @@ function BonusModal({employees, month, onSave, onClose}) {
       onSave()
     } catch(e){setErr(e.message)}finally{setSaving(false)}
   }
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{maxWidth:440,padding:0,overflow:'hidden'}}>
         <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(16,185,129,0.1),transparent)'}}>
@@ -407,7 +409,8 @@ function BonusModal({employees, month, onSave, onClose}) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -423,7 +426,7 @@ function DeductionModal({employees, month, onSave, onClose}) {
     try {await payrollApi.addDeduction({...form,month,amount:parseFloat(form.amount),installments:form.installments||undefined});onSave()}
     catch(e){setErr(e.message)}finally{setSaving(false)}
   }
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{maxWidth:440,padding:0,overflow:'hidden'}}>
         <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(239,68,68,0.08),transparent)'}}>
@@ -467,7 +470,8 @@ function DeductionModal({employees, month, onSave, onClose}) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -605,7 +609,7 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
 
   const newDedTotal = SHEET_DEDUCTION_FIELDS.reduce((s,{k})=>s+(parseFloat(sheet[k])||0),0)
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{maxWidth:480,maxHeight:'85vh',padding:0,overflow:'hidden',display:'flex',flexDirection:'column'}}>
         <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(184,134,11,0.1),transparent)',flexShrink:0}}>
@@ -713,7 +717,8 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -809,7 +814,7 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
     } catch(e) { setErr(e.message) } finally { setUploading(false) }
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{maxWidth:600,maxHeight:'85vh',padding:0,overflow:'hidden',display:'flex',flexDirection:'column'}}>
         <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(184,134,11,0.1),transparent)',flexShrink:0}}>
@@ -897,7 +902,8 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
