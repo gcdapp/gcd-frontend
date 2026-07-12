@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Plus, X, Pencil, Trash2, AlertCircle, ExternalLink,
   Download, Printer, RefreshCw, Link2,
@@ -67,7 +68,7 @@ function DocModal({ doc, onSave, onClose }) {
     } catch(e) { setErr(e.message) } finally { setSaving(false) }
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay">
       <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:520, maxHeight:'92vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'var(--shadow-lg)', border:'1px solid var(--border)' }}>
         <div style={{ padding:'22px 24px 18px', borderBottom:'1px solid var(--border)', flexShrink:0, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -121,7 +122,8 @@ function DocModal({ doc, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

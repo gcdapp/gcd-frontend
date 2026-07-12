@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { leaveApi, empApi } from '@/lib/api'
 import { Check, X, Clock, Plus, Calendar, ChevronRight, AlertCircle } from 'lucide-react'
 
@@ -35,7 +36,7 @@ function NewLeaveModal({ employees, onSave, onClose }) {
     catch(e) { alert(e.message) } finally { setSaving(false) }
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:420 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
@@ -68,7 +69,8 @@ function NewLeaveModal({ employees, onSave, onClose }) {
           <button className="btn btn-primary" onClick={handleSave} disabled={saving||!form.emp_id||!form.from_date||!form.to_date}>{saving?'Saving…':'Submit'}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

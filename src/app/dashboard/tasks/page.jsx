@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Plus, X, AlertCircle, RefreshCw, Trash2, Pencil,
   CheckCircle, AlertTriangle, ChevronDown, Timer,
@@ -114,7 +115,7 @@ function TaskModal({ task, users, onSave, onClose }) {
     return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
   })()
 
-  return (
+  return createPortal(
     <div className="modal-overlay">
       <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:500, maxHeight:'92vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'var(--shadow-lg)', border:'1px solid var(--border)' }}>
         <div style={{ padding:'22px 24px 18px', borderBottom:'1px solid var(--border)', flexShrink:0, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -169,7 +170,8 @@ function TaskModal({ task, users, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

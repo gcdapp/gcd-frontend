@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Camera, Check, Car, Fuel, FileText, User, Users, Wrench, ArrowLeftRight } from 'lucide-react'
 
 import { API } from '@/lib/api'
@@ -200,7 +201,7 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
 
   const isMaintenance = returnMode === 'maintenance'
 
-  if (done) return (
+  if (done) return createPortal(
     <div className="modal-overlay">
       <div className="modal" style={{ maxWidth:340, textAlign:'center', padding:'40px 30px' }}>
         <div style={{ width:64, height:64, borderRadius:'50%', background: isMaintenance ? '#FFF7ED' : '#ECFDF5', border:`2px solid ${isMaintenance ? '#FDE68A' : '#A7F3D0'}`, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
@@ -222,11 +223,12 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 
   // Mode picker — shown first when returning a vehicle
-  if (isReturn && returnMode === null) return (
+  if (isReturn && returnMode === null) return createPortal(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:440, padding:0, overflow:'hidden' }}>
         <div style={{ padding:'20px 22px 16px', background:'linear-gradient(135deg,#FEF2F2,#FFF9F9)' }}>
@@ -264,7 +266,8 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 
   const headerBg = isMaintenance
@@ -293,7 +296,7 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
 
   const submitLabel = isMaintenance ? 'Park for Maintenance' : isReturn ? 'Submit Return' : 'Submit Handover'
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:480, padding:0, overflow:'hidden' }}>
         {/* Header */}
@@ -432,6 +435,7 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

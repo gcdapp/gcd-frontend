@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { API } from '@/lib/api'
 import { Plus, X, Search, Clock, UserCheck, UserX, CalendarOff, AlertCircle, Trash2, RefreshCw } from 'lucide-react'
 
@@ -109,7 +110,7 @@ function LogModal({ employees, date, onSave, onClose }) {
     } catch(e) { alert(e.message) } finally { setSaving(false) }
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" style={{ zIndex:9999 }} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth:420, borderRadius:20 }}>
         <div style={{ background:'linear-gradient(135deg,#B8860B,#D4A017)', borderRadius:'16px 16px 0 0', padding:'18px 20px', margin:'-24px -24px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -153,7 +154,8 @@ function LogModal({ employees, date, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { empApi, API } from '@/lib/api'
 import { useSocket } from '@/lib/socket'
 import { Search, Plus, X, Pencil, Trash2, ChevronRight, Shield, Clock, Phone, Globe, Star, User, Building2, CreditCard, AlertCircle, CheckCircle2 } from 'lucide-react'
@@ -114,7 +115,7 @@ function EmpModal({ emp, onSave, onClose, mode }) {
     ...(mode==='add' ? [{ id:'login', label:'Login', icon:'🔑' }] : []),
   ]
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e => e.target===e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth:580, padding:0, overflow:'hidden' }}>
         {/* Header */}
@@ -212,7 +213,8 @@ function EmpModal({ emp, onSave, onClose, mode }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

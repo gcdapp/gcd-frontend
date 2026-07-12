@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Plus, X, Pencil, Trash2, Eye, EyeOff, RefreshCw, Search, Shield, User, Mail, Lock, Building2, CheckCircle, XCircle, KeyRound, AlertCircle } from 'lucide-react'
 
 import { API } from '@/lib/api'
@@ -77,7 +78,7 @@ function UserModal({ user, onSave, onClose }) {
     } catch(e) { setErr(e.message) } finally { setSaving(false) }
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:480, padding:0, overflow:'hidden' }}>
         {/* Header */}
@@ -197,7 +198,8 @@ function UserModal({ user, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

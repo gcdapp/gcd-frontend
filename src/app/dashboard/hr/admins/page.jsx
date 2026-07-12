@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Search, Plus, X, Pencil, Trash2, Phone, User, Building2,
   AlertCircle, CheckCircle2, Calendar, Shield, Receipt,
@@ -149,7 +150,7 @@ function AdminModal({ emp, onSave, onClose, mode }) {
     ...(mode==='add' ? [{ id:'login', l:'Login' }] : []),
   ]
 
-  return (
+  return createPortal(
     <div className="modal-overlay" style={{ zIndex:9999 }} onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:520, maxHeight:'92vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'var(--shadow-lg)', border:'1px solid var(--border)' }}>
         <div style={{ padding:'20px 24px 0', borderBottom:'1px solid var(--border)', flexShrink:0 }}>
@@ -244,7 +245,8 @@ function AdminModal({ emp, onSave, onClose, mode }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 
 // All interactive elements that should receive focus during tab navigation
 const FOCUSABLE = [
@@ -81,7 +82,7 @@ export function Modal({
 
   const hasHeader = title || !hideClose
 
-  return (
+  return createPortal(
     <div
       className="modal-overlay"
       role="presentation"
@@ -143,6 +144,7 @@ export function Modal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

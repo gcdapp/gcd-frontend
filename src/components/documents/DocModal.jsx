@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { differenceInDays, parseISO } from 'date-fns'
 import { AlertTriangle, X, ExternalLink, UploadCloud, Link as LinkIcon, FileText } from 'lucide-react'
 import { API } from '@/lib/api'
@@ -77,7 +78,7 @@ export default function DocModal({ emp, employees, editDoc, onSave, onClose }) {
     } catch(e) { setErr(e.message) } finally { setSaving(false) }
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:500, padding:0, overflow:'hidden' }}>
         {/* Header */}
@@ -197,6 +198,7 @@ export default function DocModal({ emp, employees, editDoc, onSave, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { attApi, empApi } from '@/lib/api'
 import { useSocket } from '@/lib/socket'
 import { Plus, X, Download, CheckSquare, Search } from 'lucide-react'
@@ -49,7 +50,7 @@ function LogModal({ employees, onSave, onClose }) {
     } catch(e) { alert(e.message) } finally { setSaving(false) }
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:460 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
@@ -137,7 +138,8 @@ function LogModal({ employees, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

@@ -219,7 +219,7 @@ export function AttModal({ employees, station, date, editRecord, onSave, onClose
     } catch(e) { setErr(e.message) } finally { setSaving(false) }
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e => e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:460 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
@@ -282,7 +282,8 @@ export function AttModal({ employees, station, date, editRecord, onSave, onClose
           <button className="btn btn-primary" onClick={handleSave} disabled={saving||!empId} style={{ flex:2, justifyContent:'center' }}>{saving?'Saving…':isEdit?'Save Changes':'Log Attendance'}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -301,7 +302,7 @@ export function AnnModal({ ann, onSave, onClose }) {
       onSave()
     } catch(e) { alert(e.message) } finally { setSaving(false) }
   }
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e => e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:440 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
@@ -317,7 +318,8 @@ export function AnnModal({ ann, onSave, onClose }) {
           <button className="btn btn-primary" onClick={handleSave} disabled={saving||!title||!body} style={{ flex:2, justifyContent:'center' }}>{saving?'Saving…':ann?'Update':'Post'}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -336,7 +338,7 @@ export function VehicleModal({ vehicle, station, onSave, onClose }) {
       onSave()
     } catch(e) { alert(e.message) } finally { setSaving(false) }
   }
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e => e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:460 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
@@ -371,7 +373,8 @@ export function VehicleModal({ vehicle, station, onSave, onClose }) {
           <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex:2, justifyContent:'center' }}>{saving?'Saving…':vehicle?'Save Changes':'Add Vehicle'}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -395,7 +398,7 @@ export function DeliveryModal({ date, station, existing, onSave, onClose }) {
       onSave()
     } catch(e) { alert(e.message) } finally { setSaving(false) }
   }
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e => e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:400 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
@@ -419,7 +422,8 @@ export function DeliveryModal({ date, station, existing, onSave, onClose }) {
           <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex:2, justifyContent:'center' }}>{saving?'Saving…':'Submit'}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -455,7 +459,7 @@ export function SimModal({ sim, emps, station, onSave, onClose }) {
     doSave()
   }
   const STATUSES = [{ v:'available',l:'Available',c:'#2E7D52' },{ v:'assigned',l:'Assigned',c:'#B8860B' },{ v:'inactive',l:'Inactive',c:'#A89880' },{ v:'damaged',l:'Damaged',c:'#C0392B' }]
-  return (
+  return createPortal(
     <div className="modal-overlay modal-fs" onClick={e => e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:440 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
@@ -512,7 +516,8 @@ export function SimModal({ sim, emps, station, onSave, onClose }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -567,7 +572,7 @@ export function SimBulkModal({ station, emps, onClose, onSave }) {
     } catch(e) { setErr(e.message) } finally { setSaving(false) }
   }
   const invalidRows = rows.filter(r => !r._ok)
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e => e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:560 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
@@ -645,7 +650,8 @@ export function SimBulkModal({ station, emps, onClose, onSave }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -805,7 +811,7 @@ export function WorkNumModal({ emp, station, sims, onSave, onClose }) {
       onSave()
     } catch { alert('Failed to remove') } finally { setSaving(false) }
   }
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e => e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:360 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
@@ -864,7 +870,8 @@ export function WorkNumModal({ emp, station, sims, onSave, onClose }) {
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -1313,7 +1320,7 @@ export function EmpDetailModal({ emp, sims, onClose }) {
   }
   const STATUS_C = { active:{c:'#2E7D52',bg:'#ECFDF5',bc:'#A7F3D0'}, on_leave:{c:'#B8860B',bg:'#FDF6E3',bc:'#F0D78C'}, inactive:{c:'#C0392B',bg:'#FEF2F2',bc:'#FCA5A5'} }
   const sc = STATUS_C[emp.status]||STATUS_C.active
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e => e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:480, maxHeight:'90vh', overflowY:'auto', padding:0 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'16px 20px', borderBottom:'1px solid var(--border)' }}>
@@ -1378,7 +1385,8 @@ export function EmpDetailModal({ emp, sims, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

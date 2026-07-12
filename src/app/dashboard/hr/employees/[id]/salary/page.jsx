@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useRouter } from 'next/navigation'
 import { empApi, payrollApi, API } from '@/lib/api'
 import { getEmp, setEmp as cacheEmp } from '@/lib/empCache'
@@ -48,7 +49,7 @@ function AddModal({ kind, empId, month, onClose, onSaved }) {
     } catch(e) { setErr(e.message) } finally { setSaving(false) }
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:420, padding:0, overflow:'hidden' }}>
         <div style={{ padding:'18px 20px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -77,7 +78,8 @@ function AddModal({ kind, empId, month, onClose, onSaved }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

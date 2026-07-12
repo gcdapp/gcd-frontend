@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '@/lib/auth'
 import { vehicleApi, vehicleInspectionApi } from '@/lib/api'
 import {
@@ -209,7 +210,7 @@ function InspectionModal({ vehicles, editInspection, onSave, onClose }) {
 
   const selectedVehicle = vehicles.find(v => v.id === vehicleId)
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 780, padding: 0, overflow: 'hidden', maxHeight: '96vh', display: 'flex', flexDirection: 'column' }}>
 
@@ -317,7 +318,8 @@ function InspectionModal({ vehicles, editInspection, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -444,7 +446,7 @@ function ViewModal({ inspection, onClose, onEdit, onDelete }) {
     </span>
   )
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth:740, padding:0, overflow:'hidden', maxHeight:'96vh', display:'flex', flexDirection:'column' }}>
 
@@ -538,7 +540,8 @@ function ViewModal({ inspection, onClose, onEdit, onDelete }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
