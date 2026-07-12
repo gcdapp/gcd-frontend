@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { empApi } from '@/lib/api'
 import { useSocket } from '@/lib/socket'
 import { useRouter } from 'next/navigation'
@@ -30,10 +31,11 @@ function CompletionRing({ pct, size=52, stroke=3 }) {
 
 /* ── Modal (Add DA only — Edit lives at hr/employees/[id]/edit) ──── */
 function EmpModal({ emp, onSave, onClose, mode }) {
-  return (
+  return createPortal(
     <div className="modal-overlay" style={{ zIndex:9999 }}>
       <EmpForm emp={emp} mode={mode} onSaved={onSave} onCancel={onClose} maxWidth={540}/>
-    </div>
+    </div>,
+    document.body
   )
 }
 
