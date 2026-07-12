@@ -77,7 +77,7 @@ function DownloadCard() {
         <div style={{ flex:1 }}>
           <div style={{ fontSize:13, fontWeight:600, color:'#1A1612' }}>What gets backed up</div>
           <div style={{ fontSize:11.5, color:'#A89880', marginTop:2 }}>
-            Employees · Users · Attendance · Payroll · Leaves · Expenses · Documents · Insurance · Compliance
+            Everything — Employees · Payroll · Petty Cash · Vehicles · SIMs · Handovers · Inspections · Customers · Tasks · Documents · Compliance, and 30+ other tables. Only login sessions (which regenerate automatically) are excluded.
           </div>
         </div>
       </div>
@@ -156,7 +156,7 @@ function RestoreCard() {
       <div style={{ display:'flex', gap:10, padding:'12px 14px', borderRadius:12, background:'#FFFBEB', border:'1px solid #FDE68A', marginBottom:20 }}>
         <AlertTriangle size={16} color="#D97706" style={{ flexShrink:0, marginTop:1 }}/>
         <div style={{ fontSize:12, color:'#92400E', lineHeight:1.6 }}>
-          <strong>This will overwrite all existing data</strong> in employees, users, attendance, payroll, leaves, and other backed-up tables. This action cannot be undone. Make sure you have a fresh backup before proceeding.
+          <strong>This will overwrite virtually all existing data</strong> — employees, payroll, petty cash, vehicles, customers, and every other backed-up table. This action cannot be undone. Make sure you have a fresh backup before proceeding.
         </div>
       </div>
 
@@ -251,7 +251,7 @@ function RestoreCard() {
       <div style={{ display:'flex', gap:8, marginTop:16, padding:'10px 12px', borderRadius:10, background:'#F0F4FF', border:'1px solid #C7D2FE' }}>
         <Info size={13} color="#4F46E5" style={{ flexShrink:0, marginTop:1 }}/>
         <p style={{ fontSize:11, color:'#3730A3', margin:0, lineHeight:1.6 }}>
-          Tables not included in the backup (vehicles, SIMs, customers, etc.) are left untouched. Only the 15 core operational tables are replaced.
+          Only login sessions are excluded from both backup and restore — they're tied to specific sign-ins and regenerate automatically next time someone logs in. Every other table is replaced.
         </p>
       </div>
     </div>
