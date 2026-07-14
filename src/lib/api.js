@@ -84,6 +84,8 @@ export const payrollApi = {
   addUnitsBulk:   (month, records, project_type) => api.post('/api/payroll/units/bulk', { month, records, project_type }),
   pendingDeduction: (emp_id, month) => api.get(`/api/payroll/pending-deduction/${emp_id}?month=${month}`),
   getEntry:       (emp_id, month) => api.get(`/api/payroll/entry/${emp_id}?month=${month}`),
+  deleteEntry:      (emp_id, month) => api.delete(`/api/payroll/entry/${emp_id}?month=${month}`),
+  deleteEntriesBulk:(emp_ids, month) => api.post('/api/payroll/entries/delete-bulk', { emp_ids, month }),
 }
 
 // Leaves

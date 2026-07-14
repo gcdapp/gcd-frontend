@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth'
 import { useSocket } from '@/lib/socket'
 import {
   Plus, X, Download, Check, Search, Wallet, FileText,
-  AlertCircle, Users, ChevronDown, Undo2, UploadCloud
+  AlertCircle, Users, ChevronDown, Undo2, UploadCloud, Pencil, Trash2
 } from 'lucide-react'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import {
@@ -495,7 +495,7 @@ const SHEET_DEDUCTION_FIELDS = [
 const emptySheetFields = () => ({perfBonus:'',incentive:'',otherAddition:'',eidOt:'',trafficFine:'',cashAdvance:'',cashVariance:'',absentDaysDed:'',others:''})
 
 const PROJECT_TYPE_LABELS = { staff:'Staff/Admin', pulser:'Pulser', cret:'CRET', tradelink:'Tradelink', external:'External' }
-function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
+function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onClose}) {
   const isStaff     = projectType === 'staff'
   const isExternal  = projectType === 'external'
   const isCret      = projectType === 'cret'
@@ -574,6 +574,12 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
     finally { setLoadingEntry(false) }
   }
 
+  // Opened as "Edit" from an existing payroll row — jump straight to that employee's
+  // entry instead of making the accountant reselect them from the dropdown.
+  useEffect(() => { if (initialEmpId) pickEmp(initialEmpId) },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [])
+
   const fieldMap = { perfBonus:'performance_bonus', incentive:'incentive', otherAddition:'other_addition', eidOt:'eid_ot',
     trafficFine:'traffic_fine', cashAdvance:'cash_advance', cashVariance:'cash_variance', absentDaysDed:'absent_days', others:'others' }
 
@@ -614,7 +620,7 @@ function AddUnitsModal({employees, month, projectType, onSave, onClose}) {
       <div className="modal" style={{maxWidth:480,maxHeight:'85vh',padding:0,overflow:'hidden',display:'flex',flexDirection:'column'}}>
         <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(184,134,11,0.1),transparent)',flexShrink:0}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <div><h3 style={{fontWeight:900,fontSize:16,color:'var(--text)',margin:0}}>Add {label} Pay</h3><p style={{fontSize:12,color:'var(--text-muted)',marginTop:2}}>{month}</p></div>
+            <div><h3 style={{fontWeight:900,fontSize:16,color:'var(--text)',margin:0}}>{initialEmpId?'Edit':'Add'} {label} Pay</h3><p style={{fontSize:12,color:'var(--text-muted)',marginTop:2}}>{month}</p></div>
             <button onClick={onClose} style={{width:28,height:28,borderRadius:'50%',background:'rgba(0,0,0,0.06)',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={13}/></button>
           </div>
         </div>
@@ -1046,18 +1052,23 @@ const PAY_CSS = `
 `
 
 /* ── Payroll Card ── */
-const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, markingPaid, onEditSalary, onRemoveDed, onRemoveBonus, month, index, canPay}) {
+const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, markingPaid, onEditSalary, onRemoveDed, onRemoveBonus, onEditEntry, onDeleteEntry, month, index, canPay, selectMode, selectedIds, onToggleSelect}) {
   const [open,      setOpen]      = useState(false)
   const [payMethod, setPayMethod] = useState('bank')
   const calc   = slip._calc
   const net    = calc.net
   const isPaid = slip.payroll_status === 'paid'
   const role   = resolveRole(slip.role)
+  const selected = !!(selectMode && selectedIds?.has(slip.id))
 
   return (
-    <div className={`py-row ${isPaid ? 'py-row-paid' : 'py-row-pend'}`} style={{animationDelay:`${Math.min(index*0.03,0.4)}s`}}>
+    <div className={`py-row ${isPaid ? 'py-row-paid' : 'py-row-pend'}`} style={{animationDelay:`${Math.min(index*0.03,0.4)}s`, background: selected ? 'rgba(220,38,38,0.05)' : undefined}}>
       <div className="py-row-top"/>
-      <div className="py-row-inner" onClick={()=>setOpen(p=>!p)}>
+      <div className="py-row-inner" onClick={()=> selectMode ? onToggleSelect(slip.id) : setOpen(p=>!p)}>
+        {selectMode && (
+          <input type="checkbox" checked={selected} onChange={()=>onToggleSelect(slip.id)} onClick={e=>e.stopPropagation()}
+            style={{width:16,height:16,flexShrink:0,cursor:'pointer',accentColor:'#DC2626'}}/>
+        )}
         <div className="py-avatar">{slip.name?.slice(0,2).toUpperCase()}</div>
         <div className="py-info">
           <div className="py-name-row">
@@ -1119,6 +1130,18 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
               <Download size={11}/> CSV
             </button>
             <div className="py-spacer"/>
+            {canPay && (
+              <button onClick={()=>onEditEntry(slip)} className="py-act py-act-blue">
+                <Pencil size={11}/> Edit
+              </button>
+            )}
+            {canPay && (
+              <button onClick={()=>!isPaid&&onDeleteEntry(slip)} disabled={isPaid} className="py-act"
+                style={{color:isPaid?'var(--text-muted)':'#EF4444', borderColor:isPaid?'var(--border)':'rgba(239,68,68,0.3)', opacity:isPaid?0.55:1, cursor:isPaid?'not-allowed':'pointer'}}
+                title={isPaid?'Mark unpaid first to delete':'Remove from this month\'s payroll'}>
+                <Trash2 size={11}/> Delete
+              </button>
+            )}
             {canPay && !isPaid && (
               <button onClick={()=>!markingPaid&&onMarkPaid(slip)} disabled={markingPaid} className="py-pay-btn">
                 {markingPaid ? <><span className="py-spin"/> Saving…</> : <><Check size={11}/> Mark Paid</>}
@@ -1179,13 +1202,14 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
 /* ── Section ── */
 const SECTION_PAGE_SIZE = 20
 
-function Section({title, slips, onMarkAllPaid, ...cardProps}) {
+function Section({title, slips, onMarkAllPaid, selectMode, selectedIds, onToggleSelect, onEnterSelect, onExitSelect, onSelectAll, onClear, onBulkDelete, bulkDeleting, ...cardProps}) {
   const [page, setPage] = useState(1)
   useEffect(() => { setPage(1) }, [slips])
 
-  const unpaidCount = slips.filter(s=>s.payroll_status!=='paid').length
-  const totalPages  = Math.max(1, Math.ceil(slips.length / SECTION_PAGE_SIZE))
-  const pageSlips   = slips.slice((page-1)*SECTION_PAGE_SIZE, page*SECTION_PAGE_SIZE)
+  const unpaidCount   = slips.filter(s=>s.payroll_status!=='paid').length
+  const totalPages    = Math.max(1, Math.ceil(slips.length / SECTION_PAGE_SIZE))
+  const pageSlips      = slips.slice((page-1)*SECTION_PAGE_SIZE, page*SECTION_PAGE_SIZE)
+  const selectedCount = selectedIds ? selectedIds.size : 0
 
   return (
     <>
@@ -1195,15 +1219,40 @@ function Section({title, slips, onMarkAllPaid, ...cardProps}) {
           {title}
           <span className="py-sec-count">{slips.length}</span>
         </div>
-        {cardProps.canPay && unpaidCount > 0 && (
-          <button className="py-sec-mark" onClick={()=>onMarkAllPaid(slips)}>
-            <Check size={11}/> Mark All Paid ({unpaidCount})
-          </button>
-        )}
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          {cardProps.canPay && slips.length > 0 && (
+            <button className="py-sec-mark"
+              style={selectMode ? {color:'var(--text-muted)',background:'transparent',borderColor:'var(--border)'} : undefined}
+              onClick={()=> selectMode ? onExitSelect() : onEnterSelect()}>
+              {selectMode ? 'Cancel' : 'Select'}
+            </button>
+          )}
+          {cardProps.canPay && unpaidCount > 0 && !selectMode && (
+            <button className="py-sec-mark" onClick={()=>onMarkAllPaid(slips)}>
+              <Check size={11}/> Mark All Paid ({unpaidCount})
+            </button>
+          )}
+        </div>
       </div>
+      {selectMode && (
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,padding:'10px 14px',background:'#FEF2F2',border:'1px solid #FCA5A5',borderRadius:10,marginTop:8,flexWrap:'wrap'}}>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <span style={{fontSize:12.5,fontWeight:700,color:'#DC2626'}}>{selectedCount} selected</span>
+            {selectedCount < slips.length && (
+              <button onClick={()=>onSelectAll(slips)} style={{fontSize:11.5,fontWeight:600,color:'var(--text-muted)',background:'none',border:'none',cursor:'pointer',textDecoration:'underline',padding:0}}>Select all {slips.length}</button>
+            )}
+            <button onClick={onClear} style={{fontSize:11.5,fontWeight:600,color:'var(--text-muted)',background:'none',border:'none',cursor:'pointer',textDecoration:'underline',padding:0}}>Clear</button>
+          </div>
+          <button onClick={onBulkDelete} disabled={!selectedCount||bulkDeleting}
+            style={{display:'flex',alignItems:'center',gap:6,padding:'7px 14px',borderRadius:8,border:'none',background:selectedCount?'#DC2626':'var(--border)',color:'white',fontWeight:700,fontSize:12,cursor:selectedCount&&!bulkDeleting?'pointer':'not-allowed',fontFamily:'inherit'}}>
+            <Trash2 size={12}/> {bulkDeleting?'Deleting…':`Delete${selectedCount?` ${selectedCount}`:''}`}
+          </button>
+        </div>
+      )}
       <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:8}}>
         {pageSlips.map((slip,i)=>(
-          <PayrollCard key={slip.id||slip.emp_id} slip={slip} index={i} {...cardProps}/>
+          <PayrollCard key={slip.id||slip.emp_id} slip={slip} index={i}
+            selectMode={selectMode} selectedIds={selectedIds} onToggleSelect={onToggleSelect} {...cardProps}/>
         ))}
       </div>
       {totalPages > 1 && (
@@ -1232,6 +1281,9 @@ export default function PayrollPage() {
   const [confirmDlg,  setConfirmDlg]  = useState(null)
   const [markingPaid, setMarkingPaid] = useState(new Set())
   const [bulkMethod,  setBulkMethod]  = useState('bank')
+  const [entrySelectMode,   setEntrySelectMode]   = useState(false)
+  const [selectedEntryIds,  setSelectedEntryIds]  = useState(new Set())
+  const [bulkEntryDeleting, setBulkEntryDeleting] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -1303,6 +1355,47 @@ export default function PayrollPage() {
       },
     })
   }
+  function editEntry(slip) {
+    setModal({type:'addUnits', projectType: isDriverRole(slip) ? (slip.project_type||'pulser') : 'staff', initialEmpId: slip.id})
+  }
+  function deleteEntry(slip) {
+    setConfirmDlg({
+      title:`Remove ${slip.name} from ${month} payroll?`,
+      message:`This removes their payroll entry for ${month}. Bonuses/deductions added via the standalone buttons are not affected.`,
+      confirmLabel:'Delete', danger:true,
+      onConfirm:async()=>{
+        setConfirmDlg(null)
+        try{await payrollApi.deleteEntry(slip.id,month);load()}
+        catch(e){alert(e.message)}
+      },
+    })
+  }
+  function toggleEntrySelect(id) {
+    setSelectedEntryIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+  function exitEntrySelectMode() { setEntrySelectMode(false); setSelectedEntryIds(new Set()) }
+  function handleBulkDeleteEntries() {
+    if (!selectedEntryIds.size) return
+    const count = selectedEntryIds.size
+    setConfirmDlg({
+      title:`Remove ${count} ${count!==1?'entries':'entry'} from ${month} payroll?`,
+      message:`Paid entries are skipped — mark them unpaid first if you need to remove those too.`,
+      confirmLabel:'Delete', danger:true,
+      onConfirm:async()=>{
+        setConfirmDlg(null)
+        setBulkEntryDeleting(true)
+        try {
+          const res = await payrollApi.deleteEntriesBulk([...selectedEntryIds], month)
+          if (res.failures?.length) alert(`${res.deleted} removed, ${res.failures.length} skipped:\n`+res.failures.map(f=>`${f.emp_id}: ${f.reason}`).join('\n'))
+        } catch(e) { alert(e.message) }
+        finally { setBulkEntryDeleting(false); exitEntrySelectMode(); load() }
+      },
+    })
+  }
 
   // Wire the real Pulser (hourly) / CRET (per-shipment) formula in everywhere —
   // slipData() was previously only used for the printable payslip.
@@ -1335,7 +1428,10 @@ export default function PayrollPage() {
   })), [filtered])
   const pieData = [{name:'Earned',value:totalEarned,color:'#B8860B'},{name:'Bonus',value:totalBonus,color:'#10B981'},{name:'Deductions',value:totalDed,color:'#EF4444'}].filter(d=>d.value>0)
 
-  const cardProps = {month, onMarkPaid:markPaidSlip, onMarkUnpaid:markUnpaidSlip, onEditSalary:s=>setModal({type:'salary',emp:s}), onRemoveDed:removeDed, onRemoveBonus:removeBonus, canPay}
+  const cardProps = {month, onMarkPaid:markPaidSlip, onMarkUnpaid:markUnpaidSlip, onEditSalary:s=>setModal({type:'salary',emp:s}), onRemoveDed:removeDed, onRemoveBonus:removeBonus, onEditEntry:editEntry, onDeleteEntry:deleteEntry, canPay}
+
+  // Selection is scoped to whichever tab/month is on screen — switching either clears it.
+  useEffect(() => { exitEntrySelectMode() }, [payTab, month])
 
   return (
     <>
@@ -1461,7 +1557,12 @@ export default function PayrollPage() {
             {activeTabSlips.length > 0 ? (
               <Section title={PAY_TABS.find(([v])=>v===payTab)[1]}
                 slips={activeTabSlips} onMarkAllPaid={markAllPaidInGroup} {...cardProps}
-                markingPaid={(id)=>markingPaid.has(id)}/>
+                markingPaid={(id)=>markingPaid.has(id)}
+                selectMode={entrySelectMode} selectedIds={selectedEntryIds} onToggleSelect={toggleEntrySelect}
+                onEnterSelect={()=>setEntrySelectMode(true)} onExitSelect={exitEntrySelectMode}
+                onSelectAll={(slips)=>setSelectedEntryIds(new Set(slips.map(s=>s.id)))}
+                onClear={()=>setSelectedEntryIds(new Set())}
+                onBulkDelete={handleBulkDeleteEntries} bulkDeleting={bulkEntryDeleting}/>
             ) : (
               <div style={{textAlign:'center',padding:'40px 20px',color:'var(--text-muted)',background:'var(--card)',border:'1px solid var(--border)',borderRadius:12}}>
                 <Wallet size={28} style={{margin:'0 auto 10px',display:'block',opacity:0.2}}/>
@@ -1475,7 +1576,7 @@ export default function PayrollPage() {
         {modal==='bonus'        && <BonusModal     employees={employees} month={month} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
         {modal==='deduction'    && <DeductionModal employees={employees} month={month} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
         {modal?.type==='salary' && <SalaryModal    emp={modal.emp}       onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
-        {modal?.type==='addUnits' && <AddUnitsModal employees={employees} month={month} projectType={modal.projectType} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
+        {modal?.type==='addUnits' && <AddUnitsModal employees={employees} month={month} projectType={modal.projectType} initialEmpId={modal.initialEmpId} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
         {modal?.type==='bulkUnits' && <BulkUnitsModal month={month} projectType={modal.projectType} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
 
         <ConfirmDialog
