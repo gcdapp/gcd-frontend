@@ -1094,7 +1094,9 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
         <div className="py-expanded">
           <div className="py-actions">
             {!calc.isExternal && (
-              <button onClick={()=>onEditSalary(slip)} className="py-act">
+              <button onClick={()=>!isPaid&&onEditSalary(slip)} disabled={isPaid} className="py-act"
+                style={isPaid?{opacity:0.55,cursor:'not-allowed'}:undefined}
+                title={isPaid?'Mark unpaid first to edit':undefined}>
                 <Wallet size={11}/> {calc.hasOverride ? 'Salary' : 'Base'}: AED {fmt(calc.base)}
               </button>
             )}
@@ -1131,7 +1133,9 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
             </button>
             <div className="py-spacer"/>
             {canPay && (
-              <button onClick={()=>onEditEntry(slip)} className="py-act py-act-blue">
+              <button onClick={()=>!isPaid&&onEditEntry(slip)} disabled={isPaid} className="py-act py-act-blue"
+                style={isPaid?{opacity:0.55,cursor:'not-allowed'}:undefined}
+                title={isPaid?'Mark unpaid first to edit':undefined}>
                 <Pencil size={11}/> Edit
               </button>
             )}
@@ -1165,7 +1169,9 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
                   </div>
                   <div className="py-item-r">
                     <span className="py-item-amt py-item-amt-bon">+AED {fmt(b.amount)}</span>
-                    <button onClick={()=>onRemoveBonus(b.id,b.type)} className="py-rm">×</button>
+                    <button onClick={()=>!isPaid&&onRemoveBonus(b.id,b.type)} disabled={isPaid} className="py-rm"
+                      style={isPaid?{opacity:0.4,cursor:'not-allowed'}:undefined}
+                      title={isPaid?'Mark unpaid first to remove':undefined}>×</button>
                   </div>
                 </div>
               ))}
