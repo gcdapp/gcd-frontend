@@ -411,7 +411,7 @@ export default function DriverDashboardPage() {
                 {serviceDays > 0 && <span style={{ fontSize:10, color:'rgba(255,255,255,0.4)', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:99, padding:'2px 8px' }}>{serviceStr}</span>}
               </div>
             </div>
-            {userRole !== 'accountant' && (
+            {['admin','accountant'].includes(userRole) && (
               <button onClick={()=>router.push(`/dashboard/hr/employees/${id}/edit`)} style={{ padding:'8px 18px', borderRadius:10, background:'#B8860B', color:'white', fontWeight:700, fontSize:12.5, border:'none', cursor:'pointer', fontFamily:'Poppins,sans-serif', boxShadow:'0 2px 10px rgba(184,134,11,0.4)', display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
                 <Pencil size={12}/> Edit
               </button>

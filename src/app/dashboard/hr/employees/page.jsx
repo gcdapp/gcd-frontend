@@ -108,16 +108,18 @@ function EmpCard({ emp, onEdit, onDelete, index, userRole }) {
             {emp.work_number || '—'}
           </div>
         </div>
-        {userRole !== 'accountant' && (
+        {['admin','accountant'].includes(userRole) && (
           <div style={{ display:'flex', gap:4, flexShrink:0 }}>
             <button onClick={e=>{e.preventDefault();e.stopPropagation();onEdit(emp)}}
               style={{ width:30, height:30, borderRadius:8, background:'var(--bg-alt)', border:'1px solid var(--border)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-sub)' }}>
               <Pencil size={11}/>
             </button>
-            <button onClick={e=>{e.preventDefault();e.stopPropagation();onDelete(emp)}}
-              style={{ width:30, height:30, borderRadius:8, background:'var(--red-bg)', border:'1px solid var(--red-border)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--red)' }}>
-              <Trash2 size={11}/>
-            </button>
+            {userRole === 'admin' && (
+              <button onClick={e=>{e.preventDefault();e.stopPropagation();onDelete(emp)}}
+                style={{ width:30, height:30, borderRadius:8, background:'var(--red-bg)', border:'1px solid var(--red-border)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--red)' }}>
+                <Trash2 size={11}/>
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -258,12 +260,14 @@ export default function EmployeesPage() {
               value={search} onChange={e=>setSearch(e.target.value)}/>
             {search && <button onClick={()=>setSearch('')} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:0, display:'flex' }}><X size={13}/></button>}
           </div>
-          <button onClick={()=>setModal({mode:'add',emp:null})}
-            style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background var(--t-fast)' }}
-            onMouseEnter={e=>e.currentTarget.style.background='#9a7209'}
-            onMouseLeave={e=>e.currentTarget.style.background='#B8860B'}>
-            <Plus size={14}/> Add DA
-          </button>
+          {['admin','accountant'].includes(userRole) && (
+            <button onClick={()=>setModal({mode:'add',emp:null})}
+              style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background var(--t-fast)' }}
+              onMouseEnter={e=>e.currentTarget.style.background='#9a7209'}
+              onMouseLeave={e=>e.currentTarget.style.background='#B8860B'}>
+              <Plus size={14}/> Add DA
+            </button>
+          )}
         </div>
 
         <div style={{ display:'flex', gap:3, background:'var(--bg-alt)', borderRadius:14, padding:3 }}>
