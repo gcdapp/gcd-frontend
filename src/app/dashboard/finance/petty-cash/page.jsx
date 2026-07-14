@@ -38,6 +38,33 @@ function monthLabel(dateStr) {
   return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
 }
 
+// YYYY-MM key for grouping/filtering — computed in UTC to match monthLabel above,
+// since dates arrive as bare YYYY-MM-DD (parsed as UTC midnight).
+function monthKey(dateStr) {
+  const d = new Date(dateStr)
+  return isNaN(d) ? '' : d.toISOString().slice(0, 7)
+}
+
+// For a bare "YYYY-MM" key (e.g. from the /all/months endpoint, which has no
+// full date to build a Date from) — turns "2026-07" into "July 2026".
+function monthKeyLabel(key) {
+  const m = String(key || '').match(/^(\d{4})-(\d{2})$/)
+  if (!m) return key || ''
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, 1))
+  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+}
+
+function MonthFilterSelect({ months, value, onChange }) {
+  if (!months.length) return null
+  return (
+    <select value={value} onChange={e => onChange(e.target.value)}
+      style={{ fontSize:11.5, fontWeight:600, color:'var(--text)', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:8, padding:'5px 8px', fontFamily:'inherit', cursor:'pointer', outline:'none' }}>
+      <option value="all">All Months</option>
+      {months.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
+    </select>
+  )
+}
+
 function Lbl({ children }) {
   return (
     <label style={{ display:'block', fontSize:10.5, fontWeight:700, letterSpacing:'0.07em', textTransform:'uppercase', color:'var(--text-muted)', marginBottom:5 }}>
@@ -657,6 +684,7 @@ function UserDetailPanel({ userId, userName, userRole, onBack, canDelete, driver
   const [selectMode,   setSelectMode]   = useState(false)
   const [selectedIds,  setSelectedIds]  = useState(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [monthFilter, setMonthFilter] = useState('all')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -667,6 +695,22 @@ function UserDetailPanel({ userId, userName, userRole, onBack, canDelete, driver
   }, [userId])
 
   useEffect(() => { load() }, [load])
+  // Drilling into a different user should not carry over the previous user's month filter/selection.
+  useEffect(() => { setMonthFilter('all'); setSelectedIds(new Set()) }, [userId])
+
+  const months = useMemo(() => {
+    const seen = new Map()
+    for (const r of data?.records || []) {
+      const k = monthKey(r.date)
+      if (k && !seen.has(k)) seen.set(k, monthLabel(r.date))
+    }
+    return [...seen.entries()].map(([key, label]) => ({ key, label }))
+  }, [data?.records])
+
+  const filteredRecords = useMemo(() => {
+    const recs = data?.records || []
+    return monthFilter === 'all' ? recs : recs.filter(r => monthKey(r.date) === monthFilter)
+  }, [data?.records, monthFilter])
 
   async function handleDelete(id) {
     if (!confirm('Delete this record?')) return
@@ -731,18 +775,21 @@ function UserDetailPanel({ userId, userName, userRole, onBack, canDelete, driver
 
       {/* Transactions card */}
       <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden' }}>
-        <div style={{ padding:'13px 16px', borderBottom:'1px solid var(--border)', fontWeight:700, fontSize:13, color:'var(--text)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ padding:'13px 16px', borderBottom:'1px solid var(--border)', fontWeight:700, fontSize:13, color:'var(--text)', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:8 }}>
           <span>Transaction History</span>
-          {canDelete && data?.records?.length > 0 && (
-            <button onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
-              style={{ fontSize:11.5, fontWeight:700, color: selectMode?'var(--text-muted)':'#DC2626', background:'none', border:'none', cursor:'pointer', fontFamily:'inherit' }}>
-              {selectMode ? 'Cancel' : 'Select'}
-            </button>
-          )}
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <MonthFilterSelect months={months} value={monthFilter} onChange={setMonthFilter}/>
+            {canDelete && filteredRecords.length > 0 && (
+              <button onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
+                style={{ fontSize:11.5, fontWeight:700, color: selectMode?'var(--text-muted)':'#DC2626', background:'none', border:'none', cursor:'pointer', fontFamily:'inherit' }}>
+                {selectMode ? 'Cancel' : 'Select'}
+              </button>
+            )}
+          </div>
         </div>
         {selectMode && (
-          <BulkSelectBar count={selectedIds.size} total={data?.records?.length||0}
-            onSelectAll={() => setSelectedIds(new Set(data.records.map(r=>r.id)))}
+          <BulkSelectBar count={selectedIds.size} total={filteredRecords.length}
+            onSelectAll={() => setSelectedIds(new Set(filteredRecords.map(r=>r.id)))}
             onClear={() => setSelectedIds(new Set())}
             onDelete={handleBulkDelete} deleting={bulkDeleting}/>
         )}
@@ -750,8 +797,10 @@ function UserDetailPanel({ userId, userName, userRole, onBack, canDelete, driver
           <div style={{ padding:32, textAlign:'center', color:'var(--text-muted)', fontSize:13 }}>Loading…</div>
         ) : !data?.records?.length ? (
           <div style={{ padding:40, textAlign:'center', color:'var(--text-muted)', fontSize:13 }}>No transactions yet</div>
+        ) : !filteredRecords.length ? (
+          <div style={{ padding:40, textAlign:'center', color:'var(--text-muted)', fontSize:13 }}>No transactions in this month</div>
         ) : (
-          data.records.map(r => (
+          filteredRecords.map(r => (
             <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDelete} onEdit={setEditRecord}
               selectMode={selectMode} selected={selectedIds.has(r.id)} onToggleSelect={toggleSelect}/>
           ))
@@ -788,6 +837,9 @@ export default function PettyCashPage() {
   const [recentSelectMode,   setRecentSelectMode]   = useState(false)
   const [recentSelectedIds,  setRecentSelectedIds]  = useState(new Set())
   const [recentBulkDeleting, setRecentBulkDeleting] = useState(false)
+  const [recentMonth,  setRecentMonth]  = useState('all')
+  const [recentMonths, setRecentMonths] = useState([])
+  const [myMonthFilter, setMyMonthFilter] = useState('all')
 
   const canGiveCash = ['admin','accountant'].includes(user?.role)
   const canViewTeam = ['admin','accountant','general_manager','manager'].includes(user?.role)
@@ -825,22 +877,37 @@ export default function PettyCashPage() {
 
   useEffect(() => { load() }, [load])
 
-  const loadRecent = useCallback(async (page = 1) => {
+  const loadRecent = useCallback(async (page = 1, month = recentMonth) => {
     setRecentLoading(true)
     try {
-      const res  = await fetch(`${API}/api/petty-cash/all?page=${page}&limit=20`, { headers: hdr() })
+      const params = new URLSearchParams({ page, limit: 20 })
+      if (month && month !== 'all') params.set('month', month)
+      const res  = await fetch(`${API}/api/petty-cash/all?${params}`, { headers: hdr() })
       const data = await res.json()
       setRecentData(data)
       setRecentPage(data.page || page)
     } catch {} finally { setRecentLoading(false) }
-  }, [])
+  }, [recentMonth])
 
   const activeTab = tab || (isCashManager ? 'recent' : 'my')
 
   useEffect(() => {
-    if (isCashManager && activeTab === 'recent') loadRecent(recentPage)
+    if (isCashManager && activeTab === 'recent') {
+      loadRecent(recentPage)
+      if (!recentMonths.length) {
+        fetch(`${API}/api/petty-cash/all/months`, { headers: hdr() })
+          .then(r => r.json()).then(d => setRecentMonths(d.months || []))
+          .catch(() => {})
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCashManager, activeTab])
+
+  function handleRecentMonthChange(m) {
+    setRecentMonth(m)
+    setRecentSelectedIds(new Set())
+    loadRecent(1, m)
+  }
 
   async function handleDeleteMy(id) {
     if (!confirm('Delete this record?')) return
@@ -906,6 +973,25 @@ export default function PettyCashPage() {
     const q = search.toLowerCase()
     return summary.filter(u => u.name.toLowerCase().includes(q))
   }, [summary, search])
+
+  const myMonths = useMemo(() => {
+    const seen = new Map()
+    for (const r of myData?.records || []) {
+      const k = monthKey(r.date)
+      if (k && !seen.has(k)) seen.set(k, monthLabel(r.date))
+    }
+    return [...seen.entries()].map(([key, label]) => ({ key, label }))
+  }, [myData?.records])
+
+  const myFilteredRecords = useMemo(() => {
+    const recs = myData?.records || []
+    return myMonthFilter === 'all' ? recs : recs.filter(r => monthKey(r.date) === myMonthFilter)
+  }, [myData?.records, myMonthFilter])
+
+  const recentMonthOptions = useMemo(
+    () => recentMonths.map(k => ({ key: k, label: monthKeyLabel(k) })),
+    [recentMonths]
+  )
 
   if (loading) return (
     <div>
@@ -1031,12 +1117,13 @@ export default function PettyCashPage() {
           {/* ── Recent Entries (admin/accountant) ── */}
           {activeTab === 'recent' && isCashManager && (
             <div>
-              <div style={{ padding:'13px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid var(--border)' }}>
+              <div style={{ padding:'13px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid var(--border)', flexWrap:'wrap', gap:8 }}>
                 <span style={{ fontWeight:700, fontSize:13, color:'var(--text)' }}>Recent Entries</span>
                 <div style={{ display:'flex', alignItems:'center', gap:12 }}>
                   {recentData?.total > 0 && (
                     <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>{recentData.total} records</span>
                   )}
+                  <MonthFilterSelect months={recentMonthOptions} value={recentMonth} onChange={handleRecentMonthChange}/>
                   {canDelete && recentData?.records?.length > 0 && (
                     <button onClick={() => recentSelectMode ? exitRecentSelectMode() : setRecentSelectMode(true)}
                       style={{ fontSize:11.5, fontWeight:700, color: recentSelectMode?'var(--text-muted)':'#DC2626', background:'none', border:'none', cursor:'pointer', fontFamily:'inherit' }}>
@@ -1058,8 +1145,8 @@ export default function PettyCashPage() {
               ) : !recentData?.records?.length ? (
                 <div style={{ padding:'52px 20px', textAlign:'center', color:'var(--text-muted)' }}>
                   <Wallet size={36} style={{ margin:'0 auto 14px', display:'block', opacity:0.12 }}/>
-                  <div style={{ fontWeight:600, fontSize:13 }}>No transactions yet</div>
-                  <div style={{ fontSize:11, marginTop:4 }}>{isAccountant ? 'Give cash to a team member to get started' : 'Record an expense or give cash to get started'}</div>
+                  <div style={{ fontWeight:600, fontSize:13 }}>{recentMonth === 'all' ? 'No transactions yet' : 'No transactions in this month'}</div>
+                  <div style={{ fontSize:11, marginTop:4 }}>{recentMonth !== 'all' ? 'Try a different month' : isAccountant ? 'Give cash to a team member to get started' : 'Record an expense or give cash to get started'}</div>
                 </div>
               ) : (
                 (() => {
@@ -1090,13 +1177,14 @@ export default function PettyCashPage() {
           {/* ── My Balance ── */}
           {activeTab === 'my' && !isCashManager && (
             <div>
-              <div style={{ padding:'13px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid var(--border)' }}>
+              <div style={{ padding:'13px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', borderBottom:'1px solid var(--border)', flexWrap:'wrap', gap:8 }}>
                 <span style={{ fontWeight:700, fontSize:13, color:'var(--text)' }}>Transaction History</span>
                 <div style={{ display:'flex', alignItems:'center', gap:12 }}>
                   {myData?.records?.length > 0 && (
-                    <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>{myData.records.length} records</span>
+                    <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>{myFilteredRecords.length} records</span>
                   )}
-                  {canDelete && myData?.records?.length > 0 && (
+                  <MonthFilterSelect months={myMonths} value={myMonthFilter} onChange={setMyMonthFilter}/>
+                  {canDelete && myFilteredRecords.length > 0 && (
                     <button onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
                       style={{ fontSize:11.5, fontWeight:700, color: selectMode?'var(--text-muted)':'#DC2626', background:'none', border:'none', cursor:'pointer', fontFamily:'inherit' }}>
                       {selectMode ? 'Cancel' : 'Select'}
@@ -1105,8 +1193,8 @@ export default function PettyCashPage() {
                 </div>
               </div>
               {selectMode && (
-                <BulkSelectBar count={selectedIds.size} total={myData?.records?.length||0}
-                  onSelectAll={() => setSelectedIds(new Set(myData.records.map(r=>r.id)))}
+                <BulkSelectBar count={selectedIds.size} total={myFilteredRecords.length}
+                  onSelectAll={() => setSelectedIds(new Set(myFilteredRecords.map(r=>r.id)))}
                   onClear={() => setSelectedIds(new Set())}
                   onDelete={handleBulkDelete} deleting={bulkDeleting}/>
               )}
@@ -1116,8 +1204,14 @@ export default function PettyCashPage() {
                   <div style={{ fontWeight:600, fontSize:13 }}>No transactions yet</div>
                   <div style={{ fontSize:11, marginTop:4 }}>Record an expense or receive cash to get started</div>
                 </div>
+              ) : !myFilteredRecords.length ? (
+                <div style={{ padding:'52px 20px', textAlign:'center', color:'var(--text-muted)' }}>
+                  <Wallet size={36} style={{ margin:'0 auto 14px', display:'block', opacity:0.12 }}/>
+                  <div style={{ fontWeight:600, fontSize:13 }}>No transactions in this month</div>
+                  <div style={{ fontSize:11, marginTop:4 }}>Try a different month</div>
+                </div>
               ) : (
-                myData.records.map(r => (
+                myFilteredRecords.map(r => (
                   <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDeleteMy} onEdit={setEditRecord}
                     selectMode={selectMode} selected={selectedIds.has(r.id)} onToggleSelect={toggleSelect}/>
                 ))
