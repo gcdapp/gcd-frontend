@@ -89,6 +89,7 @@ function ExpensesPageInner() {
   const [modal,       setModal]       = useState(null)
   const [search,      setSearch]      = useState('')
   const [catFilter,   setCatFilter]   = useState('all')
+  const [statusFilter,setStatusFilter]= useState('all')
   const [empFilter,   setEmpFilter]   = useState(searchParams.get('emp_id') || 'all')
   const [sortBy,      setSortBy]      = useState('date')
   const [sortDir,     setSortDir]     = useState('desc')
@@ -150,7 +151,8 @@ function ExpensesPageInner() {
       return (
         (!search || (e.emp_name || '').toLowerCase().includes(q) || (e.description || '').toLowerCase().includes(q)) &&
         (catFilter === 'all' || e.category === catFilter) &&
-        (empFilter === 'all' || e.emp_id === empFilter)
+        (empFilter === 'all' || e.emp_id === empFilter) &&
+        (statusFilter === 'all' || e.status === statusFilter)
       )
     })
     return [...list].sort((a, b) => {
@@ -161,9 +163,9 @@ function ExpensesPageInner() {
       else                          cmp = new Date(a.date || a.created_at) - new Date(b.date || b.created_at)
       return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [expenses, search, catFilter, empFilter, sortBy, sortDir])
+  }, [expenses, search, catFilter, empFilter, statusFilter, sortBy, sortDir])
 
-  useEffect(() => { setPage(1) }, [search, catFilter, empFilter, sortBy, sortDir, month])
+  useEffect(() => { setPage(1) }, [search, catFilter, empFilter, statusFilter, sortBy, sortDir, month])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated  = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page])
@@ -232,22 +234,33 @@ function ExpensesPageInner() {
             </div>
           </div>
 
-          {/* KPI tiles */}
+          {/* KPI tiles — Total/Approved/Pending double as status filters; click again to clear */}
           <div className="ex-kpi">
             {[
-              { label: 'Total',     val: `AED ${fmt(total)}`,        color: '#F5F5F5',  sub: `${expenses.length} records`    },
-              { label: 'Approved',  val: `AED ${fmt(approvedAmt)}`,  color: '#4ADE80',  sub: `${expenses.filter(e=>e.status==='approved').length} entries` },
-              { label: 'Pending',   val: pendingCount,               color: '#FBBF24',  sub: 'awaiting approval'             },
+              { label: 'Total',     val: `AED ${fmt(total)}`,        color: '#F5F5F5',  sub: `${expenses.length} records`, filterValue: 'all' },
+              { label: 'Approved',  val: `AED ${fmt(approvedAmt)}`,  color: '#4ADE80',  sub: `${expenses.filter(e=>e.status==='approved').length} entries`, filterValue: 'approved' },
+              { label: 'Pending',   val: pendingCount,               color: '#FBBF24',  sub: 'awaiting approval', filterValue: 'pending' },
               { label: 'Employees', val: byEmp.length,               color: '#A78BFA',  sub: 'with expenses'                 },
-            ].map(k => (
-              <div key={k.label} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '14px 16px' }}>
-                <div style={{ fontSize: 24, fontWeight: 800, color: k.color, lineHeight: 1.1 }}>
-                  {loading ? <span style={{ opacity: 0.25 }}>—</span> : k.val}
+            ].map(k => {
+              const isActive = k.filterValue && statusFilter === k.filterValue
+              return (
+                <div key={k.label}
+                  onClick={k.filterValue ? () => setStatusFilter(s => s === k.filterValue ? 'all' : k.filterValue) : undefined}
+                  style={{
+                    background: isActive ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+                    border: `1px solid ${isActive ? k.color : 'rgba(255,255,255,0.08)'}`,
+                    borderRadius: 12, padding: '14px 16px',
+                    cursor: k.filterValue ? 'pointer' : 'default',
+                    transition: 'background 0.15s, border-color 0.15s',
+                  }}>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: k.color, lineHeight: 1.1 }}>
+                    {loading ? <span style={{ opacity: 0.25 }}>—</span> : k.val}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 4 }}>{k.label}</div>
+                  {!loading && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', marginTop: 2 }}>{k.sub}</div>}
                 </div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 4 }}>{k.label}</div>
-                {!loading && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', marginTop: 2 }}>{k.sub}</div>}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
@@ -436,6 +449,12 @@ function ExpensesPageInner() {
           <select value={catFilter} onChange={e => setCatFilter(e.target.value)} className="ex-select">
             <option value="all">All Categories</option>
             {CATEGORIES.map(c => <option key={c.v} value={c.v}>{c.v}</option>)}
+          </select>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="ex-select">
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
           </select>
           <select value={sortBy} onChange={e => { setSortBy(e.target.value); setSortDir(SORT_DEFAULT_DIR[e.target.value] || 'desc') }} className="ex-select">
             <option value="date">Sort: Date</option>
