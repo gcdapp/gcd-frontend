@@ -45,6 +45,14 @@ function monthKey(dateStr) {
   return isNaN(d) ? '' : d.toISOString().slice(0, 7)
 }
 
+// Records come back from the API as full timestamps (e.g. "2026-07-14T00:00:00.000Z"),
+// not bare dates — display-format instead of ever printing the raw string.
+function fmtDate(dateStr) {
+  const d = new Date(dateStr)
+  if (isNaN(d)) return ''
+  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric', timeZone:'UTC' })
+}
+
 // For a bare "YYYY-MM" key (e.g. from the /all/months endpoint, which has no
 // full date to build a Date from) — turns "2026-07" into "July 2026".
 function monthKeyLabel(key) {
@@ -660,7 +668,7 @@ function TxRow({ record, canDelete, onDelete, onEdit, selectMode, selected, onTo
           )}
           {record.note && <span style={{ wordBreak:'break-word' }}>{record.note}</span>}
           {!record.note && !record.emp_name && (
-            <span>{isAlloc ? `From ${record.created_by_name||'Accountant'}` : record.date}</span>
+            <span>{isAlloc ? `From ${record.created_by_name||'Accountant'}` : fmtDate(record.date)}</span>
           )}
         </div>
       </div>
@@ -668,7 +676,7 @@ function TxRow({ record, canDelete, onDelete, onEdit, selectMode, selected, onTo
         <div style={{ fontSize:13, fontWeight:800, color: isAlloc ? '#22C55E' : '#EF4444' }}>
           {isAlloc ? '+' : '-'}{fmt(record.amount)}
         </div>
-        <div style={{ fontSize:10, color:'var(--text-muted)', marginTop:2 }}>{record.date}</div>
+        <div style={{ fontSize:10, color:'var(--text-muted)', marginTop:2 }}>{fmtDate(record.date)}</div>
       </div>
       {canDelete && !selectMode && (
         <div style={{ display:'flex', gap:2, flexShrink:0 }}>
