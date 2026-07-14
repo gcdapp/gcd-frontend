@@ -133,11 +133,11 @@ function DriverPicker({ drivers, value, onChange }) {
 }
 
 /* ── Expense Modal ──────────────────────────────────────────── */
-function ExpenseModal({ drivers, onSave, onClose }) {
+function ExpenseModal({ drivers, delegates, onSave, onClose }) {
   const [form, setForm] = useState({
     expense_type:'', amount:'', note:'',
     date: new Date().toISOString().slice(0,10),
-    emp_id: '',
+    emp_id: '', record_for: '',
   })
   const [saving, setSaving] = useState(false)
   const [err, setErr]       = useState(null)
@@ -151,7 +151,10 @@ function ExpenseModal({ drivers, onSave, onClose }) {
     try {
       const res = await fetch(`${API}/api/petty-cash/expense`, {
         method:'POST', headers: hdr(),
-        body: JSON.stringify({ expense_type:form.expense_type, amount:amt, note:form.note||null, date:form.date, emp_id:form.emp_id||null }),
+        body: JSON.stringify({
+          expense_type:form.expense_type, amount:amt, note:form.note||null, date:form.date, emp_id:form.emp_id||null,
+          ...(form.record_for ? { user_id: form.record_for } : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
@@ -189,6 +192,17 @@ function ExpenseModal({ drivers, onSave, onClose }) {
               {EXPENSE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
+          {delegates?.length > 0 && (
+            <div>
+              <Lbl>Record For</Lbl>
+              <select className="input" value={form.record_for} onChange={set('record_for')} style={{ borderRadius:10 }}>
+                <option value="">Myself</option>
+                {delegates.map(d => (
+                  <option key={d.id} value={d.id}>{d.name} — {ROLE_LABELS[d.role]||d.role}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
             <div>
               <Lbl>Amount (AED) *</Lbl>
@@ -821,6 +835,7 @@ export default function PettyCashPage() {
   const [summary,   setSummary]   = useState([])
   const [allUsers,  setAllUsers]  = useState([])
   const [drivers,   setDrivers]   = useState([])
+  const [delegates, setDelegates] = useState([])
   const [loading,   setLoading]   = useState(true)
   const [refreshing,setRefreshing]= useState(false)
   const [modal,     setModal]     = useState(null)
@@ -858,6 +873,7 @@ export default function PettyCashPage() {
       const fetches = [
         fetch(`${API}/api/petty-cash/my`, h).then(r => r.json()),
         fetch(`${API}/api/employees`, h).then(r => r.json()),
+        fetch(`${API}/api/petty-cash/my-delegates`, h).then(r => r.json()),
       ]
       if (canViewTeam) {
         fetches.push(
@@ -868,9 +884,10 @@ export default function PettyCashPage() {
       const results = await Promise.all(fetches)
       setMyData(results[0])
       setDrivers((results[1]?.employees||[]).filter(e => e.role === 'driver'))
+      setDelegates(results[2]?.delegates||[])
       if (canViewTeam) {
-        setSummary(results[2]?.summary||[])
-        setAllUsers((results[3]?.users||[]).filter(u => u.role !== 'driver' && u.id !== user?.id))
+        setSummary(results[3]?.summary||[])
+        setAllUsers((results[4]?.users||[]).filter(u => u.role !== 'driver' && u.id !== user?.id))
       }
     } catch {} finally { setLoading(false); setRefreshing(false) }
   }, [canViewTeam, user?.id])
@@ -1288,7 +1305,7 @@ export default function PettyCashPage() {
         </div>
       </div>
 
-      {modal==='expense' && <ExpenseModal drivers={drivers} onSave={() => { setModal(null); refreshAll() }} onClose={() => setModal(null)}/>}
+      {modal==='expense' && <ExpenseModal drivers={drivers} delegates={delegates} onSave={() => { setModal(null); refreshAll() }} onClose={() => setModal(null)}/>}
       {modal==='bulk'    && <BulkUploadModal drivers={drivers} onSave={() => { setModal(null); refreshAll() }} onClose={() => setModal(null)}/>}
       {modal==='give'    && <GiveCashModal users={allUsers} onSave={() => { setModal(null); refreshAll() }} onClose={() => setModal(null)}/>}
       {editRecord && <EditModal record={editRecord} drivers={drivers} onSave={() => { setEditRecord(null); refreshAll() }} onClose={() => setEditRecord(null)}/>}
