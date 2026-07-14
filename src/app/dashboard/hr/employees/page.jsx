@@ -258,14 +258,12 @@ export default function EmployeesPage() {
               value={search} onChange={e=>setSearch(e.target.value)}/>
             {search && <button onClick={()=>setSearch('')} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:0, display:'flex' }}><X size={13}/></button>}
           </div>
-          {userRole !== 'accountant' && (
-            <button onClick={()=>setModal({mode:'add',emp:null})}
-              style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background var(--t-fast)' }}
-              onMouseEnter={e=>e.currentTarget.style.background='#9a7209'}
-              onMouseLeave={e=>e.currentTarget.style.background='#B8860B'}>
-              <Plus size={14}/> Add DA
-            </button>
-          )}
+          <button onClick={()=>setModal({mode:'add',emp:null})}
+            style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background var(--t-fast)' }}
+            onMouseEnter={e=>e.currentTarget.style.background='#9a7209'}
+            onMouseLeave={e=>e.currentTarget.style.background='#B8860B'}>
+            <Plus size={14}/> Add DA
+          </button>
         </div>
 
         <div style={{ display:'flex', gap:3, background:'var(--bg-alt)', borderRadius:14, padding:3 }}>
