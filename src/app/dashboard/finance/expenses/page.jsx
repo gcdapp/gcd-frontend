@@ -169,7 +169,7 @@ function ExpensesPageInner() {
   const paginated  = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page])
 
   const canEdit     = ['accountant', 'admin', 'general_manager', 'manager'].includes(userRole)
-  const canApprove  = ['admin', 'manager', 'accountant'].includes(userRole)
+  const canApprove  = userRole === 'admin'
 
   async function del(id) {
     if (!confirm('Delete this expense?')) return

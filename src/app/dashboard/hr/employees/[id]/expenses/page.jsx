@@ -34,7 +34,7 @@ export default function DriverExpensesPage() {
   useEffect(() => { load() }, [load])
 
   const canEdit    = ['accountant','admin','general_manager','manager'].includes(userRole)
-  const canApprove = ['admin','manager','accountant'].includes(userRole)
+  const canApprove = userRole === 'admin'
 
   async function del(expId) {
     if (!confirm('Delete this expense?')) return
