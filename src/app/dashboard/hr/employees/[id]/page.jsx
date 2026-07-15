@@ -230,8 +230,9 @@ export default function DriverDashboardPage() {
   const [fleetLoad,   setFleetLoad]  = useState(false)
   const [attendance,  setAttendance] = useState([])
   const [attLoad,     setAttLoad]    = useState(true)
-  const [salarySnap,  setSalarySnap] = useState(null)
-  const [salaryLoad,  setSalaryLoad] = useState(true)
+  const [salarySnap,      setSalarySnap]      = useState(null)
+  const [salarySnapMonth, setSalarySnapMonth]  = useState(null)
+  const [salaryLoad,      setSalaryLoad]       = useState(true)
   const [tab,         setTab]        = useState('overview')
   const [isMobile,    setIsMobile]   = useState(false)
 
@@ -277,11 +278,30 @@ export default function DriverDashboardPage() {
     docApi.list({ emp_id: id }).then(d => setDocuments(d.documents || [])).catch(() => setDocuments([])).finally(() => setDocsLoad(false))
   }, [id])
 
-  // Eager — feeds the Salary snapshot tile
+  // Eager — feeds the Salary snapshot tile. Most DAs don't get this month's payroll
+  // entered until partway through the month, so a bare "current month" lookup shows
+  // "No record" for weeks even though last month's salary is sitting right there —
+  // walk backward until a month with an entry turns up.
   useEffect(() => {
-    setSalaryLoad(true)
-    const month = new Date().toISOString().slice(0, 7)
-    payrollApi.list({ emp_id: id, month }).then(d => setSalarySnap((d.payroll || [])[0] || null)).catch(() => setSalarySnap(null)).finally(() => setSalaryLoad(false))
+    let cancelled = false
+    async function loadSalary() {
+      setSalaryLoad(true)
+      const now = new Date()
+      for (let i = 0; i < 12; i++) {
+        const month = new Date(now.getFullYear(), now.getMonth() - i, 1).toISOString().slice(0, 7)
+        try {
+          const d = await payrollApi.list({ emp_id: id, month })
+          const row = (d.payroll || [])[0]
+          if (row) {
+            if (!cancelled) { setSalarySnap(row); setSalarySnapMonth(month) }
+            return
+          }
+        } catch { /* try the previous month */ }
+      }
+      if (!cancelled) { setSalarySnap(null); setSalarySnapMonth(null) }
+    }
+    loadSalary().finally(() => { if (!cancelled) setSalaryLoad(false) })
+    return () => { cancelled = true }
   }, [id])
 
   // Lazy — only Fleet tab needs this
@@ -379,6 +399,11 @@ export default function DriverDashboardPage() {
   const expTotal    = expenses.reduce((s, e) => s + Number(e.amount || 0), 0)
   const docsExpiring = documents.filter(d => { const st = expiryStatus(d.expires_at); return st && st.days <= 60 }).length
   const netSnap = salarySnap ? Number(salarySnap.net_pay || (Number(salarySnap.base_salary||0) + Number(salarySnap.bonus_total||0) - Number(salarySnap.deduction_total||0))) : null
+  const currentMonth = new Date().toISOString().slice(0, 7)
+  const isSalarySnapCurrent = salarySnapMonth === currentMonth
+  const salarySnapMonthLabel = salarySnapMonth
+    ? new Date(salarySnapMonth + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })
+    : null
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14, fontFamily:'Poppins,sans-serif', animation:'slideUp 0.3s ease' }}>
@@ -458,7 +483,9 @@ export default function DriverDashboardPage() {
             onClick={()=>router.push(`/dashboard/hr/employees/${id}/documents`)}/>
           <SnapshotTile icon={Banknote} color="#059669" bg="var(--green-bg)" border="var(--green-border)"
             label="Salary" value={salaryLoad ? '…' : netSnap===null ? 'No record' : `AED ${netSnap.toLocaleString('en-US')}`}
-            sub={salaryLoad ? '' : salarySnap ? (salarySnap.payroll_status==='paid' ? 'Paid this month' : 'Pending payment') : `for ${new Date().toISOString().slice(0,7)}`}
+            sub={salaryLoad ? '' : salarySnap
+              ? `${salarySnap.payroll_status==='paid' ? 'Paid' : 'Pending'}${isSalarySnapCurrent ? ' this month' : ` · ${salarySnapMonthLabel}`}`
+              : `for ${currentMonth}`}
             onClick={()=>router.push(`/dashboard/hr/employees/${id}/salary`)}/>
         </div>
 
