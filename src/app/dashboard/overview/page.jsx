@@ -83,7 +83,7 @@ export default function OverviewPage() {
         if (isRefresh) setRefreshing(false)
       }).catch(() => { setFleetStats({ total:0, active:0, grounded:0, maintenance:0 }); setRefreshing(false) })
 
-    fetch(`${API}/api/analytics/expenses-chart?months=6`, h)
+    fetch(`${API}/api/analytics/expenses-chart?months=12`, h)
       .then(r => r.json()).then(d => { setExpChart(d.chart || []); setLoadingExpChart(false) })
       .catch(() => setLoadingExpChart(false))
 
@@ -335,7 +335,7 @@ export default function OverviewPage() {
         {/* ══ EXPENSE CHART ═════════════════════════════════════════ */}
         <div className="ov-card">
           <div style={{ padding:'20px 24px 0' }}>
-            <div className="ov-card-title">Expense Trend — Last 6 Months</div>
+            <div className="ov-card-title">Expense Trend — Last 12 Months</div>
             <div className="ov-card-sub">Total company spend by month</div>
           </div>
 
@@ -392,7 +392,7 @@ export default function OverviewPage() {
             return (
               <div style={{ display:'flex', borderTop:'1px solid var(--border)', background:'var(--bg-alt)' }}>
                 {[
-                  { label:'Total (6 months)',      value:`AED ${totalExp6.toLocaleString()}`,             c:'var(--text)' },
+                  { label:`Total (${expChart.length} month${expChart.length!==1?'s':''})`, value:`AED ${totalExp6.toLocaleString()}`, c:'var(--text)' },
                   { label:'Monthly Average',        value:`AED ${Math.round(avgExp6).toLocaleString()}`,   c:'#FCD34D' },
                   { label:`Peak Month (${peakLabel})`, value:`AED ${peak.total.toLocaleString()}`,          c:'#F59E0B' },
                 ].map(({ label, value, c }) => (
