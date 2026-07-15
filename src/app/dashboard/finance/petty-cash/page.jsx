@@ -865,6 +865,9 @@ export default function PettyCashPage() {
   const [myMonthFilter, setMyMonthFilter] = useState('all')
 
   const canGiveCash = ['admin','accountant'].includes(user?.role)
+  // Admin oversees petty cash rather than spending against it personally — no reason
+  // for them to record/upload expenses against their own (always-AED-0) balance.
+  const isAdmin = user?.role === 'admin'
   const canViewTeam = ['admin','accountant','general_manager','manager'].includes(user?.role)
   const canDelete   = ['admin','accountant'].includes(user?.role)
   // Admins/accountants distribute cash rather than hold it personally, so they get
@@ -1092,38 +1095,65 @@ export default function PettyCashPage() {
                   <HandCoins size={14}/> Give Cash
                 </button>
               )}
-              <button onClick={() => setModal('expense')}
-                style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'1px solid rgba(184,134,11,0.5)', cursor:'pointer', background:'rgba(184,134,11,0.15)', color:'#D4A017', fontWeight:700, fontSize:13, fontFamily:'Poppins,sans-serif', whiteSpace:'nowrap' }}>
-                <Receipt size={14}/> Record Expense
-              </button>
-              <button onClick={() => setModal('bulk')}
-                style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'1px solid rgba(255,255,255,0.15)', cursor:'pointer', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.85)', fontWeight:700, fontSize:13, fontFamily:'Poppins,sans-serif', whiteSpace:'nowrap' }}>
-                <UploadCloud size={14}/> Bulk Upload
-              </button>
+              {!isAdmin && (
+                <button onClick={() => setModal('expense')}
+                  style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'1px solid rgba(184,134,11,0.5)', cursor:'pointer', background:'rgba(184,134,11,0.15)', color:'#D4A017', fontWeight:700, fontSize:13, fontFamily:'Poppins,sans-serif', whiteSpace:'nowrap' }}>
+                  <Receipt size={14}/> Record Expense
+                </button>
+              )}
+              {!isAdmin && (
+                <button onClick={() => setModal('bulk')}
+                  style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'1px solid rgba(255,255,255,0.15)', cursor:'pointer', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.85)', fontWeight:700, fontSize:13, fontFamily:'Poppins,sans-serif', whiteSpace:'nowrap' }}>
+                  <UploadCloud size={14}/> Bulk Upload
+                </button>
+              )}
             </div>
           </div>
 
-          {/* KPI tiles */}
+          {/* KPI tiles — admin doesn't hold petty cash personally, so show org-wide
+              totals here instead of a "My Balance" that's always AED 0 for them. */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
-            <div style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'16px 18px' }}>
-              <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:7 }}>My Balance</div>
-              <div style={{ fontSize:21, fontWeight:900, color: isNeg?'#F87171':isZero?'#34D399':'#FBBF24', letterSpacing:'-0.03em', lineHeight:1 }}>
-                {isNeg?'-':''}{fmt(balance)}
-              </div>
-              <div style={{ fontSize:10.5, color:'rgba(255,255,255,0.35)', marginTop:5 }}>
-                {isNeg?'To account':isZero?'Fully accounted':'Cash in hand'}
-              </div>
-            </div>
-            <div style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'16px 18px' }}>
-              <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:7 }}>Received</div>
-              <div style={{ fontSize:21, fontWeight:900, color:'#34D399', letterSpacing:'-0.03em', lineHeight:1 }}>{fmt(myData?.total_allocated||0)}</div>
-              <div style={{ fontSize:10.5, color:'rgba(255,255,255,0.35)', marginTop:5 }}>Total cash in</div>
-            </div>
-            <div style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'16px 18px' }}>
-              <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:7 }}>Spent</div>
-              <div style={{ fontSize:21, fontWeight:900, color:'#F87171', letterSpacing:'-0.03em', lineHeight:1 }}>{fmt(myData?.total_spent||0)}</div>
-              <div style={{ fontSize:10.5, color:'rgba(255,255,255,0.35)', marginTop:5 }}>Total expenses</div>
-            </div>
+            {isAdmin ? (
+              <>
+                <div style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'16px 18px' }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:7 }}>Distributed</div>
+                  <div style={{ fontSize:21, fontWeight:900, color:'#34D399', letterSpacing:'-0.03em', lineHeight:1 }}>{fmt(totalAllocAll)}</div>
+                  <div style={{ fontSize:10.5, color:'rgba(255,255,255,0.35)', marginTop:5 }}>Given to team</div>
+                </div>
+                <div style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'16px 18px' }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:7 }}>Total Spent</div>
+                  <div style={{ fontSize:21, fontWeight:900, color:'#F87171', letterSpacing:'-0.03em', lineHeight:1 }}>{fmt(totalSpentAll)}</div>
+                  <div style={{ fontSize:10.5, color:'rgba(255,255,255,0.35)', marginTop:5 }}>Across the team</div>
+                </div>
+                <div style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'16px 18px' }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:7 }}>Unaccounted</div>
+                  <div style={{ fontSize:21, fontWeight:900, color: unaccounted>0?'#F87171':'#34D399', letterSpacing:'-0.03em', lineHeight:1 }}>{unaccounted}</div>
+                  <div style={{ fontSize:10.5, color:'rgba(255,255,255,0.35)', marginTop:5 }}>{unaccounted>0?'Team members owe balance':'All accounted for'}</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'16px 18px' }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:7 }}>My Balance</div>
+                  <div style={{ fontSize:21, fontWeight:900, color: isNeg?'#F87171':isZero?'#34D399':'#FBBF24', letterSpacing:'-0.03em', lineHeight:1 }}>
+                    {isNeg?'-':''}{fmt(balance)}
+                  </div>
+                  <div style={{ fontSize:10.5, color:'rgba(255,255,255,0.35)', marginTop:5 }}>
+                    {isNeg?'To account':isZero?'Fully accounted':'Cash in hand'}
+                  </div>
+                </div>
+                <div style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'16px 18px' }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:7 }}>Received</div>
+                  <div style={{ fontSize:21, fontWeight:900, color:'#34D399', letterSpacing:'-0.03em', lineHeight:1 }}>{fmt(myData?.total_allocated||0)}</div>
+                  <div style={{ fontSize:10.5, color:'rgba(255,255,255,0.35)', marginTop:5 }}>Total cash in</div>
+                </div>
+                <div style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'16px 18px' }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:7 }}>Spent</div>
+                  <div style={{ fontSize:21, fontWeight:900, color:'#F87171', letterSpacing:'-0.03em', lineHeight:1 }}>{fmt(myData?.total_spent||0)}</div>
+                  <div style={{ fontSize:10.5, color:'rgba(255,255,255,0.35)', marginTop:5 }}>Total expenses</div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
