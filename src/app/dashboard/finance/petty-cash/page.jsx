@@ -894,7 +894,7 @@ export default function PettyCashPage() {
       }
       const results = await Promise.all(fetches)
       setMyData(results[0])
-      setDrivers((results[1]?.employees||[]).filter(e => e.role === 'driver'))
+      setDrivers((results[1]?.employees||[]).filter(e => (e.role||'').toLowerCase() === 'driver'))
       setDelegates(results[2]?.delegates||[])
       if (canViewTeam) {
         setSummary(results[3]?.summary||[])
