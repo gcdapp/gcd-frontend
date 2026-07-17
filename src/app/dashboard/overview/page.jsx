@@ -103,15 +103,20 @@ export default function OverviewPage() {
 
   useEffect(() => { load() }, [load])
 
-  // Derived values
-  const totalExp    = expenses.reduce((s,e) => s + Number(e.amount||0), 0)
-  const pendingExp  = expenses.filter(e => e.status === 'pending').length
-  const approvedExp = expenses.filter(e => e.status === 'approved').reduce((s,e) => s + Number(e.amount||0), 0)
-  const rejectedExp = expenses.filter(e => e.status === 'rejected').length
+  // Derived values — exclude expenses dated later than today (e.g. a forward-dated
+  // advance) so these totals mean "spent so far this month," matching the Expense
+  // Trend chart below instead of silently disagreeing with it by whatever forward-
+  // dated amount happens to exist.
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const expensesSoFar = expenses.filter(e => (e.date || '').slice(0, 10) <= todayStr)
+  const totalExp    = expensesSoFar.reduce((s,e) => s + Number(e.amount||0), 0)
+  const pendingExp  = expensesSoFar.filter(e => e.status === 'pending').length
+  const approvedExp = expensesSoFar.filter(e => e.status === 'approved').reduce((s,e) => s + Number(e.amount||0), 0)
+  const rejectedExp = expensesSoFar.filter(e => e.status === 'rejected').length
 
   const byCat = ECATS.map(cat => ({
     name:  cat.v,
-    value: expenses.filter(e => e.category === cat.v).reduce((s,e) => s + Number(e.amount||0), 0),
+    value: expensesSoFar.filter(e => e.category === cat.v).reduce((s,e) => s + Number(e.amount||0), 0),
     color: cat.c,
   })).filter(c => c.value > 0).sort((a,b) => b.value - a.value)
 
