@@ -70,20 +70,17 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
       <aside className={`sidebar${collapsed?' collapsed':''}${mobileOpen?' mobile-open':''}`}>
 
         {/* ── Logo ── */}
-        <div className="sidebar-logo">
-          <div style={{ display:'flex', alignItems:'center', justifyContent: collapsed?'center':'space-between', gap:8 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10, overflow:'hidden', minWidth:0 }}>
-              {/* Logo image */}
-              <img src="/logo.webp" alt="GCD" style={{ flexShrink:0, width:collapsed?38:56, height:collapsed?38:56, borderRadius:10, objectFit:'contain', display:'block', transition:'width 0.2s,height 0.2s' }}/>
-            </div>
-            {/* Collapse toggle — desktop only */}
-            <button onClick={() => setCollapsed(p => !p)}
-              className="sidebar-collapse-btn"
-              style={{ flexShrink:0, width:26, height:26, borderRadius:8, border:'1px solid var(--border)', background:'var(--bg-alt)', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--text-muted)' }}
-              title={collapsed?'Expand':'Collapse'}>
-              {collapsed ? <ChevronRight size={13}/> : <ChevronLeft size={13}/>}
-            </button>
+        <div className="sidebar-logo" style={{ position:'relative' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <img src="/logo.webp" alt="GCD" style={{ flexShrink:0, width:collapsed?40:88, height:collapsed?40:88, borderRadius:12, objectFit:'contain', display:'block', transition:'width 0.2s,height 0.2s' }}/>
           </div>
+          {/* Collapse toggle — desktop only */}
+          <button onClick={() => setCollapsed(p => !p)}
+            className="sidebar-collapse-btn"
+            style={{ position:'absolute', top:8, right:8, flexShrink:0, width:26, height:26, borderRadius:8, border:'1px solid var(--border)', background:'var(--bg-alt)', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--text-muted)' }}
+            title={collapsed?'Expand':'Collapse'}>
+            {collapsed ? <ChevronRight size={13}/> : <ChevronLeft size={13}/>}
+          </button>
         </div>
 
         {/* ── User chip ── */}
