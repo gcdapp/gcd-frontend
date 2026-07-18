@@ -34,6 +34,8 @@ export default function DriverExpensesPage() {
   useEffect(() => { load() }, [load])
 
   const canEdit    = ['accountant','admin','general_manager','manager'].includes(userRole)
+  // POC can edit an entry but not delete it — same split as the main Expenses page.
+  const canEditRow = canEdit || userRole === 'poc'
   const canApprove = userRole === 'admin'
 
   async function del(expId) {
@@ -157,16 +159,18 @@ export default function DriverExpensesPage() {
                             <X size={11}/>
                           </button>
                         </>)}
-                        {canEdit && (<>
+                        {canEditRow && (
                           <button onClick={()=>setModal(ex)}
                             style={{ padding:'4px 11px', borderRadius:8, background:'var(--bg-alt)', border:'1px solid var(--border)', color:'var(--text)', fontWeight:600, fontSize:11.5, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:4 }}>
                             <Pencil size={10}/> Edit
                           </button>
+                        )}
+                        {canEdit && (
                           <button onClick={()=>del(ex.id)}
                             style={{ padding:'4px 9px', borderRadius:8, background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.18)', color:'#EF4444', cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center' }}>
                             <Trash2 size={11}/>
                           </button>
-                        </>)}
+                        )}
                       </div>
                     </div>
                   </div>

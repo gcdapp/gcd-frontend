@@ -175,6 +175,9 @@ function ExpensesPageInner() {
   const paginated  = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page])
 
   const canEdit     = ['accountant', 'admin', 'general_manager', 'manager'].includes(userRole)
+  // POC can edit their own logged entries, but not add new ones directly here (they
+  // already have that via Petty Cash > Record Expense) or delete — same split as Payroll.
+  const canEditRow  = canEdit || userRole === 'poc'
   const canApprove  = userRole === 'admin'
 
   async function del(id) {
@@ -571,17 +574,17 @@ function ExpensesPageInner() {
                               </button>
                             </>
                           )}
+                          {canEditRow && (
+                            <button onClick={() => setModal(exp)}
+                              style={{ padding: '4px 11px', borderRadius: 8, background: 'var(--bg-alt)', border: '1px solid var(--border)', color: 'var(--text)', fontWeight: 600, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4, transition: 'background 0.15s' }}>
+                              <Pencil size={10}/> Edit
+                            </button>
+                          )}
                           {canEdit && (
-                            <>
-                              <button onClick={() => setModal(exp)}
-                                style={{ padding: '4px 11px', borderRadius: 8, background: 'var(--bg-alt)', border: '1px solid var(--border)', color: 'var(--text)', fontWeight: 600, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4, transition: 'background 0.15s' }}>
-                                <Pencil size={10}/> Edit
-                              </button>
-                              <button onClick={() => del(exp.id)}
-                                style={{ padding: '4px 9px', borderRadius: 8, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)', color: '#EF4444', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
-                                <Trash2 size={11}/>
-                              </button>
-                            </>
+                            <button onClick={() => del(exp.id)}
+                              style={{ padding: '4px 9px', borderRadius: 8, background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)', color: '#EF4444', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', transition: 'background 0.15s' }}>
+                              <Trash2 size={11}/>
+                            </button>
                           )}
                         </div>
                       </div>
