@@ -25,10 +25,14 @@ function hdr(json = true) {
   if (json) h['Content-Type'] = 'application/json'
   return h
 }
-function fmt(n) { return Number(n || 0).toLocaleString('en-AE', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) }
+function fmt(n) { return Number(n || 0).toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
 function getUserRole() {
   try { const t = localStorage.getItem('gcd_token'); return t ? JSON.parse(atob(t.split('.')[1])).role : null } catch { return null }
 }
+// Petty-cash/payroll mirrors append an internal "[pcref:ID]"/"[ref:ID]" tag to an
+// expense's description so the backend can find and clean it up later — never meant
+// to be user-facing. Strip it for display only; the stored description keeps the tag.
+function stripRefTag(desc) { return (desc || '').replace(/\s*\[(?:pcref|ref):[^\]]*\]\s*$/, '').trim() }
 
 // ── CSS ───────────────────────────────────────────────────────────
 const CSS = `
@@ -533,7 +537,7 @@ function ExpensesPageInner() {
                           </div>
                           {exp.description && (
                             <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 280 }}>
-                              {exp.description}
+                              {stripRefTag(exp.description)}
                             </div>
                           )}
                         </div>

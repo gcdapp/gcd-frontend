@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { empApi, expenseApi, API } from '@/lib/api'
 import { getEmp, setEmp as cacheEmp } from '@/lib/empCache'
-import { hdr, getUserRole, fmt } from '@/lib/employees'
+import { hdr, getUserRole, fmt, stripRefTag } from '@/lib/employees'
 import PageHero from '@/components/employees/PageHero'
 import BackLink from '@/components/employees/BackLink'
 import ExpenseModal, { CAT_MAP } from '@/components/expenses/ExpenseModal'
@@ -137,7 +137,7 @@ export default function DriverExpensesPage() {
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8 }}>
                       <div style={{ minWidth:0 }}>
                         <div style={{ fontSize:11, color:cat.c, fontWeight:700 }}>{ex.category}</div>
-                        {ex.description && <div style={{ fontSize:12.5, color:'var(--text)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:320 }}>{ex.description}</div>}
+                        {ex.description && <div style={{ fontSize:12.5, color:'var(--text)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:320 }}>{stripRefTag(ex.description)}</div>}
                       </div>
                       <div style={{ textAlign:'right', flexShrink:0 }}>
                         <div style={{ fontWeight:900, fontSize:17, color:'var(--text)', letterSpacing:'-0.03em' }}>AED {fmt(ex.amount)}</div>

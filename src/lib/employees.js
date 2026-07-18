@@ -23,7 +23,12 @@ export const STATUS = {
 
 export function hdr() { return { 'Content-Type':'application/json', Authorization:`Bearer ${localStorage.getItem('gcd_token')}` } }
 export function getUserRole() { try { const t = localStorage.getItem('gcd_token'); return t ? JSON.parse(atob(t.split('.')[1])).role : null } catch { return null } }
-export function fmt(n) { return Number(n||0).toLocaleString('en-AE', { maximumFractionDigits: 0 }) }
+export function fmt(n) { return Number(n||0).toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
+
+// Petty-cash/payroll mirrors append an internal "[pcref:ID]"/"[ref:ID]" tag to an
+// expense's description so the backend can find and clean it up later — never meant
+// to be user-facing. Strip it for display only; the stored description keeps the tag.
+export function stripRefTag(desc) { return (desc || '').replace(/\s*\[(?:pcref|ref):[^\]]*\]\s*$/, '').trim() }
 
 export function docDays(d) {
   if (!d) return null
