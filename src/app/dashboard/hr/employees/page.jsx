@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { empApi } from '@/lib/api'
 import { useSocket } from '@/lib/socket'
+import { useAuth } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import EmpForm from '@/components/employees/EmpForm'
@@ -130,10 +131,11 @@ function EmpCard({ emp, onEdit, onDelete, index, userRole }) {
 /* ══ MAIN PAGE ═══════════════════════════════════════════════ */
 export default function EmployeesPage() {
   const router = useRouter()
+  const { user } = useAuth()
   const [allEmployees, setAllEmployees] = useState([])
   const [loading,      setLoading]      = useState(true)
   const [search,       setSearch]       = useState('')
-  const [station,      setStation]      = useState('All')
+  const [filterValue,  setFilterValue]  = useState('All')
   const [filterTab,    setFilterTab]    = useState('all')
   const [modal,        setModal]        = useState(null)
   const [userRole,     setUserRole]     = useState(null)
@@ -141,6 +143,12 @@ export default function EmployeesPage() {
   useEffect(() => {
     try { const t=localStorage.getItem('gcd_token'); if(t){const p=JSON.parse(atob(t.split('.')[1]));setUserRole(p.role)} } catch(e){}
   }, [])
+
+  // A manager scoped to specific non-Amazon client projects (assigned_projects set)
+  // has no use for the DDB1/DXE6 Amazon-station toggle — show their actual projects
+  // instead, filtering by project_type rather than station_code.
+  const isProjectScoped = Array.isArray(user?.assigned_projects) && user.assigned_projects.length > 0
+  const filterOptions = isProjectScoped ? user.assigned_projects : ['DDB1','DXE6']
 
   const load = useCallback(async () => {
     try {
@@ -154,9 +162,12 @@ export default function EmployeesPage() {
 
   useEffect(() => { load() }, [load])
 
-  const stationEmps = useMemo(() =>
-    station==='All' ? allEmployees : allEmployees.filter(e=>e.station_code===station)
-  , [allEmployees, station])
+  const stationEmps = useMemo(() => {
+    if (filterValue==='All') return allEmployees
+    return isProjectScoped
+      ? allEmployees.filter(e=>e.project_type===filterValue)
+      : allEmployees.filter(e=>e.station_code===filterValue)
+  }, [allEmployees, filterValue, isProjectScoped])
 
   const active  = stationEmps.filter(e=>e.status==='active').length
   const onLeave = stationEmps.filter(e=>e.status==='on_leave').length
@@ -217,15 +228,15 @@ export default function EmployeesPage() {
 
         <PageHero icon={Users} title="DAs" subtitle="Delivery Associates — assignments & profiles"
           actions={<>
-            <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-              {['DDB1','DXE6'].map(st => (
-                <button key={st} onClick={()=>setStation(station===st?'All':st)}
-                  style={{ padding:'5px 14px', borderRadius:20, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:12, transition:'all var(--t-fast)',
-                    background: station===st ? '#3B82F6' : 'rgba(255,255,255,0.08)',
-                    color: station===st ? 'white' : 'rgba(255,255,255,0.55)',
-                    boxShadow: station===st ? '0 2px 8px rgba(59,130,246,0.4)' : 'none',
+            <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
+              {filterOptions.map(opt => (
+                <button key={opt} onClick={()=>setFilterValue(filterValue===opt?'All':opt)}
+                  style={{ padding:'5px 14px', borderRadius:20, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:12, transition:'all var(--t-fast)', whiteSpace:'nowrap',
+                    background: filterValue===opt ? '#3B82F6' : 'rgba(255,255,255,0.08)',
+                    color: filterValue===opt ? 'white' : 'rgba(255,255,255,0.55)',
+                    boxShadow: filterValue===opt ? '0 2px 8px rgba(59,130,246,0.4)' : 'none',
                   }}>
-                  {st}
+                  {isProjectScoped ? projectLabel(opt) : opt}
                 </button>
               ))}
             </div>

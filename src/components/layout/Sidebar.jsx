@@ -52,8 +52,16 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
 
   function toggle(href) { setExpanded(p => ({ ...p, [href]: !p[href] })) }
 
+  // A manager restricted to specific non-Amazon client projects (assigned_projects set)
+  // has no use for Amazon-operations screens like Fleet/Deliveries/Expenses — those are
+  // marked hideIfScoped so they only show for unrestricted accounts.
+  const isProjectScoped = Array.isArray(user?.assigned_projects) && user.assigned_projects.length > 0
+
   // Filter out manager role from nav visibility — admin handles everything manager did
-  const nav = NAV.filter(item => !item.roles || item.roles.includes(user?.role))
+  const nav = NAV.filter(item =>
+    (!item.roles || item.roles.includes(user?.role)) &&
+    !(item.hideIfScoped && isProjectScoped)
+  )
 
   // Active: exact match, OR prefix match only when no sibling nav item is a closer match
   const navHrefs = nav.filter(n => n.href).map(n => n.href)
