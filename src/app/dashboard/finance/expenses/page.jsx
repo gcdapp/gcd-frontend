@@ -125,20 +125,28 @@ function ExpensesPageInner() {
   useSocket({ 'expense:created': load, 'expense:updated': load })
 
   // ── All computed values memoized ──────────────────────────────
-  const { total, approvedAmt, pendingCount, byCat, byEmp } = useMemo(() => {
-    const total       = expenses.reduce((s, e) => s + Number(e.amount || 0), 0)
-    const approvedAmt = expenses.filter(e => e.status === 'approved').reduce((s, e) => s + Number(e.amount || 0), 0)
-    const pendingCount = expenses.filter(e => e.status === 'pending').length
+  // Exclude expenses dated later than today (e.g. a forward-dated advance) so these
+  // totals mean "spent so far this month" — matches the Overview page's hero KPI,
+  // which reads the same data but was disagreeing with this page by whatever
+  // forward-dated amount happened to exist.
+  const { total, approvedAmt, approvedCount, pendingCount, byCat, byEmp, soFarCount } = useMemo(() => {
+    const todayStr = new Date().toISOString().slice(0, 10)
+    const expensesSoFar = expenses.filter(e => (e.date || '').slice(0, 10) <= todayStr)
+
+    const total       = expensesSoFar.reduce((s, e) => s + Number(e.amount || 0), 0)
+    const approvedAmt = expensesSoFar.filter(e => e.status === 'approved').reduce((s, e) => s + Number(e.amount || 0), 0)
+    const approvedCount = expensesSoFar.filter(e => e.status === 'approved').length
+    const pendingCount = expensesSoFar.filter(e => e.status === 'pending').length
 
     const byCat = CATEGORIES.map(cat => ({
       name: cat.v, short: cat.v.split(' ')[0], Icon: cat.I,
-      value: expenses.filter(e => e.category === cat.v).reduce((s, e) => s + Number(e.amount || 0), 0),
+      value: expensesSoFar.filter(e => e.category === cat.v).reduce((s, e) => s + Number(e.amount || 0), 0),
       color: cat.c,
     })).filter(c => c.value > 0).sort((a, b) => b.value - a.value)
 
     // Build from expense records — no employees API needed
     const empMap = {}
-    for (const exp of expenses) {
+    for (const exp of expensesSoFar) {
       const name = exp.emp_name || exp.emp_id || 'Company Expense'
       if (!empMap[name]) empMap[name] = { name, id: exp.emp_id, value: 0, count: 0 }
       empMap[name].value += Number(exp.amount || 0)
@@ -146,7 +154,7 @@ function ExpensesPageInner() {
     }
     const byEmp = Object.values(empMap).sort((a, b) => b.value - a.value)
 
-    return { total, approvedAmt, pendingCount, byCat, byEmp }
+    return { total, approvedAmt, pendingCount, byCat, byEmp, soFarCount: expensesSoFar.length }
   }, [expenses])
 
   const filtered = useMemo(() => {
@@ -222,7 +230,7 @@ function ExpensesPageInner() {
             <div>
               <div style={{ fontWeight: 900, fontSize: 20, color: 'white', letterSpacing: '-0.02em', lineHeight: 1.1 }}>Expenses</div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 3 }}>
-                {loading ? 'Loading…' : `${expenses.length} record${expenses.length !== 1 ? 's' : ''} · AED ${fmt(total)} this month`}
+                {loading ? 'Loading…' : `${soFarCount} record${soFarCount !== 1 ? 's' : ''} · AED ${fmt(total)} this month`}
               </div>
             </div>
             <div className="ex-hero-actions" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -244,8 +252,8 @@ function ExpensesPageInner() {
           {/* KPI tiles — Total/Approved/Pending double as status filters; click again to clear */}
           <div className="ex-kpi">
             {[
-              { label: 'Total',     val: `AED ${fmt(total)}`,        color: '#F5F5F5',  sub: `${expenses.length} records`, filterValue: 'all' },
-              { label: 'Approved',  val: `AED ${fmt(approvedAmt)}`,  color: '#4ADE80',  sub: `${expenses.filter(e=>e.status==='approved').length} entries`, filterValue: 'approved' },
+              { label: 'Total',     val: `AED ${fmt(total)}`,        color: '#F5F5F5',  sub: `${soFarCount} records`, filterValue: 'all' },
+              { label: 'Approved',  val: `AED ${fmt(approvedAmt)}`,  color: '#4ADE80',  sub: `${approvedCount} entries`, filterValue: 'approved' },
               { label: 'Pending',   val: pendingCount,               color: '#FBBF24',  sub: 'awaiting approval', filterValue: 'pending' },
               { label: 'Employees', val: byEmp.length,               color: '#A78BFA',  sub: 'with expenses'                 },
             ].map(k => {
