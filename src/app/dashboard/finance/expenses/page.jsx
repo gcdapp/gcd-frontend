@@ -200,16 +200,23 @@ function ExpensesPageInner() {
   }
 
   function exportCSV() {
+    // Expenses with no linked employee (or an employee with no station_code — e.g. a
+    // "Company Expense") have no emp_station, so they can't land in a DDB1/DXE6 column.
+    // Without an explicit bucket for them, the station columns silently undercount
+    // against Total with no way to tell why. An "Unassigned" column reconciles it.
     const stations = [...new Set(expenses.map(e => e.emp_station).filter(Boolean))].sort()
-    const rows = [['Expense Type', ...stations, 'Total']]
+    const cols = [...stations, 'Unassigned']
+    const rows = [['Expense Type', ...cols, 'Total']]
     for (const cat of CATEGORIES) {
       const exps = expenses.filter(e => e.category === cat.v)
       if (!exps.length) continue
       const sTotals = stations.map(st => exps.filter(e => e.emp_station === st).reduce((s, e) => s + Number(e.amount || 0), 0))
-      rows.push([cat.v, ...sTotals.map(v => v || ''), exps.reduce((s, e) => s + Number(e.amount || 0), 0)])
+      const unassigned = exps.filter(e => !e.emp_station).reduce((s, e) => s + Number(e.amount || 0), 0)
+      rows.push([cat.v, ...sTotals.map(v => v || ''), unassigned || '', exps.reduce((s, e) => s + Number(e.amount || 0), 0)])
     }
     const colTotals = stations.map(st => expenses.filter(e => e.emp_station === st).reduce((s, e) => s + Number(e.amount || 0), 0))
-    rows.push(['Total', ...colTotals.map(v => v || ''), expenses.reduce((s, e) => s + Number(e.amount || 0), 0)])
+    const unassignedTotal = expenses.filter(e => !e.emp_station).reduce((s, e) => s + Number(e.amount || 0), 0)
+    rows.push(['Total', ...colTotals.map(v => v || ''), unassignedTotal || '', expenses.reduce((s, e) => s + Number(e.amount || 0), 0)])
     const csv = rows.map(r => r.join(',')).join('\n')
     const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = `expenses-${month}.csv`; a.click()
   }
@@ -379,14 +386,20 @@ function ExpensesPageInner() {
 
         {/* ── Costwise Summary Table ── */}
         {!loading && expenses.length > 0 && (() => {
-          const stations   = [...new Set(expenses.map(e => e.emp_station).filter(Boolean))].sort()
+          // Expenses with no linked employee (or an employee with no station_code — e.g.
+          // a "Company Expense") have no emp_station, so DDB1/DXE6 alone would silently
+          // undercount against Total with no way to tell why. "Unassigned" reconciles it.
+          const stations     = [...new Set(expenses.map(e => e.emp_station).filter(Boolean))].sort()
+          const hasUnassigned = expenses.some(e => !e.emp_station)
           const catRows    = CATEGORIES.filter(cat => expenses.some(e => e.category === cat.v))
           const catTotals  = catRows.map(cat => ({
             cat,
             sts: stations.map(st => expenses.filter(e => e.category === cat.v && e.emp_station === st).reduce((s, e) => s + Number(e.amount || 0), 0)),
+            unassigned: expenses.filter(e => e.category === cat.v && !e.emp_station).reduce((s, e) => s + Number(e.amount || 0), 0),
             row: expenses.filter(e => e.category === cat.v).reduce((s, e) => s + Number(e.amount || 0), 0),
           }))
-          const colTotals  = stations.map(st => expenses.filter(e => e.emp_station === st).reduce((s, e) => s + Number(e.amount || 0), 0))
+          const colTotals      = stations.map(st => expenses.filter(e => e.emp_station === st).reduce((s, e) => s + Number(e.amount || 0), 0))
+          const unassignedTotal = expenses.filter(e => !e.emp_station).reduce((s, e) => s + Number(e.amount || 0), 0)
           const grandTotal = expenses.reduce((s, e) => s + Number(e.amount || 0), 0)
           if (!catRows.length) return null
           const TH = { padding: '10px 14px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg-alt)', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap', textAlign: 'right' }
@@ -409,11 +422,12 @@ function ExpensesPageInner() {
                     <tr>
                       <th style={{ ...TH, textAlign: 'left', position: 'sticky', left: 0, zIndex: 1, minWidth: 160 }}>Expense Type</th>
                       {stations.map(st => <th key={st} style={TH}>{st}</th>)}
+                      {hasUnassigned && <th style={TH} title="No linked employee, or their station isn't set">Unassigned</th>}
                       <th style={{ ...TH, color: '#FBBF24' }}>Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {catTotals.map(({ cat, sts, row }) => (
+                    {catTotals.map(({ cat, sts, unassigned, row }) => (
                       <tr key={cat.v}
                         onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-alt)'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
@@ -428,6 +442,11 @@ function ExpensesPageInner() {
                             {v > 0 ? fmt(v) : '—'}
                           </td>
                         ))}
+                        {hasUnassigned && (
+                          <td style={{ ...TD, color: unassigned > 0 ? 'var(--text-muted)' : 'var(--text-muted)', opacity: unassigned > 0 ? 1 : 0.4 }}>
+                            {unassigned > 0 ? fmt(unassigned) : '—'}
+                          </td>
+                        )}
                         <td style={{ ...TD, fontWeight: 800, color: '#FBBF24' }}>{fmt(row)}</td>
                       </tr>
                     ))}
@@ -438,6 +457,9 @@ function ExpensesPageInner() {
                       {colTotals.map((v, i) => (
                         <td key={stations[i]} style={{ ...TD, background: 'var(--bg-alt)', fontWeight: 700, color: '#FBBF24' }}>{v > 0 ? fmt(v) : '—'}</td>
                       ))}
+                      {hasUnassigned && (
+                        <td style={{ ...TD, background: 'var(--bg-alt)', fontWeight: 700, color: 'var(--text-muted)' }}>{unassignedTotal > 0 ? fmt(unassignedTotal) : '—'}</td>
+                      )}
                       <td style={{ ...TD, background: 'var(--bg-alt)', fontWeight: 900, color: '#FBBF24', fontSize: 14 }}>{fmt(grandTotal)}</td>
                     </tr>
                   </tfoot>
