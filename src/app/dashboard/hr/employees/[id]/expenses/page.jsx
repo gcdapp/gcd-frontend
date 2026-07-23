@@ -147,7 +147,7 @@ export default function DriverExpensesPage() {
                       </div>
                     </div>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:10, paddingTop:8, borderTop:'1px solid var(--border)' }}>
-                      <span style={{ fontSize:11, color:'var(--text-muted)' }}>{ex.date?.slice(0,10)}</span>
+                      <span style={{ fontSize:11, color:'var(--text-muted)' }}>{ex.date?.slice(0,10)} · by {ex.created_by_name || 'Unknown'}</span>
                       <div style={{ display:'flex', gap:5 }}>
                         {canApprove && isPending && (<>
                           <button onClick={()=>setStatus(ex.id,'approved')}

@@ -618,6 +618,7 @@ function ExpensesPageInner() {
                           <span>{exp.date?.slice(0, 10)}</span>
                           {exp.month && <span>· {exp.month}</span>}
                           {exp.emp_station && <span style={{ fontWeight: 600 }}>· {exp.emp_station}</span>}
+                          <span>· by {exp.created_by_name || 'Unknown'}</span>
                         </div>
                         <div style={{ display: 'flex', gap: 5 }}>
                           {canApprove && isPending && (
