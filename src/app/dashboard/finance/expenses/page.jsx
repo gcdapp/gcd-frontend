@@ -131,30 +131,36 @@ function ExpensesPageInner() {
   // forward-dated amount happened to exist.
   const { total, approvedAmt, approvedCount, pendingCount, byCat, byEmp, soFarCount } = useMemo(() => {
     const todayStr = new Date().toISOString().slice(0, 10)
-    const expensesSoFar = expenses.filter(e => (e.date || '').slice(0, 10) <= todayStr)
+    // Single pass over expenses instead of ~6 separate .filter()/.reduce() scans
+    // (one per category alone was O(categories × N)) — matters once this reruns on
+    // every keystroke/filter change without memoization, which it now won't.
+    const catSums = new Map()
+    const empMap  = {}
+    let total = 0, approvedAmt = 0, approvedCount = 0, pendingCount = 0, soFarCount = 0
 
-    const total       = expensesSoFar.reduce((s, e) => s + Number(e.amount || 0), 0)
-    const approvedAmt = expensesSoFar.filter(e => e.status === 'approved').reduce((s, e) => s + Number(e.amount || 0), 0)
-    const approvedCount = expensesSoFar.filter(e => e.status === 'approved').length
-    const pendingCount = expensesSoFar.filter(e => e.status === 'pending').length
+    for (const e of expenses) {
+      if ((e.date || '').slice(0, 10) > todayStr) continue // forward-dated — not "so far"
+      soFarCount++
+      const amt = Number(e.amount || 0)
+      total += amt
+      if (e.status === 'approved') { approvedAmt += amt; approvedCount++ }
+      else if (e.status === 'pending') pendingCount++
 
-    const byCat = CATEGORIES.map(cat => ({
-      name: cat.v, short: cat.v.split(' ')[0], Icon: cat.I,
-      value: expensesSoFar.filter(e => e.category === cat.v).reduce((s, e) => s + Number(e.amount || 0), 0),
-      color: cat.c,
-    })).filter(c => c.value > 0).sort((a, b) => b.value - a.value)
+      catSums.set(e.category, (catSums.get(e.category) || 0) + amt)
 
-    // Build from expense records — no employees API needed
-    const empMap = {}
-    for (const exp of expensesSoFar) {
-      const name = exp.emp_name || exp.emp_id || 'Company Expense'
-      if (!empMap[name]) empMap[name] = { name, id: exp.emp_id, value: 0, count: 0 }
-      empMap[name].value += Number(exp.amount || 0)
+      const name = e.emp_name || e.emp_id || 'Company Expense'
+      if (!empMap[name]) empMap[name] = { name, id: e.emp_id, value: 0, count: 0 }
+      empMap[name].value += amt
       empMap[name].count++
     }
+
+    const byCat = CATEGORIES
+      .map(cat => ({ name: cat.v, short: cat.v.split(' ')[0], Icon: cat.I, value: catSums.get(cat.v) || 0, color: cat.c }))
+      .filter(c => c.value > 0)
+      .sort((a, b) => b.value - a.value)
     const byEmp = Object.values(empMap).sort((a, b) => b.value - a.value)
 
-    return { total, approvedAmt, pendingCount, byCat, byEmp, soFarCount: expensesSoFar.length }
+    return { total, approvedAmt, approvedCount, pendingCount, byCat, byEmp, soFarCount }
   }, [expenses])
 
   const filtered = useMemo(() => {
@@ -179,6 +185,32 @@ function ExpensesPageInner() {
 
   useEffect(() => { setPage(1) }, [search, catFilter, empFilter, statusFilter, sortBy, sortDir, month])
 
+  // Costwise Summary (category × station breakdown) — was an unmemoized IIFE sitting
+  // directly in the render body doing a nested filter() per category×station, so it
+  // recomputed from scratch on every keystroke in search, every sort/filter change,
+  // even every page click. Now a single O(expenses) pass, memoized on expenses alone.
+  const costwise = useMemo(() => {
+    const stations = [...new Set(expenses.map(e => e.emp_station).filter(Boolean))].sort()
+    const stationIndex = Object.fromEntries(stations.map((s, i) => [s, i]))
+    const catMap = new Map()
+    const colTotals = stations.map(() => 0)
+    let unassignedTotal = 0, grandTotal = 0
+
+    for (const e of expenses) {
+      const amt = Number(e.amount || 0)
+      grandTotal += amt
+      let entry = catMap.get(e.category)
+      if (!entry) { entry = { sts: stations.map(() => 0), unassigned: 0, row: 0 }; catMap.set(e.category, entry) }
+      entry.row += amt
+      const idx = e.emp_station != null ? stationIndex[e.emp_station] : undefined
+      if (idx !== undefined) { entry.sts[idx] += amt; colTotals[idx] += amt }
+      else { entry.unassigned += amt; unassignedTotal += amt }
+    }
+
+    const catRows = CATEGORIES.filter(cat => catMap.has(cat.v)).map(cat => ({ cat, ...catMap.get(cat.v) }))
+    return { stations, hasUnassigned: unassignedTotal > 0, catRows, colTotals, unassignedTotal, grandTotal }
+  }, [expenses])
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated  = useMemo(() => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [filtered, page])
 
@@ -200,23 +232,14 @@ function ExpensesPageInner() {
   }
 
   function exportCSV() {
-    // Expenses with no linked employee (or an employee with no station_code — e.g. a
-    // "Company Expense") have no emp_station, so they can't land in a DDB1/DXE6 column.
-    // Without an explicit bucket for them, the station columns silently undercount
-    // against Total with no way to tell why. An "Unassigned" column reconciles it.
-    const stations = [...new Set(expenses.map(e => e.emp_station).filter(Boolean))].sort()
+    // Reuses the memoized costwise breakdown instead of recomputing it from scratch.
+    const { stations, catRows, colTotals, unassignedTotal, grandTotal } = costwise
     const cols = [...stations, 'Unassigned']
     const rows = [['Expense Type', ...cols, 'Total']]
-    for (const cat of CATEGORIES) {
-      const exps = expenses.filter(e => e.category === cat.v)
-      if (!exps.length) continue
-      const sTotals = stations.map(st => exps.filter(e => e.emp_station === st).reduce((s, e) => s + Number(e.amount || 0), 0))
-      const unassigned = exps.filter(e => !e.emp_station).reduce((s, e) => s + Number(e.amount || 0), 0)
-      rows.push([cat.v, ...sTotals.map(v => v || ''), unassigned || '', exps.reduce((s, e) => s + Number(e.amount || 0), 0)])
+    for (const { cat, sts, unassigned, row } of catRows) {
+      rows.push([cat.v, ...sts.map(v => v || ''), unassigned || '', row])
     }
-    const colTotals = stations.map(st => expenses.filter(e => e.emp_station === st).reduce((s, e) => s + Number(e.amount || 0), 0))
-    const unassignedTotal = expenses.filter(e => !e.emp_station).reduce((s, e) => s + Number(e.amount || 0), 0)
-    rows.push(['Total', ...colTotals.map(v => v || ''), unassignedTotal || '', expenses.reduce((s, e) => s + Number(e.amount || 0), 0)])
+    rows.push(['Total', ...colTotals.map(v => v || ''), unassignedTotal || '', grandTotal])
     const csv = rows.map(r => r.join(',')).join('\n')
     const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = `expenses-${month}.csv`; a.click()
   }
@@ -385,34 +408,26 @@ function ExpensesPageInner() {
         )}
 
         {/* ── Costwise Summary Table ── */}
-        {!loading && expenses.length > 0 && (() => {
-          // Expenses with no linked employee (or an employee with no station_code — e.g.
-          // a "Company Expense") have no emp_station, so DDB1/DXE6 alone would silently
-          // undercount against Total with no way to tell why. "Unassigned" reconciles it.
-          const stations     = [...new Set(expenses.map(e => e.emp_station).filter(Boolean))].sort()
-          const hasUnassigned = expenses.some(e => !e.emp_station)
-          const catRows    = CATEGORIES.filter(cat => expenses.some(e => e.category === cat.v))
-          const catTotals  = catRows.map(cat => ({
-            cat,
-            sts: stations.map(st => expenses.filter(e => e.category === cat.v && e.emp_station === st).reduce((s, e) => s + Number(e.amount || 0), 0)),
-            unassigned: expenses.filter(e => e.category === cat.v && !e.emp_station).reduce((s, e) => s + Number(e.amount || 0), 0),
-            row: expenses.filter(e => e.category === cat.v).reduce((s, e) => s + Number(e.amount || 0), 0),
-          }))
-          const colTotals      = stations.map(st => expenses.filter(e => e.emp_station === st).reduce((s, e) => s + Number(e.amount || 0), 0))
-          const unassignedTotal = expenses.filter(e => !e.emp_station).reduce((s, e) => s + Number(e.amount || 0), 0)
-          const grandTotal = expenses.reduce((s, e) => s + Number(e.amount || 0), 0)
-          if (!catRows.length) return null
-          const TH = { padding: '10px 14px', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg-alt)', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap', textAlign: 'right' }
-          const TD = { padding: '9px 14px', fontSize: 12.5, color: 'var(--text)', borderBottom: '1px solid var(--border)', textAlign: 'right', whiteSpace: 'nowrap' }
+        {!loading && costwise.catRows.length > 0 && (() => {
+          const { stations, hasUnassigned, catRows, colTotals, unassignedTotal, grandTotal } = costwise
+          const unassignedPct = grandTotal > 0 ? Math.round(unassignedTotal / grandTotal * 100) : 0
+          const TH = { padding: '11px 14px', fontSize: 10.5, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--bg-alt)', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap', textAlign: 'right' }
+          const TD = { padding: '10px 14px', fontSize: 12.5, color: 'var(--text)', borderBottom: '1px solid var(--border)', textAlign: 'right', whiteSpace: 'nowrap' }
           return (
-            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
-              <div style={{ padding: '13px 18px 11px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: 13.5, color: 'var(--text)' }}>Costwise Summary</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>By category × station</div>
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div style={{ padding: '14px 18px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Tag size={14} color="#D97706"/>
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 13.5, color: 'var(--text)' }}>Costwise Summary</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>By category × station</div>
+                  </div>
                 </div>
                 <button onClick={exportCSV}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', color: '#10B981', fontWeight: 700, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', color: '#10B981', fontWeight: 700, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 0.15s' }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = '0.8'} onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
                   <Download size={12}/> CSV
                 </button>
               </div>
@@ -420,47 +435,60 @@ function ExpensesPageInner() {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
-                      <th style={{ ...TH, textAlign: 'left', position: 'sticky', left: 0, zIndex: 1, minWidth: 160 }}>Expense Type</th>
+                      <th style={{ ...TH, textAlign: 'left', position: 'sticky', left: 0, zIndex: 1, minWidth: 170 }}>Expense Type</th>
                       {stations.map(st => <th key={st} style={TH}>{st}</th>)}
-                      {hasUnassigned && <th style={TH} title="No linked employee, or their station isn't set">Unassigned</th>}
-                      <th style={{ ...TH, color: '#FBBF24' }}>Total</th>
+                      {hasUnassigned && (
+                        <th style={{ ...TH, color: '#D97706', borderLeft: '1px dashed var(--border)' }} title="No linked employee, or their station isn't set">
+                          Unassigned
+                        </th>
+                      )}
+                      <th style={{ ...TH, color: '#D97706', borderLeft: '1px solid var(--border)' }}>Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {catTotals.map(({ cat, sts, unassigned, row }) => (
+                    {catRows.map(({ cat, sts, unassigned, row }, i) => (
                       <tr key={cat.v}
+                        style={{ background: i % 2 ? 'transparent' : 'color-mix(in srgb, var(--bg-alt) 40%, transparent)' }}
                         onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-alt)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        <td style={{ ...TD, textAlign: 'left', position: 'sticky', left: 0, background: 'var(--card)', fontWeight: 600 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                            <div style={{ width: 8, height: 8, borderRadius: 2, background: cat.c, flexShrink: 0 }}/>
+                        onMouseLeave={e => e.currentTarget.style.background = i % 2 ? 'transparent' : 'color-mix(in srgb, var(--bg-alt) 40%, transparent)'}>
+                        <td style={{ ...TD, textAlign: 'left', position: 'sticky', left: 0, background: 'inherit', backgroundColor: 'var(--card)', fontWeight: 600, borderLeft: `2.5px solid ${cat.c}` }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 7, height: 7, borderRadius: '50%', background: cat.c, flexShrink: 0 }}/>
                             <span style={{ color: cat.c }}>{cat.v}</span>
                           </div>
                         </td>
-                        {sts.map((v, i) => (
-                          <td key={stations[i]} style={{ ...TD, color: v > 0 ? 'var(--text)' : 'var(--text-muted)', opacity: v > 0 ? 1 : 0.4 }}>
+                        {sts.map((v, si) => (
+                          <td key={stations[si]} style={{ ...TD, color: v > 0 ? 'var(--text)' : 'var(--text-muted)', opacity: v > 0 ? 1 : 0.35 }}>
                             {v > 0 ? fmt(v) : '—'}
                           </td>
                         ))}
                         {hasUnassigned && (
-                          <td style={{ ...TD, color: unassigned > 0 ? 'var(--text-muted)' : 'var(--text-muted)', opacity: unassigned > 0 ? 1 : 0.4 }}>
+                          <td style={{ ...TD, color: '#D97706', opacity: unassigned > 0 ? 0.85 : 0.3, borderLeft: '1px dashed var(--border)' }}>
                             {unassigned > 0 ? fmt(unassigned) : '—'}
                           </td>
                         )}
-                        <td style={{ ...TD, fontWeight: 800, color: '#FBBF24' }}>{fmt(row)}</td>
+                        <td style={{ ...TD, fontWeight: 800, color: 'var(--text)', borderLeft: '1px solid var(--border)' }}>{fmt(row)}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr style={{ borderTop: '2px solid var(--border)' }}>
-                      <td style={{ ...TD, textAlign: 'left', position: 'sticky', left: 0, background: 'var(--bg-alt)', fontWeight: 800, color: 'var(--text)' }}>Total</td>
+                    <tr>
+                      <td colSpan={1 + stations.length + (hasUnassigned ? 1 : 0) + 1} style={{ padding: 0 }}>
+                        <div style={{ height: 2, background: 'linear-gradient(90deg,#D97706,#FBBF24)' }}/>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ ...TD, textAlign: 'left', position: 'sticky', left: 0, background: 'var(--bg-alt)', fontWeight: 800, color: 'var(--text)', borderBottom: 'none' }}>Total</td>
                       {colTotals.map((v, i) => (
-                        <td key={stations[i]} style={{ ...TD, background: 'var(--bg-alt)', fontWeight: 700, color: '#FBBF24' }}>{v > 0 ? fmt(v) : '—'}</td>
+                        <td key={stations[i]} style={{ ...TD, background: 'var(--bg-alt)', fontWeight: 700, color: 'var(--text)', borderBottom: 'none' }}>{v > 0 ? fmt(v) : '—'}</td>
                       ))}
                       {hasUnassigned && (
-                        <td style={{ ...TD, background: 'var(--bg-alt)', fontWeight: 700, color: 'var(--text-muted)' }}>{unassignedTotal > 0 ? fmt(unassignedTotal) : '—'}</td>
+                        <td style={{ ...TD, background: 'var(--bg-alt)', fontWeight: 700, color: '#D97706', borderLeft: '1px dashed var(--border)', borderBottom: 'none' }}>
+                          {unassignedTotal > 0 ? fmt(unassignedTotal) : '—'}
+                          {unassignedTotal > 0 && <div style={{ fontSize: 9.5, fontWeight: 600, opacity: 0.75, marginTop: 1 }}>{unassignedPct}% of total</div>}
+                        </td>
                       )}
-                      <td style={{ ...TD, background: 'var(--bg-alt)', fontWeight: 900, color: '#FBBF24', fontSize: 14 }}>{fmt(grandTotal)}</td>
+                      <td style={{ ...TD, background: 'var(--bg-alt)', fontWeight: 900, color: '#D97706', fontSize: 15, borderLeft: '1px solid var(--border)', borderBottom: 'none' }}>{fmt(grandTotal)}</td>
                     </tr>
                   </tfoot>
                 </table>
