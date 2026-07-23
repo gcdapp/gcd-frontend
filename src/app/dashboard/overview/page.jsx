@@ -83,9 +83,16 @@ export default function OverviewPage() {
         if (isRefresh) setRefreshing(false)
       }).catch(() => { setFleetStats({ total:0, active:0, grounded:0, maintenance:0 }); setRefreshing(false) })
 
-    fetch(`${API}/api/analytics/expenses-chart?months=12`, h)
-      .then(r => r.json()).then(d => { setExpChart(d.chart || []); setLoadingExpChart(false) })
-      .catch(() => setLoadingExpChart(false))
+    // Company-wide total spend, unscoped by project — admin-only (backend now
+    // enforces this too; skip the call entirely for anyone else instead of
+    // firing a request that will just 403).
+    if (user?.role === 'admin') {
+      fetch(`${API}/api/analytics/expenses-chart?months=12`, h)
+        .then(r => r.json()).then(d => { setExpChart(d.chart || []); setLoadingExpChart(false) })
+        .catch(() => setLoadingExpChart(false))
+    } else {
+      setLoadingExpChart(false)
+    }
 
     fetch(`${API}/api/expenses?month=${month}`, h)
       .then(r => r.json()).then(d => { setExpenses(d.expenses || []); setLoadingExp(false) })
@@ -99,7 +106,7 @@ export default function OverviewPage() {
     fetch(`${API}/api/letters?status=pending&limit=5`, h)
       .then(r => r.json()).then(d => setPendingLetters(d.letters || []))
       .catch(() => {})
-  }, [])
+  }, [user?.role])
 
   useEffect(() => { load() }, [load])
 
@@ -338,6 +345,10 @@ export default function OverviewPage() {
         )}
 
         {/* ══ EXPENSE CHART ═════════════════════════════════════════ */}
+        {/* Company-wide spend total — admin-only, matches the backend's
+            /expenses-chart admin gate. A project-scoped manager must never
+            see the whole org's spend, only their own. */}
+        {user?.role === 'admin' && (
         <div className="ov-card">
           <div style={{ padding:'20px 24px 0' }}>
             <div className="ov-card-title">Expense Trend — Last 12 Months</div>
@@ -410,6 +421,7 @@ export default function OverviewPage() {
             )
           })()}
         </div>
+        )}
 
         {/* ══ AGENTS + FLEET ════════════════════════════════════════ */}
         <div className="ov-two">
