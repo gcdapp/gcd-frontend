@@ -224,7 +224,12 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
 
         {tab==='work' && (
           <div className="modal-two-col">
-            {sel('Role *','role',['Driver','HR Manager','Finance Mgr','Accountant','Dispatcher','General Manager','Admin','POC','Other'])}
+            {isProjectScoped ? (
+              <div>
+                <Lbl>Role *</Lbl>
+                <div className="input" style={{ display:'flex', alignItems:'center', color:'var(--text-muted)', background:'var(--bg-alt)', cursor:'not-allowed' }}>Driver</div>
+              </div>
+            ) : sel('Role *','role',['Driver','HR Manager','Finance Mgr','Accountant','Dispatcher','General Manager','Admin','POC','Other'])}
             {sel('Department *','dept',['Operations','HR','Finance','Admin','Other'])}
             {!isProjectScoped && sel('Station','station_code',['DDB1','DXE6'])}
             {sel('Status','status',[{v:'active',l:'Active'},{v:'on_leave',l:'On Leave'},{v:'inactive',l:'Inactive'}])}
