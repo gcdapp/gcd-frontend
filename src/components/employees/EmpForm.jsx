@@ -109,6 +109,14 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
     } catch(e) { setErr(e.message) } finally { setSaving(false) }
   }
 
+  function locked(label, value) {
+    return (
+      <div>
+        <Lbl>{label}</Lbl>
+        <div className="input" style={{ display:'flex', alignItems:'center', color:'var(--text-muted)', background:'var(--bg-alt)', cursor:'not-allowed' }}>{value}</div>
+      </div>
+    )
+  }
   function inp(label, k, type='text', placeholder='') {
     return (
       <div key={k}>
@@ -224,13 +232,10 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
 
         {tab==='work' && (
           <div className="modal-two-col">
-            {isProjectScoped ? (
-              <div>
-                <Lbl>Role *</Lbl>
-                <div className="input" style={{ display:'flex', alignItems:'center', color:'var(--text-muted)', background:'var(--bg-alt)', cursor:'not-allowed' }}>Driver</div>
-              </div>
-            ) : sel('Role *','role',['Driver','HR Manager','Finance Mgr','Accountant','Dispatcher','General Manager','Admin','POC','Other'])}
-            {sel('Department *','dept',['Operations','HR','Finance','Admin','Other'])}
+            {isProjectScoped ? locked('Role *','Driver')
+              : sel('Role *','role',['Driver','HR Manager','Finance Mgr','Accountant','Dispatcher','General Manager','Admin','POC','Other'])}
+            {isProjectScoped ? locked('Department *','Operations')
+              : sel('Department *','dept',['Operations','HR','Finance','Admin','Other'])}
             {!isProjectScoped && sel('Station','station_code',['DDB1','DXE6'])}
             {sel('Status','status',[{v:'active',l:'Active'},{v:'on_leave',l:'On Leave'},{v:'inactive',l:'Inactive'}])}
             <div style={{ gridColumn:'span 2' }}>
