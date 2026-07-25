@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { useSocket } from '@/lib/socket'
 import {
   Plus, X, Receipt, Search, Trash2, Pencil, Check,
-  Users, Tag, Download, TrendingUp,
+  Users, Tag, Download, TrendingUp, Calendar,
   ChevronDown, Filter, ArrowUp, ArrowDown,
 } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
@@ -33,6 +33,10 @@ function getUserRole() {
 // expense's description so the backend can find and clean it up later — never meant
 // to be user-facing. Strip it for display only; the stored description keeps the tag.
 function stripRefTag(desc) { return (desc || '').replace(/\s*\[(?:pcref|ref):[^\]]*\]\s*$/, '').trim() }
+function fmtMonthLabel(m) {
+  const [y, mo] = m.split('-')
+  return new Date(+y, +mo - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+}
 
 // ── CSS ───────────────────────────────────────────────────────────
 const CSS = `
@@ -45,13 +49,17 @@ const CSS = `
   .ex-filters{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .ex-select { padding:9px 14px; border-radius:24px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-size:12.5px; font-weight:600; cursor:pointer; outline:none; font-family:inherit; }
   .ex-hero-row { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+  .ex-month-select { appearance:none; -webkit-appearance:none; -moz-appearance:none; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); border-radius:24px; padding:9px 32px 9px 34px; color:rgba(255,255,255,0.92); font-size:12.5px; font-weight:700; outline:none; cursor:pointer; font-family:inherit; transition:background 0.15s,border-color 0.15s; }
+  .ex-month-select:hover { background:rgba(255,255,255,0.13); border-color:rgba(255,255,255,0.24); }
+  .ex-month-select option { color:#1a1f2e; background:#fff; font-weight:500; }
   @media(max-width:640px){
     .ex-kpi    { grid-template-columns:repeat(2,1fr) !important; }
     .ex-charts { grid-template-columns:1fr !important; }
     .ex-hero-row { flex-wrap:wrap; gap:10px; }
     .ex-hero-row>div:last-child { width:100%; }
     .ex-hero-actions { width:100%; display:flex; gap:8px; }
-    .ex-hero-actions select, .ex-hero-actions button { flex:1; }
+    .ex-hero-actions select, .ex-hero-actions button, .ex-hero-actions .ex-month-wrap { flex:1; }
+    .ex-hero-actions .ex-month-wrap select { width:100%; }
     .ex-filters { gap:6px; }
     .ex-filters .ex-search-wrap { width:100%; }
     .ex-filters .ex-select { flex:1 1 auto; min-width:0; }
@@ -264,10 +272,13 @@ function ExpensesPageInner() {
               </div>
             </div>
             <div className="ex-hero-actions" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <select value={month} onChange={e => setMonth(e.target.value)}
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 13px', color: 'rgba(255,255,255,0.85)', fontSize: 12.5, outline: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                {MONTHS.map(m => <option key={m}>{m}</option>)}
-              </select>
+              <div className="ex-month-wrap" style={{ position: 'relative', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                <Calendar size={13} style={{ position: 'absolute', left: 13, color: 'rgba(255,255,255,0.5)', pointerEvents: 'none' }}/>
+                <select value={month} onChange={e => setMonth(e.target.value)} className="ex-month-select">
+                  {MONTHS.map(m => <option key={m} value={m}>{fmtMonthLabel(m)}</option>)}
+                </select>
+                <ChevronDown size={13} style={{ position: 'absolute', right: 12, color: 'rgba(255,255,255,0.5)', pointerEvents: 'none' }}/>
+              </div>
               {canEdit && (
                 <button onClick={() => setModal('add')}
                   style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#F59E0B,#D97706)', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap', transition: 'opacity 0.15s' }}
