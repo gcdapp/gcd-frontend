@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { empApi, API } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
 import { X, AlertCircle } from 'lucide-react'
 
 const EMPTY = {
@@ -34,6 +35,13 @@ function Lbl({ children }) {
  * (Update Driver Info, hr/employees/[id]/edit/page.jsx).
  */
 export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }) {
+  const { user } = useAuth()
+  // A manager scoped to specific client projects may only add/edit DAs within
+  // those projects — the picker below hides everything else so the option
+  // never shows up (backend enforces this independently as the real boundary).
+  const assignedProjects = Array.isArray(user?.assigned_projects) ? user.assigned_projects : []
+  const isProjectScoped  = assignedProjects.length > 0
+
   const [form, setForm] = useState(() => emp ? {
     ...emp,
     salary:               emp.salary||'',
@@ -65,7 +73,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
     visa_file_no:             emp.visa_file_no||'',
     insurance_url:            emp.insurance_url||'',
     login_email:'', login_password:''
-  } : EMPTY)
+  } : (isProjectScoped ? { ...EMPTY, project_type: assignedProjects[0], station_code: '' } : EMPTY))
   const [saving, setSaving] = useState(false)
   const [err,    setErr]    = useState(null)
   const [tab,    setTab]    = useState('identity')
@@ -218,22 +226,24 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
           <div className="modal-two-col">
             {sel('Role *','role',['Driver','HR Manager','Finance Mgr','Accountant','Dispatcher','General Manager','Admin','POC','Other'])}
             {sel('Department *','dept',['Operations','HR','Finance','Admin','Other'])}
-            {sel('Station','station_code',['DDB1','DXE6'])}
+            {!isProjectScoped && sel('Station','station_code',['DDB1','DXE6'])}
             {sel('Status','status',[{v:'active',l:'Active'},{v:'on_leave',l:'On Leave'},{v:'inactive',l:'Inactive'}])}
             <div style={{ gridColumn:'span 2' }}>
               <div style={{ background:'var(--purple-bg)', border:'1px solid var(--purple-border)', borderRadius:12, padding:'14px 16px' }}>
                 <label style={{ fontSize:11, fontWeight:800, letterSpacing:'0.06em', textTransform:'uppercase', color:'#7C3AED', marginBottom:10, display:'block' }}>Project & Salary Type</label>
-                <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'2px 0 6px' }}>Amazon</div>
-                <div className="modal-proj-col" style={{ marginBottom:10 }}>
-                  {[{v:'pulser',l:'Pulser',d:'Base + Hours × Rate + Bonus'},{v:'cret',l:'CRET',d:'Base + Shipments × Rate'},{v:'tradelink',l:'Tradelink',d:'Fixed prorated base, no hours/shipments'}].map(p=>(
-                    <button key={p.v} onClick={e=>{e.stopPropagation();set('project_type',p.v)}} type="button"
-                      style={{ padding:'11px', borderRadius:10, border:`2px solid ${form.project_type===p.v?'#7C3AED':'var(--border)'}`, background:form.project_type===p.v?'var(--purple-bg)':'var(--card)', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
-                      <div style={{ fontWeight:700, fontSize:13, color:form.project_type===p.v?'#7C3AED':'var(--text)' }}>{p.l}</div>
-                      <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:2 }}>{p.d}</div>
-                    </button>
-                  ))}
-                </div>
-                <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'2px 0 6px' }}>Other Clients</div>
+                {!isProjectScoped && (<>
+                  <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'2px 0 6px' }}>Amazon</div>
+                  <div className="modal-proj-col" style={{ marginBottom:10 }}>
+                    {[{v:'pulser',l:'Pulser',d:'Base + Hours × Rate + Bonus'},{v:'cret',l:'CRET',d:'Base + Shipments × Rate'},{v:'tradelink',l:'Tradelink',d:'Fixed prorated base, no hours/shipments'}].map(p=>(
+                      <button key={p.v} onClick={e=>{e.stopPropagation();set('project_type',p.v)}} type="button"
+                        style={{ padding:'11px', borderRadius:10, border:`2px solid ${form.project_type===p.v?'#7C3AED':'var(--border)'}`, background:form.project_type===p.v?'var(--purple-bg)':'var(--card)', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
+                        <div style={{ fontWeight:700, fontSize:13, color:form.project_type===p.v?'#7C3AED':'var(--text)' }}>{p.l}</div>
+                        <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:2 }}>{p.d}</div>
+                      </button>
+                    ))}
+                  </div>
+                </>)}
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'2px 0 6px' }}>{isProjectScoped ? 'Your Projects' : 'Other Clients'}</div>
                 <div className="modal-proj-col" style={{ marginBottom:12 }}>
                   {[
                     {v:'creative_packers',l:'Creative Packers',d:'Fixed Base Salary'},
@@ -241,7 +251,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
                     {v:'imile',l:'IMILE Delivery Services',d:'Fixed Base Salary'},
                     {v:'jnt_express',l:'Jnt Express',d:'Fixed Base Salary'},
                     {v:'le_chocola',l:'Le Chocola',d:'Fixed Base Salary'},
-                  ].map(p=>(
+                  ].filter(p => !isProjectScoped || assignedProjects.includes(p.v)).map(p=>(
                     <button key={p.v} onClick={e=>{e.stopPropagation();set('project_type',p.v)}} type="button"
                       style={{ padding:'11px', borderRadius:10, border:`2px solid ${form.project_type===p.v?'#7C3AED':'var(--border)'}`, background:form.project_type===p.v?'var(--purple-bg)':'var(--card)', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
                       <div style={{ fontWeight:700, fontSize:13, color:form.project_type===p.v?'#7C3AED':'var(--text)' }}>{p.l}</div>
