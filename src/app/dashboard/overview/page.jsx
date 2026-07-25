@@ -29,6 +29,11 @@ const ECATS = [
 export default function OverviewPage() {
   const { user } = useAuth()
   const router   = useRouter()
+  // Vehicles are tracked purely by Amazon station (DDB1/DXE6) — a manager scoped
+  // to specific client projects (Creative Packers, IG RAK, etc.) has no fleet of
+  // their own, and Fleet is already hidden from their sidebar nav. Overview must
+  // match that instead of independently leaking the whole company's fleet count.
+  const isProjectScoped = Array.isArray(user?.assigned_projects) && user.assigned_projects.length > 0
 
   useEffect(() => {
     if (user && user.role === 'poc') router?.replace('/dashboard/poc')
@@ -169,7 +174,7 @@ export default function OverviewPage() {
         .ov-refresh-btn:hover { background:rgba(255,255,255,0.14); color:white; }
 
         /* ── KPI strip ── */
-        .ov-kpi-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:rgba(255,255,255,0.10); border-radius:16px; overflow:hidden; }
+        .ov-kpi-strip { display:grid; grid-template-columns:repeat(${isProjectScoped ? 3 : 4},1fr); gap:1px; background:rgba(255,255,255,0.10); border-radius:16px; overflow:hidden; }
         .ov-kpi       { background:rgba(0,0,0,0.20); padding:18px 22px; transition:background 0.15s; cursor:default; }
         .ov-kpi:hover { background:rgba(255,255,255,0.06); }
         .ov-kpi-val   { font-size:27px; font-weight:900; letter-spacing:-0.05em; line-height:1; transition:color 0.3s; }
@@ -290,12 +295,12 @@ export default function OverviewPage() {
                   hint:  loadingHero ? '' : `of ${totalEmp} total`,
                   color: '#34D399',
                 },
-                {
+                ...(isProjectScoped ? [] : [{
                   val:   loadingHero ? null : (fleetStats?.active ?? 0),
                   lbl:   'Vehicles on Road',
                   hint:  loadingHero ? '' : `of ${fleetStats?.total ?? 0} fleet`,
                   color: '#38BDF8',
-                },
+                }]),
                 {
                   val:   loadingExp  ? null : fmtAED(totalExp),
                   lbl:   'Expenses This Month',
@@ -427,7 +432,7 @@ export default function OverviewPage() {
         <div className="ov-two">
 
           {/* Delivery Agents */}
-          <div className="ov-card">
+          <div className="ov-card" style={isProjectScoped ? { gridColumn:'1 / -1' } : undefined}>
             <div className="ov-card-hd">
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                 <div className="ov-card-hd-icon" style={{ background:'#F59E0B18', border:'1px solid #F59E0B30' }}>
@@ -475,7 +480,9 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          {/* Fleet Vehicles */}
+          {/* Fleet Vehicles — Amazon-station only, not applicable to a project-scoped
+              manager's client projects; Fleet is already hidden from their nav */}
+          {!isProjectScoped && (
           <div className="ov-card">
             <div className="ov-card-hd">
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -521,6 +528,7 @@ export default function OverviewPage() {
               </div>
             </div>
           </div>
+          )}
         </div>
 
         {/* ══ EXPENSES + SIM CARDS ══════════════════════════════════ */}
