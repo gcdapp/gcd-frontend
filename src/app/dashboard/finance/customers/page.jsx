@@ -1509,6 +1509,7 @@ function CustomerModal({ customer, onSave, onClose }) {
 
 /* ── All Invoices & Receipts (every customer, one month at a time) ──── */
 function fmtMonthTitle(key) {
+  if (!key) return ''
   const [y, m] = key.split('-')
   return new Date(+y, +m - 1).toLocaleDateString('en-US', { month:'long', year:'numeric' })
 }
@@ -1551,15 +1552,12 @@ function AllTransactionsView() {
     return Array.from(set).sort((a, b) => b.localeCompare(a))
   }, [allEntries])
 
-  // Default to (or snap back to) the most recent month once data loads.
-  useEffect(() => {
-    if (monthKeys.length && (!selectedMonth || !monthKeys.includes(selectedMonth))) {
-      setSelectedMonth(monthKeys[0])
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthKeys])
+  // Falls back to the newest month whenever there's no explicit selection yet
+  // (or the previously selected month no longer has data) — computed directly
+  // during render so the very first paint, before any effect runs, is safe.
+  const activeMonth = (selectedMonth && monthKeys.includes(selectedMonth)) ? selectedMonth : (monthKeys[0] || null)
 
-  const monthIndex  = selectedMonth ? monthKeys.indexOf(selectedMonth) : -1
+  const monthIndex  = activeMonth ? monthKeys.indexOf(activeMonth) : -1
   const canGoOlder   = monthIndex >= 0 && monthIndex < monthKeys.length - 1
   const canGoNewer   = monthIndex > 0
   const goOlder = () => canGoOlder && setSelectedMonth(monthKeys[monthIndex + 1])
@@ -1568,7 +1566,7 @@ function AllTransactionsView() {
   const { entries, totalInvoiced, totalReceived, invCount, recCount } = useMemo(() => {
     const q = search.trim().toLowerCase()
     const list = allEntries
-      .filter(e => (e.date || '').slice(0, 7) === selectedMonth)
+      .filter(e => (e.date || '').slice(0, 7) === activeMonth)
       .filter(e => !q
         || (e.customer_name || '').toLowerCase().includes(q)
         || (e.description   || '').toLowerCase().includes(q)
@@ -1585,7 +1583,7 @@ function AllTransactionsView() {
       else                      { totalReceived += e.amount; recCount++ }
     })
     return { entries: list, totalInvoiced, totalReceived, invCount, recCount }
-  }, [allEntries, selectedMonth, search])
+  }, [allEntries, activeMonth, search])
 
   const net = totalInvoiced - totalReceived
   const ratioTotal = totalInvoiced + totalReceived
@@ -1623,7 +1621,7 @@ function AllTransactionsView() {
         </div>
         <div className="txn-month-nav">
           <button className="txn-month-nav-btn" onClick={goOlder} disabled={!canGoOlder} title="Older month"><ChevronLeft size={15}/></button>
-          <select className="txn-month-select" value={selectedMonth || ''} onChange={e => setSelectedMonth(e.target.value)}>
+          <select className="txn-month-select" value={activeMonth || ''} onChange={e => setSelectedMonth(e.target.value)}>
             {monthKeys.map(k => <option key={k} value={k}>{fmtMonthTitle(k)}</option>)}
           </select>
           <button className="txn-month-nav-btn" onClick={goNewer} disabled={!canGoNewer} title="Newer month"><ChevronRight size={15}/></button>
@@ -1662,7 +1660,7 @@ function AllTransactionsView() {
         </div>
       </div>
 
-      <div className="cust-section-label"><FileSpreadsheet size={12}/> {fmtMonthTitle(selectedMonth)} Transactions</div>
+      <div className="cust-section-label"><FileSpreadsheet size={12}/> {fmtMonthTitle(activeMonth)} Transactions</div>
 
       {entries.length === 0 ? (
         <div className="txn-empty">
