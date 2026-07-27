@@ -232,7 +232,7 @@ export const customerApi = {
 
 // Customer Invoices
 export const customerInvoiceApi = {
-  list:   (customerId) => api.get(`/api/customer-invoices?customer_id=${customerId}`),
+  list:   (customerId) => api.get(`/api/customer-invoices${customerId ? `?customer_id=${customerId}` : ''}`),
   create: (data)       => api.post('/api/customer-invoices', data),
   update: (id, data)   => api.put(`/api/customer-invoices/${id}`, data),
   delete: (id)         => api.delete(`/api/customer-invoices/${id}`),
@@ -240,7 +240,7 @@ export const customerInvoiceApi = {
 
 // Customer Receipts
 export const customerReceiptApi = {
-  list:   (customerId) => api.get(`/api/customer-receipts?customer_id=${customerId}`),
+  list:   (customerId) => api.get(`/api/customer-receipts${customerId ? `?customer_id=${customerId}` : ''}`),
   create: (data)       => api.post('/api/customer-receipts', data),
   update: (id, data)   => api.put(`/api/customer-receipts/${id}`, data),
   delete: (id)         => api.delete(`/api/customer-receipts/${id}`),
