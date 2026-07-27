@@ -104,6 +104,7 @@ function ExpensesPageInner() {
   const [catFilter,   setCatFilter]   = useState('all')
   const [statusFilter,setStatusFilter]= useState('all')
   const [empFilter,   setEmpFilter]   = useState(searchParams.get('emp_id') || 'all')
+  const [creatorFilter, setCreatorFilter] = useState('all')
   const [sortBy,      setSortBy]      = useState('date')
   const [sortDir,     setSortDir]     = useState('desc')
   const [month,       setMonth]       = useState(MONTHS[0])
@@ -138,13 +139,14 @@ function ExpensesPageInner() {
   // totals mean "spent so far this month" — matches the Overview page's hero KPI,
   // which reads the same data but was disagreeing with this page by whatever
   // forward-dated amount happened to exist.
-  const { total, approvedAmt, approvedCount, pendingCount, byCat, byEmp, soFarCount } = useMemo(() => {
+  const { total, approvedAmt, approvedCount, pendingCount, byCat, byEmp, byCreator, soFarCount } = useMemo(() => {
     const todayStr = new Date().toISOString().slice(0, 10)
     // Single pass over expenses instead of ~6 separate .filter()/.reduce() scans
     // (one per category alone was O(categories × N)) — matters once this reruns on
     // every keystroke/filter change without memoization, which it now won't.
     const catSums = new Map()
     const empMap  = {}
+    const creatorMap = {}
     let total = 0, approvedAmt = 0, approvedCount = 0, pendingCount = 0, soFarCount = 0
 
     for (const e of expenses) {
@@ -164,15 +166,22 @@ function ExpensesPageInner() {
       if (!empMap[name]) empMap[name] = { name, id: e.emp_id || 'company', value: 0, count: 0 }
       empMap[name].value += amt
       empMap[name].count++
+
+      // "Entered by" — the user who logged the record, distinct from who the
+      // expense is for (e.g. an accountant entering a driver's petty cash claim).
+      if (e.created_by && e.created_by_name && !creatorMap[e.created_by]) {
+        creatorMap[e.created_by] = { id: e.created_by, name: e.created_by_name }
+      }
     }
 
     const byCat = CATEGORIES
       .map(cat => ({ name: cat.v, short: cat.v.split(' ')[0], Icon: cat.I, value: catSums.get(cat.v) || 0, color: cat.c }))
       .filter(c => c.value > 0)
       .sort((a, b) => b.value - a.value)
-    const byEmp = Object.values(empMap).sort((a, b) => b.value - a.value)
+    const byEmp     = Object.values(empMap).sort((a, b) => b.value - a.value)
+    const byCreator = Object.values(creatorMap).sort((a, b) => a.name.localeCompare(b.name))
 
-    return { total, approvedAmt, approvedCount, pendingCount, byCat, byEmp, soFarCount }
+    return { total, approvedAmt, approvedCount, pendingCount, byCat, byEmp, byCreator, soFarCount }
   }, [expenses])
 
   const filtered = useMemo(() => {
@@ -182,6 +191,7 @@ function ExpensesPageInner() {
         (!search || (e.emp_name || '').toLowerCase().includes(q) || (e.description || '').toLowerCase().includes(q) || (e.created_by_name || '').toLowerCase().includes(q)) &&
         (catFilter === 'all' || e.category === catFilter) &&
         (empFilter === 'all' || (empFilter === 'company' ? !e.emp_id : e.emp_id === empFilter)) &&
+        (creatorFilter === 'all' || e.created_by === creatorFilter) &&
         (statusFilter === 'all' || e.status === statusFilter)
       )
     })
@@ -194,9 +204,9 @@ function ExpensesPageInner() {
       else                           cmp = new Date(a.date || a.created_at) - new Date(b.date || b.created_at)
       return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [expenses, search, catFilter, empFilter, statusFilter, sortBy, sortDir])
+  }, [expenses, search, catFilter, empFilter, creatorFilter, statusFilter, sortBy, sortDir])
 
-  useEffect(() => { setPage(1) }, [search, catFilter, empFilter, statusFilter, sortBy, sortDir, month])
+  useEffect(() => { setPage(1) }, [search, catFilter, empFilter, creatorFilter, statusFilter, sortBy, sortDir, month])
 
   // Costwise Summary (category × station breakdown) — was an unmemoized IIFE sitting
   // directly in the render body doing a nested filter() per category×station, so it
@@ -526,6 +536,10 @@ function ExpensesPageInner() {
           <select value={empFilter} onChange={e => setEmpFilter(e.target.value)} className="ex-select">
             <option value="all">All Employees</option>
             {byEmp.map(e => <option key={e.id || e.name} value={e.id}>{e.name}</option>)}
+          </select>
+          <select value={creatorFilter} onChange={e => setCreatorFilter(e.target.value)} className="ex-select">
+            <option value="all">All Entered By</option>
+            {byCreator.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
           <select value={catFilter} onChange={e => setCatFilter(e.target.value)} className="ex-select">
             <option value="all">All Categories</option>
