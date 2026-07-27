@@ -169,6 +169,13 @@ const CSS = `
     color: var(--text-muted); display: flex; align-items: center;
   }
   .cust-input-prefix .cust-input { border-radius: 0 8px 8px 0; }
+  .cust-input-suffix { display: flex; }
+  .cust-input-suffix .cust-input { border-radius: 8px 0 0 8px; }
+  .cust-input-suffix span {
+    padding: 8px 10px; background: var(--card); border: 1px solid var(--border);
+    border-left: none; border-radius: 0 8px 8px 0; font-size: 11px; font-weight: 700;
+    color: var(--text-muted); display: flex; align-items: center;
+  }
   .cust-type-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
   .cust-type-opt {
     display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -399,7 +406,7 @@ function EntryModal({ type, customer, entry, onSave, onClose }) {
   const hasTrn    = !!customer?.trn_no?.trim()
 
   const blank = isInvoice
-    ? { invoice_date: new Date().toISOString().slice(0,10), invoice_no:'', cost_center: customer?.cost_center||'', description:'', invoice_amount:'', vat: hasTrn ? '' : '0', grand_total:'' }
+    ? { invoice_date: new Date().toISOString().slice(0,10), invoice_no:'', cost_center: customer?.cost_center||'', description:'', invoice_amount:'', vat_percent: hasTrn ? '5' : '', grand_total:'' }
     : { receipt_date: new Date().toISOString().slice(0,10), cost_center: customer?.cost_center||'', description:'', credit:'' }
 
   const [form, setForm] = useState(entry ? (() => {
@@ -409,7 +416,10 @@ function EntryModal({ type, customer, entry, onSave, onClose }) {
       cost_center:    entry.cost_center   || '',
       description:    entry.description   || '',
       invoice_amount: entry.invoice_amount != null ? String(entry.invoice_amount) : '',
-      vat:            entry.vat            != null ? String(entry.vat)            : '',
+      // VAT is stored as an AED amount; derive the display percentage from amount + vat.
+      vat_percent:    (entry.vat != null && entry.invoice_amount)
+        ? String(Math.round((entry.vat / entry.invoice_amount) * 10000) / 100)
+        : (entry.vat != null ? '0' : ''),
       grand_total:    entry.grand_total    != null ? String(entry.grand_total)    : '',
     }
     return {
@@ -426,27 +436,23 @@ function EntryModal({ type, customer, entry, onSave, onClose }) {
   function set(k, v) {
     setForm(f => {
       const next = { ...f, [k]: v }
-      if (isInvoice && k === 'invoice_amount') {
-        const amt = parseFloat(v)
-        // Auto-suggest 5% VAT only for TRN customers; no-TRN customers enter VAT manually
-        // and their existing entry should not be overwritten when the amount changes.
-        if (hasTrn) {
-          next.vat = (!isNaN(amt) && amt >= 0) ? String(Math.round(amt * 5) / 100) : ''
-        }
-        const vat = parseFloat(next.vat)
-        next.grand_total = (!isNaN(amt) && amt >= 0)
-          ? String(Math.round((amt + (isNaN(vat) ? 0 : vat)) * 100) / 100)
-          : ''
-      } else if (isInvoice && k === 'vat') {
+      if (isInvoice && (k === 'invoice_amount' || k === 'vat_percent')) {
         const amt = parseFloat(next.invoice_amount)
-        const vat = parseFloat(v)
-        if (!isNaN(amt) && amt >= 0) {
-          next.grand_total = String(Math.round((amt + (isNaN(vat) ? 0 : vat)) * 100) / 100)
-        }
+        const pct = parseFloat(next.vat_percent)
+        const vatAmt = (!isNaN(amt) && amt >= 0 && !isNaN(pct)) ? Math.round(amt * pct) / 100 : 0
+        next.grand_total = (!isNaN(amt) && amt >= 0)
+          ? String(Math.round((amt + vatAmt) * 100) / 100)
+          : ''
       }
       return next
     })
   }
+
+  const vatAmount = (() => {
+    const amt = parseFloat(form.invoice_amount)
+    const pct = parseFloat(form.vat_percent)
+    return (!isNaN(amt) && amt >= 0 && !isNaN(pct)) ? Math.round(amt * pct) / 100 : 0
+  })()
 
   async function handleSubmit() {
     setErr('')
@@ -463,8 +469,8 @@ function EntryModal({ type, customer, entry, onSave, onClose }) {
           cost_center: form.cost_center || null,
           description: form.description || null,
           invoice_amount: amt,
-          vat: form.vat !== '' ? parseFloat(form.vat) : null,
-          grand_total: form.grand_total !== '' ? parseFloat(form.grand_total) : null,
+          vat: vatAmount,
+          grand_total: form.grand_total !== '' ? parseFloat(form.grand_total) : (amt + vatAmount),
         }
         if (isEdit) await customerInvoiceApi.update(entry.id, payload)
         else        await customerInvoiceApi.create(payload)
@@ -549,13 +555,14 @@ function EntryModal({ type, customer, entry, onSave, onClose }) {
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div className="cust-field">
                   <label>VAT {hasTrn
-                    ? <span style={{ fontSize:9, color:'#16A34A' }}>(5% auto)</span>
-                    : <span style={{ fontSize:9, color:'#DC2626' }}>(no TRN — enter manually)</span>}
+                    ? <span style={{ fontSize:9, color:'#16A34A' }}>(defaults to 5%)</span>
+                    : <span style={{ fontSize:9, color:'#DC2626' }}>(no TRN — enter % manually)</span>}
                   </label>
-                  <div className="cust-input-prefix">
-                    <span>AED</span>
-                    <input type="number" min="0" step="0.01" value={form.vat} onChange={e => set('vat', e.target.value)} placeholder="0.00" className="cust-input"/>
+                  <div className="cust-input-suffix">
+                    <input type="number" min="0" max="100" step="0.01" value={form.vat_percent} onChange={e => set('vat_percent', e.target.value)} placeholder="0" className="cust-input"/>
+                    <span>%</span>
                   </div>
+                  <div style={{ fontSize:10, color:'var(--text-muted)', marginTop:4 }}>= AED {vatAmount.toLocaleString('en-AE', { minimumFractionDigits:2, maximumFractionDigits:2 })}</div>
                 </div>
                 <div className="cust-field">
                   <label>Grand Total</label>
