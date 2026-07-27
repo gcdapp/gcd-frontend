@@ -18,7 +18,7 @@ const MONTHS  = Array.from({ length: 6 }, (_, i) => {
 const EMP_COLORS = ['#FBBF24','#818CF8','#34D399','#F87171','#38BDF8','#A78BFA','#FB923C','#4ADE80']
 // Each sort field has a "natural" default direction (newest/highest/A-Z first) —
 // applied whenever the field changes, so switching fields doesn't feel backwards.
-const SORT_DEFAULT_DIR = { date: 'desc', amount: 'desc', emp: 'asc', cat: 'asc' }
+const SORT_DEFAULT_DIR = { date: 'desc', amount: 'desc', emp: 'asc', cat: 'asc', creator: 'asc' }
 
 // ── Helpers ───────────────────────────────────────────────────────
 function hdr(json = true) {
@@ -187,10 +187,11 @@ function ExpensesPageInner() {
     })
     return [...list].sort((a, b) => {
       let cmp = 0
-      if (sortBy === 'amount')      cmp = Number(a.amount) - Number(b.amount)
-      else if (sortBy === 'emp')    cmp = (a.emp_name || '').localeCompare(b.emp_name || '')
-      else if (sortBy === 'cat')    cmp = a.category.localeCompare(b.category)
-      else                          cmp = new Date(a.date || a.created_at) - new Date(b.date || b.created_at)
+      if (sortBy === 'amount')       cmp = Number(a.amount) - Number(b.amount)
+      else if (sortBy === 'emp')     cmp = (a.emp_name || '').localeCompare(b.emp_name || '')
+      else if (sortBy === 'cat')     cmp = a.category.localeCompare(b.category)
+      else if (sortBy === 'creator') cmp = (a.created_by_name || '').localeCompare(b.created_by_name || '')
+      else                           cmp = new Date(a.date || a.created_at) - new Date(b.date || b.created_at)
       return sortDir === 'asc' ? cmp : -cmp
     })
   }, [expenses, search, catFilter, empFilter, statusFilter, sortBy, sortDir])
@@ -541,6 +542,7 @@ function ExpensesPageInner() {
             <option value="amount">Sort: Amount</option>
             <option value="emp">Sort: Employee</option>
             <option value="cat">Sort: Category</option>
+            <option value="creator">Sort: Entered By</option>
           </select>
           <button onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
             title={sortDir === 'asc' ? 'Ascending — click to reverse' : 'Descending — click to reverse'}
