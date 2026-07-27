@@ -7,7 +7,7 @@ import {
   Building2, Plus, Search, Pencil, Trash2, X, ChevronLeft,
   Hash, MapPin, FileText, DollarSign, Tag, Receipt,
   RefreshCw, AlertCircle, FileSpreadsheet, ArrowDownLeft,
-  TrendingUp, TrendingDown, CheckCircle2, BookOpen, Printer,
+  TrendingUp, TrendingDown, CheckCircle2, BookOpen, Printer, Clock,
 } from 'lucide-react'
 
 const TYPE_META = {
@@ -102,6 +102,19 @@ const CSS = `
     border: 1px solid; white-space: nowrap;
   }
   .cust-card-body { padding: 12px 16px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+  .cust-bal-strip {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    border-radius: 12px; padding: 11px 14px;
+  }
+  .cust-bal-label { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 3px; }
+  .cust-bal-val   { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+  .cust-bal-stats { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+  .cust-bal-stats span { display: flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+  .cust-bal-empty {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 11.5px; color: var(--text-muted); opacity: 0.55;
+    padding: 10px 0; border: 1px dashed var(--border); border-radius: 12px;
+  }
   .cust-meta { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--text-muted); }
   .cust-meta-icon { flex-shrink: 0; margin-top: 1px; }
   .cust-rates {
@@ -1529,6 +1542,11 @@ export default function CustomersPage() {
           {filtered.map(c => {
             const typeMeta = TYPE_META[c.customer_type] || TYPE_META.sale_invoice
             const hasRates = [c.ncod_rate, c.cod_rate, c.rp_rate, c.pickup_rate].some(r => r != null)
+            const invoiceCount = Number(c.invoice_count || 0)
+            const hasActivity  = invoiceCount > 0 || Number(c.total_received || 0) !== 0 || Number(c.opening_balance || 0) !== 0
+            const bal    = Number(c.balance || 0)
+            const isDue  = c.balance_sign === 'Db' && bal > 0
+            const balColor = isDue ? '#EF4444' : '#22C55E'
             return (
               <div key={c.id} className="cust-card">
                 <div className="cust-card-header">
@@ -1543,13 +1561,21 @@ export default function CustomersPage() {
                   </div>
                 </div>
                 <div className="cust-card-body">
-                  {c.address && <div className="cust-meta"><MapPin size={11} className="cust-meta-icon" style={{ color:'var(--text-muted)' }}/><span>{c.address}</span></div>}
-                  {c.opening_balance != null && parseFloat(c.opening_balance) !== 0 && (
-                    <div className="cust-meta">
-                      <DollarSign size={11} className="cust-meta-icon" style={{ color:'#B8860B' }}/>
-                      <span>Opening Balance: <strong style={{ color:'var(--text)' }}>AED {fmtNum(c.opening_balance)}</strong></span>
+                  {hasActivity ? (
+                    <div className="cust-bal-strip" style={{ background: isDue ? 'rgba(239,68,68,0.06)' : 'rgba(34,197,94,0.06)', border: `1px solid ${isDue ? 'rgba(239,68,68,0.18)' : 'rgba(34,197,94,0.18)'}` }}>
+                      <div>
+                        <div className="cust-bal-label">{isDue ? 'Outstanding Balance' : bal === 0 ? 'Fully Settled' : 'In Credit'}</div>
+                        <div className="cust-bal-val" style={{ color: balColor }}>AED {fmtNum(bal) ?? '0.00'}</div>
+                      </div>
+                      <div className="cust-bal-stats">
+                        <span><FileText size={10}/> {invoiceCount} invoice{invoiceCount === 1 ? '' : 's'}</span>
+                        {c.last_activity && <span><Clock size={10}/> {new Date(c.last_activity).toLocaleDateString('en-AE', { day:'2-digit', month:'short', year:'numeric' })}</span>}
+                      </div>
                     </div>
+                  ) : (
+                    <div className="cust-bal-empty"><Receipt size={12}/> No invoices or payments yet</div>
                   )}
+                  {c.address && <div className="cust-meta"><MapPin size={11} className="cust-meta-icon" style={{ color:'var(--text-muted)' }}/><span>{c.address}</span></div>}
                   {hasRates && (
                     <div className="cust-rates">
                       <RateCell label="NCOD"   value={c.ncod_rate}/>
