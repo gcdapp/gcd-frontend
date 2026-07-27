@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { API } from '@/lib/api'
+import { fmtEntryTime } from '@/lib/employees'
 import ExpenseModal, { CATEGORIES, CAT_MAP } from '@/components/expenses/ExpenseModal'
 
 const MONTHS  = Array.from({ length: 6 }, (_, i) => {
@@ -628,11 +629,12 @@ function ExpensesPageInner() {
 
                       {/* Footer */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 8 }}>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                           <span>{exp.date?.slice(0, 10)}</span>
                           {exp.month && <span>· {exp.month}</span>}
                           {exp.emp_station && <span style={{ fontWeight: 600 }}>· {exp.emp_station}</span>}
                           <span>· by {exp.created_by_name || 'Unknown'}</span>
+                          {fmtEntryTime(exp.created_at) && <span>· entered {fmtEntryTime(exp.created_at)}</span>}
                         </div>
                         <div style={{ display: 'flex', gap: 5 }}>
                           {canApprove && isPending && (

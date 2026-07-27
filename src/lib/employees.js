@@ -30,6 +30,13 @@ export function fmt(n) { return Number(n||0).toLocaleString('en-AE', { minimumFr
 // to be user-facing. Strip it for display only; the stored description keeps the tag.
 export function stripRefTag(desc) { return (desc || '').replace(/\s*\[(?:pcref|ref):[^\]]*\]\s*$/, '').trim() }
 
+// exp.date is the expense's own (editable/backdate-able) date — created_at is when
+// the record was actually entered into the system, time included.
+export function fmtEntryTime(ts) {
+  if (!ts) return null
+  return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+}
+
 export function docDays(d) {
   if (!d) return null
   try { return differenceInDays(parseISO(d.slice(0,10)), new Date()) } catch { return null }

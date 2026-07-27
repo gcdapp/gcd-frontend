@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { empApi, expenseApi, API } from '@/lib/api'
 import { getEmp, setEmp as cacheEmp } from '@/lib/empCache'
-import { hdr, getUserRole, fmt, stripRefTag } from '@/lib/employees'
+import { hdr, getUserRole, fmt, stripRefTag, fmtEntryTime } from '@/lib/employees'
 import PageHero from '@/components/employees/PageHero'
 import BackLink from '@/components/employees/BackLink'
 import ExpenseModal, { CAT_MAP } from '@/components/expenses/ExpenseModal'
@@ -147,7 +147,10 @@ export default function DriverExpensesPage() {
                       </div>
                     </div>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:10, paddingTop:8, borderTop:'1px solid var(--border)' }}>
-                      <span style={{ fontSize:11, color:'var(--text-muted)' }}>{ex.date?.slice(0,10)} · by {ex.created_by_name || 'Unknown'}</span>
+                      <span style={{ fontSize:11, color:'var(--text-muted)' }}>
+                        {ex.date?.slice(0,10)} · by {ex.created_by_name || 'Unknown'}
+                        {fmtEntryTime(ex.created_at) && ` · entered ${fmtEntryTime(ex.created_at)}`}
+                      </span>
                       <div style={{ display:'flex', gap:5 }}>
                         {canApprove && isPending && (<>
                           <button onClick={()=>setStatus(ex.id,'approved')}
