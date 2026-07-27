@@ -157,7 +157,10 @@ function ExpensesPageInner() {
       catSums.set(e.category, (catSums.get(e.category) || 0) + amt)
 
       const name = e.emp_name || e.emp_id || 'Company Expense'
-      if (!empMap[name]) empMap[name] = { name, id: e.emp_id, value: 0, count: 0 }
+      // No emp_id means "Company Expense" — give it an explicit sentinel id instead
+      // of undefined, otherwise the <option> below renders with no value attribute
+      // and the browser falls back to its text content, which never matches emp_id.
+      if (!empMap[name]) empMap[name] = { name, id: e.emp_id || 'company', value: 0, count: 0 }
       empMap[name].value += amt
       empMap[name].count++
     }
@@ -177,7 +180,7 @@ function ExpensesPageInner() {
       return (
         (!search || (e.emp_name || '').toLowerCase().includes(q) || (e.description || '').toLowerCase().includes(q)) &&
         (catFilter === 'all' || e.category === catFilter) &&
-        (empFilter === 'all' || e.emp_id === empFilter) &&
+        (empFilter === 'all' || (empFilter === 'company' ? !e.emp_id : e.emp_id === empFilter)) &&
         (statusFilter === 'all' || e.status === statusFilter)
       )
     })
