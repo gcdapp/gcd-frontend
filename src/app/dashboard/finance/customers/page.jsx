@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '@/lib/auth'
 import { customerApi, customerInvoiceApi, customerReceiptApi, customerLedgerApi } from '@/lib/api'
 import {
@@ -427,20 +428,20 @@ function EntryModal({ type, customer, entry, onSave, onClose }) {
       const next = { ...f, [k]: v }
       if (isInvoice && k === 'invoice_amount') {
         const amt = parseFloat(v)
-        if (!isNaN(amt) && amt >= 0) {
-          // Always recalculate VAT when amount changes; 5% only if customer has TRN
-          const autoVat = hasTrn ? Math.round(amt * 5) / 100 : 0
-          next.vat        = String(autoVat)
-          next.grand_total = String(Math.round((amt + autoVat) * 100) / 100)
-        } else {
-          next.vat        = hasTrn ? '' : '0'
-          next.grand_total = ''
+        // Auto-suggest 5% VAT only for TRN customers; no-TRN customers enter VAT manually
+        // and their existing entry should not be overwritten when the amount changes.
+        if (hasTrn) {
+          next.vat = (!isNaN(amt) && amt >= 0) ? String(Math.round(amt * 5) / 100) : ''
         }
+        const vat = parseFloat(next.vat)
+        next.grand_total = (!isNaN(amt) && amt >= 0)
+          ? String(Math.round((amt + (isNaN(vat) ? 0 : vat)) * 100) / 100)
+          : ''
       } else if (isInvoice && k === 'vat') {
         const amt = parseFloat(next.invoice_amount)
         const vat = parseFloat(v)
-        if (!isNaN(amt) && !isNaN(vat)) {
-          next.grand_total = String(Math.round((amt + vat) * 100) / 100)
+        if (!isNaN(amt) && amt >= 0) {
+          next.grand_total = String(Math.round((amt + (isNaN(vat) ? 0 : vat)) * 100) / 100)
         }
       }
       return next
@@ -492,7 +493,7 @@ function EntryModal({ type, customer, entry, onSave, onClose }) {
   const btnBg    = isInvoice ? 'linear-gradient(135deg,#B8860B,#D4A017)' : 'linear-gradient(135deg,#15803D,#22C55E)'
   const btnShadow= isInvoice ? '0 3px 12px rgba(184,134,11,0.35)' : '0 3px 12px rgba(34,197,94,0.3)'
 
-  return (
+  return createPortal(
     <div className="ent-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="ent-modal">
         <div className="ent-modal-head">
@@ -549,11 +550,11 @@ function EntryModal({ type, customer, entry, onSave, onClose }) {
                 <div className="cust-field">
                   <label>VAT {hasTrn
                     ? <span style={{ fontSize:9, color:'#16A34A' }}>(5% auto)</span>
-                    : <span style={{ fontSize:9, color:'#DC2626' }}>(no TRN — zero rated)</span>}
+                    : <span style={{ fontSize:9, color:'#DC2626' }}>(no TRN — enter manually)</span>}
                   </label>
                   <div className="cust-input-prefix">
                     <span>AED</span>
-                    <input type="number" min="0" step="0.01" value={form.vat} onChange={e => set('vat', e.target.value)} placeholder="0.00" className="cust-input" readOnly={!hasTrn} style={!hasTrn ? { color:'var(--text-muted)', background:'var(--card)' } : {}}/>
+                    <input type="number" min="0" step="0.01" value={form.vat} onChange={e => set('vat', e.target.value)} placeholder="0.00" className="cust-input"/>
                   </div>
                 </div>
                 <div className="cust-field">
@@ -599,7 +600,8 @@ function EntryModal({ type, customer, entry, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -1308,7 +1310,7 @@ function CustomerModal({ customer, onSave, onClose }) {
     finally { setSaving(false) }
   }
 
-  return (
+  return createPortal(
     <div className="cust-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="cust-modal">
         <div className="cust-modal-header">
@@ -1410,7 +1412,8 @@ function CustomerModal({ customer, onSave, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

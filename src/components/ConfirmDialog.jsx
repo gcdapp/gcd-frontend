@@ -19,6 +19,7 @@
 //   })
 
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { AlertTriangle } from 'lucide-react'
 
 export default function ConfirmDialog({
@@ -44,7 +45,7 @@ export default function ConfirmDialog({
   const accentColor = danger ? 'var(--red)'   : 'var(--amber)'
   const accentBg    = danger ? 'var(--red-bg)' : 'var(--amber-bg)'
 
-  return (
+  return createPortal(
     <div
       onClick={e => { if (e.target === e.currentTarget) onCancel() }}
       style={{
@@ -103,6 +104,7 @@ export default function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

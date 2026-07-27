@@ -1146,7 +1146,7 @@ export default function AdminsPage() {
       </div>
 
       {/* ── Detail — centered modal ──────────────────────────── */}
-      {selected && (
+      {selected && createPortal(
         <div style={{ position:'fixed', inset:0, zIndex:9998, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
           onClick={()=>setSelected(null)}>
           <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:700, maxHeight:'90vh', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 25px 60px rgba(0,0,0,0.45)', border:'1px solid var(--border)' }}
@@ -1154,7 +1154,8 @@ export default function AdminsPage() {
             <DetailDrawer emp={selected} onEdit={()=>setModal({mode:'edit',emp:selected})} onDelete={()=>handleDelete(selected)} onClose={()=>setSelected(null)} onRefresh={load} userRole={userRole}
               onCreateProfile={u=>setModal({mode:'add',emp:{name:u.name,role:u.role,station_code:u.station_code},linkUserId:u.userId})}/>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ── Add/Edit modal ───────────────────────────────────── */}
