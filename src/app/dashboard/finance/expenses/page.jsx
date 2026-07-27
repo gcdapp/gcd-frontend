@@ -179,7 +179,7 @@ function ExpensesPageInner() {
     let list = expenses.filter(e => {
       const q = search.toLowerCase()
       return (
-        (!search || (e.emp_name || '').toLowerCase().includes(q) || (e.description || '').toLowerCase().includes(q)) &&
+        (!search || (e.emp_name || '').toLowerCase().includes(q) || (e.description || '').toLowerCase().includes(q) || (e.created_by_name || '').toLowerCase().includes(q)) &&
         (catFilter === 'all' || e.category === catFilter) &&
         (empFilter === 'all' || (empFilter === 'company' ? !e.emp_id : e.emp_id === empFilter)) &&
         (statusFilter === 'all' || e.status === statusFilter)
@@ -519,7 +519,7 @@ function ExpensesPageInner() {
             <Search size={13} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}/>
             <input
               style={{ width: '100%', paddingLeft: 36, paddingRight: 12, paddingTop: 9, paddingBottom: 9, borderRadius: 24, border: '1.5px solid var(--border)', background: 'var(--card)', color: 'var(--text)', fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
-              placeholder="Search name, description…"
+              placeholder="Search name, description, entered by…"
               value={search} onChange={e => setSearch(e.target.value)}
             />
           </div>
