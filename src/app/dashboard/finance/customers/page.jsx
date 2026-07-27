@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 import { useAuth } from '@/lib/auth'
 import { customerApi, customerInvoiceApi, customerReceiptApi, customerLedgerApi } from '@/lib/api'
 import {
-  Building2, Plus, Search, Pencil, Trash2, X, ChevronLeft, ChevronDown,
+  Building2, Plus, Search, Pencil, Trash2, X, ChevronLeft, ChevronRight,
   Hash, MapPin, FileText, DollarSign, Tag, Receipt,
   RefreshCw, AlertCircle, FileSpreadsheet, ArrowDownLeft,
   TrendingUp, TrendingDown, CheckCircle2, BookOpen, Printer, Clock, Layers,
@@ -42,7 +42,7 @@ const CSS = `
     background: linear-gradient(135deg, #0f1623 0%, #1a2535 50%, #1e3a5f 100%);
     border-radius: 16px; padding: 24px; margin-bottom: 20px;
   }
-  .cust-hero-top { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+  .cust-hero-top { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; position: relative; }
   .cust-hero-icon {
     width: 44px; height: 44px; border-radius: 12px;
     background: rgba(184,134,11,0.15); border: 1px solid rgba(184,134,11,0.3);
@@ -357,59 +357,74 @@ const CSS = `
     font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap;
   }
 
-  /* ── View toggle (Customers ↔ All Invoices & Receipts) ── */
+  /* ── View toggle (Customers ↔ All Invoices & Receipts) — centered in the hero row ── */
   .cust-view-toggle {
-    display: flex; gap: 3px; background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 3px;
-    margin-left: 20px;
+    display: flex; gap: 3px; background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 3px;
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   }
   .cust-view-btn {
     display: flex; align-items: center; gap: 6px;
-    padding: 8px 14px; border-radius: 9px; border: none; background: transparent;
+    padding: 8px 16px; border-radius: 9px; border: none; background: transparent;
     color: rgba(255,255,255,0.55); font-size: 12.5px; font-weight: 700;
     cursor: pointer; font-family: Poppins, sans-serif; white-space: nowrap; transition: all 0.15s;
   }
   .cust-view-btn:hover:not(.active) { color: rgba(255,255,255,0.85); }
-  .cust-view-btn.active { background: #B8860B; color: white; box-shadow: 0 2px 8px rgba(184,134,11,0.4); }
+  .cust-view-btn.active { background: #B8860B; color: white; box-shadow: 0 2px 10px rgba(184,134,11,0.45); }
 
   /* ── All Invoices & Receipts view ── */
-  .txn-toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
-  .txn-month {
-    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-    margin-bottom: 14px; overflow: hidden;
+  .txn-toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+  .txn-month-nav {
+    display: flex; align-items: center; gap: 2px; flex-shrink: 0;
+    background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 4px 6px;
   }
-  .txn-month-head {
-    display: flex; align-items: center; gap: 14px; padding: 16px 20px;
-    cursor: pointer; user-select: none; transition: background 0.15s;
+  .txn-month-nav-btn {
+    width: 28px; height: 28px; border-radius: 50%; border: none; background: transparent;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    color: var(--text-muted); transition: all 0.15s; flex-shrink: 0;
   }
-  .txn-month-head:hover { background: var(--bg-alt); }
-  .txn-month-chevron { color: var(--text-muted); flex-shrink: 0; transition: transform 0.2s; }
-  .txn-month-chevron.open { transform: rotate(180deg); }
-  .txn-month-title { font-size: 15px; font-weight: 800; color: var(--text); flex-shrink: 0; min-width: 140px; }
-  .txn-month-stats { display: flex; gap: 22px; margin-left: auto; flex-wrap: wrap; }
-  .txn-month-stat { text-align: right; }
-  .txn-month-stat-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 2px; }
-  .txn-month-stat-val   { font-size: 14px; font-weight: 800; font-family: monospace; }
-  .txn-month-count {
-    font-size: 10.5px; font-weight: 700; color: var(--text-muted); background: var(--bg-alt);
-    border-radius: 20px; padding: 3px 10px; flex-shrink: 0;
+  .txn-month-nav-btn:hover:not(:disabled) { background: var(--bg-alt); color: #B8860B; }
+  .txn-month-nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+  .txn-month-select {
+    border: none; background: transparent; outline: none; cursor: pointer;
+    font-family: Poppins, sans-serif; font-size: 13.5px; font-weight: 800; color: var(--text);
+    padding: 0 4px; text-align: center; appearance: none; -webkit-appearance: none; -moz-appearance: none;
+    min-width: 118px; text-align: center;
   }
-  .txn-rows { border-top: 1px solid var(--border); }
+
+  .txn-stat-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+  .txn-stat-tile {
+    border-radius: 16px; padding: 18px 20px; background: var(--card);
+    border: 1px solid var(--border); border-top: 3px solid transparent;
+    transition: box-shadow 0.18s, transform 0.18s;
+  }
+  .txn-stat-tile:hover { box-shadow: 0 8px 26px rgba(0,0,0,0.08); transform: translateY(-2px); }
+  .txn-stat-icon {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+  }
+  .txn-stat-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 6px; }
+  .txn-stat-val   { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; font-family: Poppins, sans-serif; line-height: 1; }
+  .txn-stat-sub   { font-size: 11px; color: var(--text-muted); margin-top: 8px; font-weight: 600; }
+  .txn-ratio-bar  { height: 6px; border-radius: 20px; background: var(--bg-alt); overflow: hidden; display: flex; margin-top: 10px; }
+  .txn-ratio-fill { height: 100%; transition: width 0.4s ease; }
+
+  .txn-list { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
   .txn-row {
-    display: flex; align-items: center; gap: 12px; padding: 11px 20px;
-    border-bottom: 1px solid var(--border); font-size: 12.5px;
+    display: flex; align-items: center; gap: 14px; padding: 13px 20px;
+    border-bottom: 1px solid var(--border); font-size: 12.5px; transition: background 0.15s;
   }
   .txn-row:last-child { border-bottom: none; }
   .txn-row:hover { background: var(--bg-alt); }
   .txn-row-type {
     display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
-    font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 20px; white-space: nowrap; width: 68px; justify-content: center;
+    font-size: 9.5px; font-weight: 800; padding: 4px 10px; border-radius: 20px; white-space: nowrap; width: 72px; justify-content: center;
   }
-  .txn-row-cust { font-weight: 700; color: var(--text); min-width: 160px; flex-shrink: 0; }
+  .txn-row-cust { font-weight: 700; color: var(--text); min-width: 170px; flex-shrink: 0; }
   .txn-row-desc { color: var(--text-muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .txn-row-date { color: var(--text-muted); font-size: 11.5px; flex-shrink: 0; white-space: nowrap; }
-  .txn-row-amt  { font-weight: 800; font-family: monospace; flex-shrink: 0; white-space: nowrap; text-align: right; min-width: 110px; }
-  .txn-empty { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+  .txn-row-date { color: var(--text-muted); font-size: 11.5px; flex-shrink: 0; white-space: nowrap; width: 82px; }
+  .txn-row-amt  { font-weight: 800; font-family: Poppins, sans-serif; flex-shrink: 0; white-space: nowrap; text-align: right; min-width: 110px; font-size: 13.5px; }
+  .txn-empty { text-align: center; padding: 70px 20px; color: var(--text-muted); }
 
   @media print {
     .det-back-btn, .det-hero-row button, .cust-add-btn, .det-tabs,
@@ -431,10 +446,9 @@ const CSS = `
   }
   @media (max-width: 700px) {
     .cust-hero-top { flex-wrap: wrap; }
-    .cust-view-toggle { margin-left: 0; order: 3; width: 100%; }
+    .cust-view-toggle { position: static; transform: none; order: 3; width: 100%; justify-content: center; margin-top: 4px; }
     .cust-add-btn { margin-left: 0; }
-    .txn-month-head { flex-wrap: wrap; }
-    .txn-month-stats { margin-left: 0; width: 100%; justify-content: flex-start; gap: 16px; }
+    .txn-stat-strip { grid-template-columns: 1fr; }
     .txn-row { flex-wrap: wrap; }
     .txn-row-desc { width: 100%; order: 4; white-space: normal; }
   }
@@ -1493,7 +1507,7 @@ function CustomerModal({ customer, onSave, onClose }) {
   )
 }
 
-/* ── All Invoices & Receipts (every customer, grouped by month) ──── */
+/* ── All Invoices & Receipts (every customer, one month at a time) ──── */
 function fmtMonthTitle(key) {
   const [y, m] = key.split('-')
   return new Date(+y, +m - 1).toLocaleDateString('en-US', { month:'long', year:'numeric' })
@@ -1505,7 +1519,7 @@ function AllTransactionsView() {
   const [loading,  setLoading]  = useState(true)
   const [err,      setErr]      = useState('')
   const [search,   setSearch]   = useState('')
-  const [openMonths, setOpenMonths] = useState(() => new Set())
+  const [selectedMonth, setSelectedMonth] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
@@ -1519,64 +1533,82 @@ function AllTransactionsView() {
 
   useEffect(() => { load() }, [load])
 
-  const months = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    const merged = [
-      ...invoices.map(i => ({
-        id: i.id, type:'invoice', date: i.invoice_date, customer_name: i.customer_name,
-        ref: i.invoice_no || '', description: i.description, amount: Number(i.grand_total || 0),
-      })),
-      ...receipts.map(r => ({
-        id: r.id, type:'receipt', date: r.receipt_date, customer_name: r.customer_name,
-        ref: '', description: r.description, amount: Number(r.credit || 0),
-      })),
-    ].filter(e => !q
-      || (e.customer_name || '').toLowerCase().includes(q)
-      || (e.description   || '').toLowerCase().includes(q)
-      || (e.ref            || '').toLowerCase().includes(q)
-    )
+  const allEntries = useMemo(() => [
+    ...invoices.map(i => ({
+      id: i.id, type:'invoice', date: i.invoice_date, customer_name: i.customer_name,
+      ref: i.invoice_no || '', description: i.description, amount: Number(i.grand_total || 0),
+    })),
+    ...receipts.map(r => ({
+      id: r.id, type:'receipt', date: r.receipt_date, customer_name: r.customer_name,
+      ref: '', description: r.description, amount: Number(r.credit || 0),
+    })),
+  ], [invoices, receipts])
 
-    const map = new Map()
-    for (const e of merged) {
-      const key = (e.date || '').slice(0, 7)
-      if (!key) continue
-      if (!map.has(key)) map.set(key, { key, entries:[], totalInvoiced:0, totalReceived:0 })
-      const m = map.get(key)
-      m.entries.push(e)
-      if (e.type === 'invoice') m.totalInvoiced += e.amount
-      else                      m.totalReceived += e.amount
-    }
-    const arr = Array.from(map.values())
-    arr.forEach(m => m.entries.sort((a, b) => {
-      if (a.date !== b.date) return a.date < b.date ? 1 : -1
-      if (a.type !== b.type) return a.type === 'invoice' ? -1 : 1
-      return 0
-    }))
-    arr.sort((a, b) => b.key.localeCompare(a.key))
-    return arr
-  }, [invoices, receipts, search])
+  // Newest month first — this is the "sort by month" order the picker walks through.
+  const monthKeys = useMemo(() => {
+    const set = new Set()
+    allEntries.forEach(e => { const k = (e.date || '').slice(0, 7); if (k) set.add(k) })
+    return Array.from(set).sort((a, b) => b.localeCompare(a))
+  }, [allEntries])
 
-  // Nothing expanded yet (first load) → open just the most recent month so the
-  // page isn't an intimidating wall of collapsed rows.
+  // Default to (or snap back to) the most recent month once data loads.
   useEffect(() => {
-    if (months.length && openMonths.size === 0) setOpenMonths(new Set([months[0].key]))
+    if (monthKeys.length && (!selectedMonth || !monthKeys.includes(selectedMonth))) {
+      setSelectedMonth(monthKeys[0])
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [months.length])
+  }, [monthKeys])
 
-  function toggleMonth(key) {
-    setOpenMonths(prev => {
-      const next = new Set(prev)
-      next.has(key) ? next.delete(key) : next.add(key)
-      return next
+  const monthIndex  = selectedMonth ? monthKeys.indexOf(selectedMonth) : -1
+  const canGoOlder   = monthIndex >= 0 && monthIndex < monthKeys.length - 1
+  const canGoNewer   = monthIndex > 0
+  const goOlder = () => canGoOlder && setSelectedMonth(monthKeys[monthIndex + 1])
+  const goNewer = () => canGoNewer && setSelectedMonth(monthKeys[monthIndex - 1])
+
+  const { entries, totalInvoiced, totalReceived, invCount, recCount } = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const list = allEntries
+      .filter(e => (e.date || '').slice(0, 7) === selectedMonth)
+      .filter(e => !q
+        || (e.customer_name || '').toLowerCase().includes(q)
+        || (e.description   || '').toLowerCase().includes(q)
+        || (e.ref            || '').toLowerCase().includes(q)
+      )
+      .sort((a, b) => {
+        if (a.date !== b.date) return a.date < b.date ? 1 : -1
+        if (a.type !== b.type) return a.type === 'invoice' ? -1 : 1
+        return 0
+      })
+    let totalInvoiced = 0, totalReceived = 0, invCount = 0, recCount = 0
+    list.forEach(e => {
+      if (e.type === 'invoice') { totalInvoiced += e.amount; invCount++ }
+      else                      { totalReceived += e.amount; recCount++ }
     })
-  }
+    return { entries: list, totalInvoiced, totalReceived, invCount, recCount }
+  }, [allEntries, selectedMonth, search])
 
-  const isSearching = search.trim().length > 0
+  const net = totalInvoiced - totalReceived
+  const ratioTotal = totalInvoiced + totalReceived
+  const invoicedPct = ratioTotal > 0 ? (totalInvoiced / ratioTotal) * 100 : 50
 
   if (loading) {
     return (
       <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-        {[1,2,3].map(i => <div key={i} className="cust-skel" style={{ height:64, opacity:1-(i-1)*0.15 }}/>)}
+        <div className="cust-skel" style={{ height:36, width:220 }}/>
+        <div className="txn-stat-strip">
+          {[1,2,3].map(i => <div key={i} className="cust-skel" style={{ height:110, opacity:1-(i-1)*0.12 }}/>)}
+        </div>
+        <div className="cust-skel" style={{ height:200 }}/>
+      </div>
+    )
+  }
+
+  if (monthKeys.length === 0) {
+    return (
+      <div className="txn-empty">
+        <Layers size={32} style={{ opacity:0.2, marginBottom:12 }}/>
+        <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>No invoices or receipts yet</div>
+        <div style={{ fontSize:12.5 }}>Add an invoice or receipt from a customer to see it here</div>
       </div>
     )
   }
@@ -1586,8 +1618,15 @@ function AllTransactionsView() {
       <div className="txn-toolbar">
         <div className="cust-search-wrap" style={{ flex:1 }}>
           <Search size={14} style={{ color:'var(--text-muted)', flexShrink:0 }}/>
-          <input className="cust-search-input" placeholder="Search customer, description, invoice no…" value={search} onChange={e => setSearch(e.target.value)}/>
+          <input className="cust-search-input" placeholder="Search this month's customer, description, invoice no…" value={search} onChange={e => setSearch(e.target.value)}/>
           {search && <button onClick={() => setSearch('')} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', display:'flex' }}><X size={13}/></button>}
+        </div>
+        <div className="txn-month-nav">
+          <button className="txn-month-nav-btn" onClick={goOlder} disabled={!canGoOlder} title="Older month"><ChevronLeft size={15}/></button>
+          <select className="txn-month-select" value={selectedMonth || ''} onChange={e => setSelectedMonth(e.target.value)}>
+            {monthKeys.map(k => <option key={k} value={k}>{fmtMonthTitle(k)}</option>)}
+          </select>
+          <button className="txn-month-nav-btn" onClick={goNewer} disabled={!canGoNewer} title="Newer month"><ChevronRight size={15}/></button>
         </div>
       </div>
 
@@ -1597,56 +1636,57 @@ function AllTransactionsView() {
         </div>
       )}
 
-      {months.length === 0 ? (
-        <div className="txn-empty">
-          <Layers size={32} style={{ opacity:0.2, marginBottom:12 }}/>
-          <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>{isSearching ? 'No matching transactions' : 'No invoices or receipts yet'}</div>
-          <div style={{ fontSize:12.5 }}>{isSearching ? 'Try a different search term' : 'Add an invoice or receipt from a customer to see it here'}</div>
+      <div className="txn-stat-strip">
+        <div className="txn-stat-tile" style={{ borderTopColor:'#F97316' }}>
+          <div className="txn-stat-icon" style={{ background:'rgba(249,115,22,0.12)' }}><TrendingUp size={16} color="#F97316"/></div>
+          <div className="txn-stat-label">Invoiced</div>
+          <div className="txn-stat-val" style={{ color:'#F97316' }}>AED {fmtNum(totalInvoiced) ?? '0.00'}</div>
+          <div className="txn-stat-sub">{invCount} invoice{invCount === 1 ? '' : 's'}</div>
         </div>
-      ) : months.map(m => {
-        const open = isSearching || openMonths.has(m.key)
-        const net  = m.totalInvoiced - m.totalReceived
-        return (
-          <div key={m.key} className="txn-month">
-            <div className="txn-month-head" onClick={() => toggleMonth(m.key)}>
-              <ChevronDown size={16} className={`txn-month-chevron${open ? ' open' : ''}`}/>
-              <div className="txn-month-title">{fmtMonthTitle(m.key)}</div>
-              <div className="txn-month-stats">
-                <div className="txn-month-stat">
-                  <div className="txn-month-stat-label">Invoiced</div>
-                  <div className="txn-month-stat-val" style={{ color:'#F97316' }}>AED {fmtNum(m.totalInvoiced)}</div>
-                </div>
-                <div className="txn-month-stat">
-                  <div className="txn-month-stat-label">Received</div>
-                  <div className="txn-month-stat-val" style={{ color:'#22C55E' }}>AED {fmtNum(m.totalReceived)}</div>
-                </div>
-                <div className="txn-month-stat">
-                  <div className="txn-month-stat-label">Net</div>
-                  <div className="txn-month-stat-val" style={{ color: net >= 0 ? '#F97316' : '#22C55E' }}>AED {fmtNum(Math.abs(net))}</div>
-                </div>
-              </div>
-              <div className="txn-month-count">{m.entries.length} entr{m.entries.length === 1 ? 'y' : 'ies'}</div>
-            </div>
-            {open && (
-              <div className="txn-rows">
-                {m.entries.map(e => (
-                  <div key={`${e.type}-${e.id}`} className="txn-row">
-                    <span className="txn-row-type" style={{
-                      background: e.type === 'invoice' ? 'rgba(249,115,22,0.1)' : 'rgba(34,197,94,0.1)',
-                      color:      e.type === 'invoice' ? '#F97316' : '#22C55E',
-                      border:     `1px solid ${e.type === 'invoice' ? 'rgba(249,115,22,0.25)' : 'rgba(34,197,94,0.25)'}`,
-                    }}>{e.type === 'invoice' ? 'INVOICE' : 'RECEIPT'}</span>
-                    <span className="txn-row-cust">{e.customer_name || 'Unknown'}</span>
-                    <span className="txn-row-desc">{e.ref ? `${e.ref} — ` : ''}{e.description || <span style={{ opacity:0.5 }}>—</span>}</span>
-                    <span className="txn-row-date">{e.date?.slice(0,10)}</span>
-                    <span className="txn-row-amt" style={{ color: e.type === 'invoice' ? '#F97316' : '#22C55E' }}>AED {fmtNum(e.amount)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+        <div className="txn-stat-tile" style={{ borderTopColor:'#22C55E' }}>
+          <div className="txn-stat-icon" style={{ background:'rgba(34,197,94,0.12)' }}><ArrowDownLeft size={16} color="#22C55E"/></div>
+          <div className="txn-stat-label">Received</div>
+          <div className="txn-stat-val" style={{ color:'#22C55E' }}>AED {fmtNum(totalReceived) ?? '0.00'}</div>
+          <div className="txn-stat-sub">{recCount} receipt{recCount === 1 ? '' : 's'}</div>
+        </div>
+        <div className="txn-stat-tile" style={{ borderTopColor: net >= 0 ? '#F97316' : '#22C55E' }}>
+          <div className="txn-stat-icon" style={{ background: net >= 0 ? 'rgba(249,115,22,0.12)' : 'rgba(34,197,94,0.12)' }}>
+            {net >= 0 ? <TrendingUp size={16} color="#F97316"/> : <CheckCircle2 size={16} color="#22C55E"/>}
           </div>
-        )
-      })}
+          <div className="txn-stat-label">Net</div>
+          <div className="txn-stat-val" style={{ color: net >= 0 ? '#F97316' : '#22C55E' }}>AED {fmtNum(Math.abs(net)) ?? '0.00'}</div>
+          <div className="txn-ratio-bar">
+            <div className="txn-ratio-fill" style={{ width:`${invoicedPct}%`, background:'#F97316' }}/>
+            <div className="txn-ratio-fill" style={{ width:`${100 - invoicedPct}%`, background:'#22C55E' }}/>
+          </div>
+        </div>
+      </div>
+
+      <div className="cust-section-label"><FileSpreadsheet size={12}/> {fmtMonthTitle(selectedMonth)} Transactions</div>
+
+      {entries.length === 0 ? (
+        <div className="txn-empty">
+          <Search size={28} style={{ opacity:0.2, marginBottom:10 }}/>
+          <div style={{ fontWeight:700, fontSize:13.5 }}>No matching transactions</div>
+          <div style={{ fontSize:12, marginTop:2 }}>Try a different search term</div>
+        </div>
+      ) : (
+        <div className="txn-list">
+          {entries.map(e => (
+            <div key={`${e.type}-${e.id}`} className="txn-row">
+              <span className="txn-row-type" style={{
+                background: e.type === 'invoice' ? 'rgba(249,115,22,0.1)' : 'rgba(34,197,94,0.1)',
+                color:      e.type === 'invoice' ? '#F97316' : '#22C55E',
+                border:     `1px solid ${e.type === 'invoice' ? 'rgba(249,115,22,0.25)' : 'rgba(34,197,94,0.25)'}`,
+              }}>{e.type === 'invoice' ? 'INVOICE' : 'RECEIPT'}</span>
+              <span className="txn-row-cust">{e.customer_name || 'Unknown'}</span>
+              <span className="txn-row-desc">{e.ref ? `${e.ref} — ` : ''}{e.description || <span style={{ opacity:0.5 }}>—</span>}</span>
+              <span className="txn-row-date">{e.date?.slice(0,10)}</span>
+              <span className="txn-row-amt" style={{ color: e.type === 'invoice' ? '#F97316' : '#22C55E' }}>AED {fmtNum(e.amount) ?? '0.00'}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
