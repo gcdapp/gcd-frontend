@@ -649,6 +649,7 @@ function ExpensesPageInner() {
                           <span>{exp.date?.slice(0, 10)}</span>
                           {exp.month && <span>· {exp.month}</span>}
                           {exp.emp_station && <span style={{ fontWeight: 600 }}>· {exp.emp_station}</span>}
+                          <span style={{ textTransform: 'capitalize' }}>· {exp.payment_method || 'cash'}</span>
                           <span>· by {exp.created_by_name || 'Unknown'}</span>
                           {fmtEntryTime(exp.created_at) && <span>· entered {fmtEntryTime(exp.created_at)}</span>}
                         </div>

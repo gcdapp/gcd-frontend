@@ -5,8 +5,13 @@ import { API } from '@/lib/api'
 import {
   X, AlertCircle, ParkingCircle, Banknote, Plane, Fuel, HeartPulse,
   ScanSearch, Smartphone, Building2, Wallet, Bus, Car, KeyRound, FileText, Package,
-  Scale, Gavel, Award, TrendingDown, Clock, Wrench, Route, PiggyBank,
+  Scale, Gavel, Award, TrendingDown, Clock, Wrench, Route, PiggyBank, Landmark, Coins,
 } from 'lucide-react'
+
+const PAYMENT_METHODS = [
+  { v: 'cash', label: 'Cash', I: Coins },
+  { v: 'bank', label: 'Bank', I: Landmark },
+]
 
 export const CATEGORIES = [
   { v:'Parking',               c:'#F59E0B', I:ParkingCircle  },
@@ -59,6 +64,7 @@ export default function ExpenseModal({ expense, employees = [], lockEmpId, onSav
     date:        expense?.date?.slice(0, 10) || new Date().toISOString().slice(0, 10),
     description: expense?.description || '',
     month:       expense?.month       || MONTHS[0],
+    payment_method: expense?.payment_method || 'cash',
   })
   const [saving, setSaving] = useState(false)
   const [err,    setErr]    = useState(null)
@@ -143,6 +149,29 @@ export default function ExpenseModal({ expense, employees = [], lockEmpId, onSav
             <div style={{ position: 'relative' }}>
               <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>AED</span>
               <input className="input" type="number" step="0.01" value={form.amount} onChange={e => set('amount', e.target.value)} style={{ paddingLeft: 52, fontSize: 16, fontWeight: 700 }}/>
+            </div>
+          </div>
+
+          <div>
+            <label className="input-label">Paid Via</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {PAYMENT_METHODS.map(pm => {
+                const active = form.payment_method === pm.v
+                return (
+                  <button key={pm.v} type="button" onClick={() => set('payment_method', pm.v)}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                      padding: '9px 12px', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit',
+                      fontWeight: 700, fontSize: 12.5,
+                      border: `1.5px solid ${active ? cat.c : 'var(--border)'}`,
+                      background: active ? `${cat.c}14` : 'var(--card)',
+                      color: active ? cat.c : 'var(--text-muted)',
+                      transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+                    }}>
+                    <pm.I size={14}/> {pm.label}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
