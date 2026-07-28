@@ -5,7 +5,7 @@ import { API } from '@/lib/api'
 import {
   X, AlertCircle, ParkingCircle, Banknote, Plane, Fuel, HeartPulse,
   ScanSearch, Smartphone, Building2, Wallet, Bus, Car, KeyRound, FileText, Package,
-  Scale, Gavel, Award, TrendingDown, Clock, Wrench, Route,
+  Scale, Gavel, Award, TrendingDown, Clock, Wrench, Route, PiggyBank,
 } from 'lucide-react'
 
 export const CATEGORIES = [
@@ -19,6 +19,7 @@ export const CATEGORIES = [
   { v:'Idfy',                  c:'#EC4899', I:ScanSearch     },
   { v:'Mobile Expenses',       c:'#06B6D4', I:Smartphone     },
   { v:'Office Expenses',       c:'#84CC16', I:Building2      },
+  { v:'Pension',               c:'#059669', I:PiggyBank      },
   { v:'Petty Cash',            c:'#F97316', I:Wallet         },
   { v:'RTA Top-up',            c:'#0EA5E9', I:Bus            },
   { v:'Salik',                 c:'#0EA5E9', I:Route          },
