@@ -73,7 +73,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
     visa_file_no:             emp.visa_file_no||'',
     insurance_url:            emp.insurance_url||'',
     login_email:'', login_password:''
-  } : (isProjectScoped ? { ...EMPTY, project_type: assignedProjects[0], station_code: '' } : EMPTY))
+  } : (isProjectScoped ? { ...EMPTY, project_type: assignedProjects[0] } : EMPTY))
   const [saving, setSaving] = useState(false)
   const [err,    setErr]    = useState(null)
   const [tab,    setTab]    = useState('identity')
