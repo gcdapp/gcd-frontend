@@ -20,9 +20,12 @@ import { differenceInDays, parseISO } from 'date-fns'
 // ── Helpers ──────────────────────────────────────────────────────
 const TYPE_COLORS = { Annual:'#B8860B', Sick:'#2563EB', Emergency:'#DC2626', Unpaid:'#6B7280', Other:'#6B7280' }
 const DED_LABELS  = { traffic_fine:'Traffic Fine', iloe_fee:'ILOE Fee', iloe_fine:'ILOE Fine', cash_variance:'Cash Variance', cash_advance:'Cash Advance', absent_days:'Absent Days', other:'Other' }
+// Plain year*12+month arithmetic — d.setMonth(d.getMonth()-i) overflows into
+// the next month on a 31st whenever the target month is shorter, producing
+// duplicate/skipped months.
 const PAY_MONTHS = Array.from({length:12},(_,i)=>{
-  const d = new Date(); d.setMonth(d.getMonth()-i)
-  return d.toISOString().slice(0,7)
+  const now = new Date(), total = now.getFullYear()*12 + now.getMonth() - i
+  return `${Math.floor(total/12)}-${String(total%12+1).padStart(2,'0')}`
 })
 
 function fmt(n)  { return Number(n || 0).toLocaleString('en-US') }

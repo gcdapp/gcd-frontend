@@ -12,8 +12,13 @@ import { API } from '@/lib/api'
 import { fmtEntryTime } from '@/lib/employees'
 import ExpenseModal, { CATEGORIES, CAT_MAP } from '@/components/expenses/ExpenseModal'
 
+// Not `d.setMonth(d.getMonth() - i)` — on a 31st, that overflows into the next
+// month whenever the target month is shorter (e.g. Jul 31 minus 1 month lands
+// on Jun 31 → rolls to Jul 1), producing duplicate/skipped months. Plain
+// year*12+month arithmetic sidesteps day-of-month entirely.
 const MONTHS  = Array.from({ length: 6 }, (_, i) => {
-  const d = new Date(); d.setMonth(d.getMonth() - i); return d.toISOString().slice(0, 7)
+  const now = new Date(), total = now.getFullYear() * 12 + now.getMonth() - i
+  return `${Math.floor(total / 12)}-${String(total % 12 + 1).padStart(2, '0')}`
 })
 const EMP_COLORS = ['#FBBF24','#818CF8','#34D399','#F87171','#38BDF8','#A78BFA','#FB923C','#4ADE80']
 // Each sort field has a "natural" default direction (newest/highest/A-Z first) —

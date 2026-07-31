@@ -9,8 +9,12 @@ import PageHero from '@/components/employees/PageHero'
 import BackLink from '@/components/employees/BackLink'
 import { Banknote, Plus, Trash2, Check, Undo2, X } from 'lucide-react'
 
+// Plain year*12+month arithmetic — d.setMonth(d.getMonth()-i) overflows into
+// the next month on a 31st whenever the target month is shorter, producing
+// duplicate/skipped months.
 const MONTHS = Array.from({ length: 12 }, (_, i) => {
-  const d = new Date(); d.setMonth(d.getMonth() - i); return d.toISOString().slice(0, 7)
+  const now = new Date(), total = now.getFullYear() * 12 + now.getMonth() - i
+  return `${Math.floor(total / 12)}-${String(total % 12 + 1).padStart(2, '0')}`
 })
 const BON_TYPES = [
   { v:'performance',   l:'Performance' },

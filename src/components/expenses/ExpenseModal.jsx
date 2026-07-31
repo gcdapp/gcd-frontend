@@ -41,8 +41,12 @@ export const CATEGORIES = [
 ]
 export const CAT_MAP = Object.fromEntries(CATEGORIES.map(c => [c.v, c]))
 
+// Plain year*12+month arithmetic — d.setMonth(d.getMonth()-i) overflows into
+// the next month on a 31st whenever the target month is shorter, producing
+// duplicate/skipped months.
 const MONTHS = Array.from({ length: 6 }, (_, i) => {
-  const d = new Date(); d.setMonth(d.getMonth() - i); return d.toISOString().slice(0, 7)
+  const now = new Date(), total = now.getFullYear() * 12 + now.getMonth() - i
+  return `${Math.floor(total / 12)}-${String(total % 12 + 1).padStart(2, '0')}`
 })
 
 function hdr(json = true) {
