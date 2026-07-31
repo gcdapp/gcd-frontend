@@ -20,7 +20,7 @@ const EXPENSE_TYPES = [
   'ADVANCES', 'AIR TICKETS', 'CASH VARIANCE', 'FINE', 'Fuel',
   'INCENTIVE', 'INCENTIVE DEDUCTIONS', 'Miscellaneous Exp.', 'Mobile Expenses',
   'OverTime', 'Parking Fee', 'RTA PARKING TOPUP', 'RTA TOPUP',
-  'Salik', 'Vehicle Damage', 'Vehicle Expenses',
+  'Salary', 'Salik', 'Vehicle Damage', 'Vehicle Expenses',
 ]
 
 const ROLE_LABELS = {
