@@ -73,7 +73,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
     visa_file_no:             emp.visa_file_no||'',
     insurance_url:            emp.insurance_url||'',
     login_email:'', login_password:''
-  } : (isProjectScoped ? { ...EMPTY, project_type: assignedProjects[0] } : EMPTY))
+  } : (isProjectScoped ? { ...EMPTY, project_type: assignedProjects[0], visa_type: 'own' } : EMPTY))
   const [saving, setSaving] = useState(false)
   const [err,    setErr]    = useState(null)
   const [tab,    setTab]    = useState('identity')
@@ -82,7 +82,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
 
   async function handleSave() {
     if (!form.name||!form.role||!form.dept) return setErr('Name, role and department required')
-    if (mode==='add'&&!form.id) return setErr('Employee ID required')
+    if (mode==='add'&&!form.id&&!isProjectScoped) return setErr('Employee ID required')
     setSaving(true); setErr(null)
     try {
       const safeDate = v => (v && /^\d{4}-\d{2}-\d{2}$/.test(v)) ? v : null
@@ -142,7 +142,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
     {id:'personal',l:'Personal'},
     {id:'work',l:'Work & Pay'},
     {id:'docs',l:'Documents'},
-    ...(mode==='add'?[{id:'login',l:'Login'}]:[]),
+    ...(mode==='add'&&!isProjectScoped?[{id:'login',l:'Login'}]:[]),
   ]
 
   const previewSalary = () => {
@@ -168,14 +168,16 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
             </button>
           )}
         </div>
-        <div style={{ display:'flex', gap:2 }}>
-          {TABS.map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)}
-              style={{ padding:'8px 14px', fontSize:12.5, fontWeight:tab===t.id?700:500, color:tab===t.id?'var(--gold)':'var(--text-muted)', background:'none', border:'none', borderBottom:`2px solid ${tab===t.id?'var(--gold)':'transparent'}`, cursor:'pointer', fontFamily:'Poppins,sans-serif', marginBottom:-1, transition:'all 0.15s' }}>
-              {t.l}
-            </button>
-          ))}
-        </div>
+        {!isProjectScoped && (
+          <div style={{ display:'flex', gap:2 }}>
+            {TABS.map(t=>(
+              <button key={t.id} onClick={()=>setTab(t.id)}
+                style={{ padding:'8px 14px', fontSize:12.5, fontWeight:tab===t.id?700:500, color:tab===t.id?'var(--gold)':'var(--text-muted)', background:'none', border:'none', borderBottom:`2px solid ${tab===t.id?'var(--gold)':'transparent'}`, cursor:'pointer', fontFamily:'Poppins,sans-serif', marginBottom:-1, transition:'all 0.15s' }}>
+                {t.l}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Body */}
@@ -186,7 +188,47 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
           </div>
         )}
 
-        {tab==='identity' && (
+        {isProjectScoped && (
+          <div className="modal-two-col">
+            {locked('Employee ID', mode==='add' ? 'Auto-generated on save' : form.id)}
+            {inp('Full Name *','name','text','Mohammed Al Rashid')}
+            {inp('Phone Number','phone','tel','+971 50 XXX XXXX')}
+            <div style={{ gridColumn:'span 2' }}>
+              <Lbl>Visa Type</Lbl>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                {[
+                  { v:'own',     l:'Own Visa',      d:"Employee's own sponsorship" },
+                  { v:'company', l:'Company Visa',  d:'Sponsored by Golden Crescent' },
+                ].map(opt => (
+                  <button key={opt.v} type="button" onClick={() => set('visa_type', opt.v)}
+                    style={{ padding:'12px', borderRadius:11, border:`2px solid ${form.visa_type===opt.v?'var(--gold)':'var(--border)'}`, background:form.visa_type===opt.v?'var(--amber-bg)':'var(--card)', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
+                    <div style={{ fontWeight:700, fontSize:13, color:form.visa_type===opt.v?'var(--gold)':'var(--text)' }}>{opt.l}</div>
+                    <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:2 }}>{opt.d}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ gridColumn:'span 2' }}>
+              <Lbl>Project</Lbl>
+              <div className="modal-proj-col">
+                {[
+                  {v:'creative_packers',l:'Creative Packers'},
+                  {v:'ig_rak',l:'IG RAK'},
+                  {v:'imile',l:'IMILE Delivery Services'},
+                  {v:'jnt_express',l:'Jnt Express'},
+                  {v:'le_chocola',l:'Le Chocola'},
+                ].filter(p => assignedProjects.includes(p.v)).map(p=>(
+                  <button key={p.v} onClick={e=>{e.stopPropagation();set('project_type',p.v)}} type="button"
+                    style={{ padding:'11px', borderRadius:10, border:`2px solid ${form.project_type===p.v?'#7C3AED':'var(--border)'}`, background:form.project_type===p.v?'var(--purple-bg)':'var(--card)', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
+                    <div style={{ fontWeight:700, fontSize:13, color:form.project_type===p.v?'#7C3AED':'var(--text)' }}>{p.l}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!isProjectScoped && tab==='identity' && (
           <div className="modal-two-col">
             {mode==='add' && inp('Employee ID *','id','text','DA001')}
             {inp('Full Name *','name','text','Mohammed Al Rashid')}
@@ -213,7 +255,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
           </div>
         )}
 
-        {tab==='personal' && (
+        {!isProjectScoped && tab==='personal' && (
           <div className="modal-two-col">
             {inp('Sub Group Name','sub_group_name')}
             {inp('Passport No','passport_no','text','A1234567')}
@@ -230,30 +272,26 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
           </div>
         )}
 
-        {tab==='work' && (
+        {!isProjectScoped && tab==='work' && (
           <div className="modal-two-col">
-            {isProjectScoped ? locked('Role *','Driver')
-              : sel('Role *','role',['Driver','HR Manager','Finance Mgr','Accountant','Dispatcher','General Manager','Admin','POC','Other'])}
-            {isProjectScoped ? locked('Department *','Operations')
-              : sel('Department *','dept',['Operations','HR','Finance','Admin','Other'])}
-            {!isProjectScoped && sel('Station','station_code',['DDB1','DXE6'])}
+            {sel('Role *','role',['Driver','HR Manager','Finance Mgr','Accountant','Dispatcher','General Manager','Admin','POC','Other'])}
+            {sel('Department *','dept',['Operations','HR','Finance','Admin','Other'])}
+            {sel('Station','station_code',['DDB1','DXE6'])}
             {sel('Status','status',[{v:'active',l:'Active'},{v:'on_leave',l:'On Leave'},{v:'inactive',l:'Inactive'}])}
             <div style={{ gridColumn:'span 2' }}>
               <div style={{ background:'var(--purple-bg)', border:'1px solid var(--purple-border)', borderRadius:12, padding:'14px 16px' }}>
                 <label style={{ fontSize:11, fontWeight:800, letterSpacing:'0.06em', textTransform:'uppercase', color:'#7C3AED', marginBottom:10, display:'block' }}>Project & Salary Type</label>
-                {!isProjectScoped && (<>
-                  <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'2px 0 6px' }}>Amazon</div>
-                  <div className="modal-proj-col" style={{ marginBottom:10 }}>
-                    {[{v:'pulser',l:'Pulser',d:'Base + Hours × Rate + Bonus'},{v:'cret',l:'CRET',d:'Base + Shipments × Rate'},{v:'tradelink',l:'Tradelink',d:'Fixed prorated base, no hours/shipments'}].map(p=>(
-                      <button key={p.v} onClick={e=>{e.stopPropagation();set('project_type',p.v)}} type="button"
-                        style={{ padding:'11px', borderRadius:10, border:`2px solid ${form.project_type===p.v?'#7C3AED':'var(--border)'}`, background:form.project_type===p.v?'var(--purple-bg)':'var(--card)', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
-                        <div style={{ fontWeight:700, fontSize:13, color:form.project_type===p.v?'#7C3AED':'var(--text)' }}>{p.l}</div>
-                        <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:2 }}>{p.d}</div>
-                      </button>
-                    ))}
-                  </div>
-                </>)}
-                <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'2px 0 6px' }}>{isProjectScoped ? 'Your Projects' : 'Other Clients'}</div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'2px 0 6px' }}>Amazon</div>
+                <div className="modal-proj-col" style={{ marginBottom:10 }}>
+                  {[{v:'pulser',l:'Pulser',d:'Base + Hours × Rate + Bonus'},{v:'cret',l:'CRET',d:'Base + Shipments × Rate'},{v:'tradelink',l:'Tradelink',d:'Fixed prorated base, no hours/shipments'}].map(p=>(
+                    <button key={p.v} onClick={e=>{e.stopPropagation();set('project_type',p.v)}} type="button"
+                      style={{ padding:'11px', borderRadius:10, border:`2px solid ${form.project_type===p.v?'#7C3AED':'var(--border)'}`, background:form.project_type===p.v?'var(--purple-bg)':'var(--card)', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
+                      <div style={{ fontWeight:700, fontSize:13, color:form.project_type===p.v?'#7C3AED':'var(--text)' }}>{p.l}</div>
+                      <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:2 }}>{p.d}</div>
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'2px 0 6px' }}>Other Clients</div>
                 <div className="modal-proj-col" style={{ marginBottom:12 }}>
                   {[
                     {v:'creative_packers',l:'Creative Packers',d:'Fixed Base Salary'},
@@ -261,7 +299,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
                     {v:'imile',l:'IMILE Delivery Services',d:'Fixed Base Salary'},
                     {v:'jnt_express',l:'Jnt Express',d:'Fixed Base Salary'},
                     {v:'le_chocola',l:'Le Chocola',d:'Fixed Base Salary'},
-                  ].filter(p => !isProjectScoped || assignedProjects.includes(p.v)).map(p=>(
+                  ].map(p=>(
                     <button key={p.v} onClick={e=>{e.stopPropagation();set('project_type',p.v)}} type="button"
                       style={{ padding:'11px', borderRadius:10, border:`2px solid ${form.project_type===p.v?'#7C3AED':'var(--border)'}`, background:form.project_type===p.v?'var(--purple-bg)':'var(--card)', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
                       <div style={{ fontWeight:700, fontSize:13, color:form.project_type===p.v?'#7C3AED':'var(--text)' }}>{p.l}</div>
@@ -283,7 +321,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
           </div>
         )}
 
-        {tab==='docs' && (
+        {!isProjectScoped && tab==='docs' && (
           <div style={{ display:'flex', flexDirection:'column', gap:13 }}>
             <div className="modal-two-col">
               {inp('Visa Expiry','visa_expiry','date')}
@@ -302,7 +340,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
           </div>
         )}
 
-        {tab==='login' && mode==='add' && (
+        {!isProjectScoped && tab==='login' && mode==='add' && (
           <div style={{ display:'flex', flexDirection:'column', gap:13 }}>
             <div style={{ background:'var(--amber-bg)', border:'1px solid var(--amber-border)', borderRadius:10, padding:'12px 14px', fontSize:12.5, color:'#92400E' }}>
               <strong>Optional:</strong> Creates a driver portal login for this DA.

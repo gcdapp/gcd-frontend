@@ -41,7 +41,7 @@ function EmpModal({ emp, onSave, onClose, mode }) {
 }
 
 /* ── Employee Card ───────────────────────────────────────────── */
-function EmpCard({ emp, onEdit, onDelete, index, userRole }) {
+function EmpCard({ emp, onEdit, onDelete, index, userRole, isProjectScoped }) {
   const s        = STATUS[emp.status] || STATUS.inactive
   const sc       = SC_COLOR[emp.station_code] || '#B8860B'
   const exp      = expiry(emp.visa_expiry)
@@ -109,13 +109,13 @@ function EmpCard({ emp, onEdit, onDelete, index, userRole }) {
             {emp.work_number || '—'}
           </div>
         </div>
-        {['admin','accountant'].includes(userRole) && (
+        {(['admin','accountant'].includes(userRole) || isProjectScoped) && (
           <div style={{ display:'flex', gap:4, flexShrink:0 }}>
             <button onClick={e=>{e.preventDefault();e.stopPropagation();onEdit(emp)}}
               style={{ width:30, height:30, borderRadius:8, background:'var(--bg-alt)', border:'1px solid var(--border)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-sub)' }}>
               <Pencil size={11}/>
             </button>
-            {userRole === 'admin' && (
+            {(userRole === 'admin' || isProjectScoped) && (
               <button onClick={e=>{e.preventDefault();e.stopPropagation();onDelete(emp)}}
                 style={{ width:30, height:30, borderRadius:8, background:'var(--red-bg)', border:'1px solid var(--red-border)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--red)' }}>
                 <Trash2 size={11}/>
@@ -310,7 +310,8 @@ export default function EmployeesPage() {
               <EmpCard key={emp.id} emp={emp} index={i}
                 onEdit={e=>router.push(`/dashboard/hr/employees/${e.id}/edit`)}
                 onDelete={handleDelete}
-                userRole={userRole}/>
+                userRole={userRole}
+                isProjectScoped={isProjectScoped}/>
             ))}
           </div>
         )}
