@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
 
-import { API } from '@/lib/api'
+import { API, empApi } from '@/lib/api'
 const STATIONS = ['DDB1','DXE6']
 
 const ADMIN_ROLE_OPTIONS = ['Manager','HR','Accountant','POC','Admin','Operations Manager','Fleet Manager','POC Supervisor','Finance Manager']
@@ -88,19 +88,34 @@ function AdminModal({ emp, onSave, onClose, mode }) {
   const [saving, setSaving] = useState(false)
   const [err,    setErr]    = useState(null)
   const [tab,    setTab]    = useState('identity')
+  // Tracks whether the Employee ID was hand-typed, so the auto-suggest effect
+  // below never clobbers a value the user deliberately chose.
+  const [idTouched, setIdTouched] = useState(mode !== 'add')
 
   function set(k,v) { setForm(p=>({...p,[k]:v})) }
 
+  // Pre-fill a suggested next Employee ID on add — still editable if HR wants a different one.
+  useEffect(() => {
+    if (mode !== 'add' || idTouched) return
+    let cancelled = false
+    empApi.nextId(form.role, null).then(r => {
+      if (!cancelled && r?.id) setForm(p => (p.id ? p : { ...p, id: r.id }))
+    }).catch(()=>{})
+    return () => { cancelled = true }
+  }, [mode, idTouched, form.role])
+
   async function handleSave() {
     if (!form.name || !form.role || !form.dept) return setErr('Name, role and department required')
-    if (mode==='add' && !form.id) return setErr('Employee ID required')
+    if (!form.id) return setErr('Employee ID required')
     if (mode==='add' && form.login_email && form.login_password && form.login_password.length < 6) {
       return setErr('Login password must be at least 6 characters')
     }
     setSaving(true); setErr(null)
     try {
       const body = { ...form, salary: Number(form.salary)||0, hourly_rate: 0 }
-      const url  = mode==='add' ? `${API}/api/employees` : `${API}/api/employees/${form.id}`
+      // Update always targets the record's ORIGINAL id in the URL — form.id may
+      // have just been edited to a new value, which is exactly what we're renaming to.
+      const url  = mode==='add' ? `${API}/api/employees` : `${API}/api/employees/${emp.id}`
       const res  = await fetch(url, { method: mode==='add'?'POST':'PUT', headers: hdr(), body: JSON.stringify(body) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to save')
@@ -182,7 +197,15 @@ function AdminModal({ emp, onSave, onClose, mode }) {
 
           {tab==='identity' && (
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:13 }}>
-              {mode==='add' && inp('Employee ID *','id','text','ADM001')}
+              <div>
+                <Lbl>Employee ID *</Lbl>
+                <input className="input" type="text" value={form.id||''} autoComplete="off" spellCheck={false}
+                  placeholder={idTouched ? 'ADM001' : 'Generating…'}
+                  onChange={e=>{ setIdTouched(true); set('id', e.target.value) }}/>
+                <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:5 }}>
+                  {mode==='add' ? 'Auto-generated — edit if you need a different ID.' : 'Editing this renames the staff member everywhere it appears.'}
+                </div>
+              </div>
               {inp('Full Name *','name','text','Ahmed Al Mansouri')}
               {inp('Personal Phone','phone','tel','+971 50 XXX XXXX')}
               {inp('Emirates ID','emirates_id','text','784-XXXX-XXXXXXX-X')}

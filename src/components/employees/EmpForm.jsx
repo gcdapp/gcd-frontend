@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { empApi, API } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { X, AlertCircle } from 'lucide-react'
@@ -77,12 +77,28 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
   const [saving, setSaving] = useState(false)
   const [err,    setErr]    = useState(null)
   const [tab,    setTab]    = useState('identity')
+  // Tracks whether the Employee ID was hand-typed, so the auto-suggest effect
+  // below never clobbers a value the user deliberately chose.
+  const [idTouched, setIdTouched] = useState(mode !== 'add')
 
   function set(k,v) { setForm(p=>({...p,[k]:v})) }
 
+  // Pre-fill a suggested next Employee ID on Add (both the full form and the
+  // project-scoped one — the scoped case used to lock the field and generate
+  // it only server-side; now it's just a pre-filled suggestion, same as everywhere
+  // else). Re-suggests when role/project changes, but only while untouched.
+  useEffect(() => {
+    if (mode !== 'add' || idTouched) return
+    let cancelled = false
+    empApi.nextId(form.role, form.project_type).then(r => {
+      if (!cancelled && r?.id) setForm(p => (p.id ? p : { ...p, id: r.id }))
+    }).catch(()=>{})
+    return () => { cancelled = true }
+  }, [mode, idTouched, form.role, form.project_type])
+
   async function handleSave() {
     if (!form.name||!form.role||!form.dept) return setErr('Name, role and department required')
-    if (mode==='add'&&!form.id&&!isProjectScoped) return setErr('Employee ID required')
+    if (mode==='add'&&!form.id) return setErr('Employee ID required')
     setSaving(true); setErr(null)
     try {
       const safeDate = v => (v && /^\d{4}-\d{2}-\d{2}$/.test(v)) ? v : null
@@ -100,7 +116,9 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
         iloe_expiry:        safeDate(form.iloe_expiry),
         annual_leave_start: safeDate(form.annual_leave_start),
       }
-      const res = mode==='add' ? await empApi.create(data) : await empApi.update(form.id,data)
+      // Update always targets the record's ORIGINAL id in the URL — form.id may
+      // have just been edited to a new value, which is exactly what we're renaming to.
+      const res = mode==='add' ? await empApi.create(data) : await empApi.update(emp.id,data)
       if (mode==='add'&&form.login_email&&form.login_password) {
         const empId = res?.employee?.id||form.id
         await fetch(`${API}/api/employees/${empId}/create-user`,{method:'POST',headers:hdr(),body:JSON.stringify({email:form.login_email.trim().toLowerCase(),password:form.login_password})}).catch(()=>{})
@@ -109,14 +127,6 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
     } catch(e) { setErr(e.message) } finally { setSaving(false) }
   }
 
-  function locked(label, value) {
-    return (
-      <div>
-        <Lbl>{label}</Lbl>
-        <div className="input" style={{ display:'flex', alignItems:'center', color:'var(--text-muted)', background:'var(--bg-alt)', cursor:'not-allowed' }}>{value}</div>
-      </div>
-    )
-  }
   function inp(label, k, type='text', placeholder='') {
     return (
       <div key={k}>
@@ -190,7 +200,15 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
 
         {isProjectScoped && (
           <div className="modal-two-col">
-            {locked('Employee ID', mode==='add' ? 'Auto-generated on save' : form.id)}
+            <div>
+              <Lbl>Employee ID {mode==='add' && '*'}</Lbl>
+              <input className="input" type="text" value={form.id||''} autoComplete="off" spellCheck={false}
+                placeholder={idTouched ? 'JNT001' : 'Generating…'}
+                onChange={e=>{ setIdTouched(true); set('id', e.target.value) }}/>
+              <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:5 }}>
+                {mode==='add' ? 'Auto-generated — edit if you need a different ID.' : 'Editing this renames the DA everywhere it appears.'}
+              </div>
+            </div>
             {inp('Full Name *','name','text','Mohammed Al Rashid')}
             {inp('Phone Number','phone','tel','+971 50 XXX XXXX')}
             <div style={{ gridColumn:'span 2' }}>
@@ -230,7 +248,15 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
 
         {!isProjectScoped && tab==='identity' && (
           <div className="modal-two-col">
-            {mode==='add' && inp('Employee ID *','id','text','DA001')}
+            <div>
+              <Lbl>Employee ID *</Lbl>
+              <input className="input" type="text" value={form.id||''} autoComplete="off" spellCheck={false}
+                placeholder={idTouched ? 'DA001' : 'Generating…'}
+                onChange={e=>{ setIdTouched(true); set('id', e.target.value) }}/>
+              <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:5 }}>
+                {mode==='add' ? 'Auto-generated — edit if you need a different ID.' : 'Editing this renames the employee everywhere it appears.'}
+              </div>
+            </div>
             {inp('Full Name *','name','text','Mohammed Al Rashid')}
             {inp('Phone Number','phone','tel','+971 50 XXX XXXX')}
             {inp('Work Number','work_number','text','Internal contact')}

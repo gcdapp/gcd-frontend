@@ -17,6 +17,9 @@ export default function EditDriverPage() {
   }, [id])
 
   function backToDashboard() { router.push(`/dashboard/hr/employees/${id}`) }
+  // If the save renamed the Employee ID, the old URL no longer resolves — go
+  // to the record under its new ID instead.
+  function afterSave(savedEmp) { router.push(`/dashboard/hr/employees/${savedEmp?.id || id}`) }
 
   if (loading && !emp) return <div style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>Loading…</div>
   if (!emp) return (
@@ -31,7 +34,7 @@ export default function EditDriverPage() {
       <div style={{ width:'100%', maxWidth:720, marginBottom:-4 }}>
         <BackLink router={router} href={`/dashboard/hr/employees/${id}`} label={`Back to ${emp.name}`}/>
       </div>
-      <EmpForm emp={emp} mode="edit" maxWidth={720} onCancel={backToDashboard} onSaved={backToDashboard}/>
+      <EmpForm emp={emp} mode="edit" maxWidth={720} onCancel={backToDashboard} onSaved={afterSave}/>
     </div>
   )
 }

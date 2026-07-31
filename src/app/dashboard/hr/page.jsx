@@ -63,16 +63,31 @@ function EmpModal({ emp, onSave, onClose, mode }) {
   const [saving, setSaving] = useState(false)
   const [err,    setErr]    = useState(null)
   const [tab,    setTab]    = useState('identity')
+  // Tracks whether the Employee ID was hand-typed, so the auto-suggest effect
+  // below never clobbers a value the user deliberately chose.
+  const [idTouched, setIdTouched] = useState(mode !== 'add')
 
   function set(k, v) { setForm(p => ({ ...p, [k]: v })) }
 
+  // Pre-fill a suggested next Employee ID on add — still editable if HR wants a different one.
+  useEffect(() => {
+    if (mode !== 'add' || idTouched) return
+    let cancelled = false
+    empApi.nextId(form.role, null).then(r => {
+      if (!cancelled && r?.id) setForm(p => (p.id ? p : { ...p, id: r.id }))
+    }).catch(()=>{})
+    return () => { cancelled = true }
+  }, [mode, idTouched, form.role])
+
   async function handleSave() {
     if (!form.name || !form.role || !form.dept) return setErr('Name, role and department are required')
-    if (mode === 'add' && !form.id) return setErr('Employee ID is required (e.g. DA001)')
+    if (!form.id) return setErr('Employee ID is required (e.g. DA001)')
     setSaving(true); setErr(null)
     try {
       const data = { ...form, salary: Number(form.salary)||0, hourly_rate: Number(form.hourly_rate)||3.85 }
-      const res  = mode === 'add' ? await empApi.create(data) : await empApi.update(form.id, data)
+      // Update always targets the record's ORIGINAL id in the URL — form.id may
+      // have just been edited to a new value, which is exactly what we're renaming to.
+      const res  = mode === 'add' ? await empApi.create(data) : await empApi.update(emp.id, data)
       if (mode === 'add' && form.login_email && form.login_password) {
         const empId = res?.employee?.id || form.id
         await fetch(`${API}/api/employees/${empId}/create-user`, {
@@ -155,7 +170,16 @@ function EmpModal({ emp, onSave, onClose, mode }) {
 
           {tab==='identity' && (
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-              {mode==='add' && inp('Employee ID *', 'id', 'text', '', 'DA001')}
+              <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                <label style={{ fontSize:11, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:'#A89880' }}>Employee ID *</label>
+                <input className="input" type="text" value={form.id||''} autoComplete="off" spellCheck={false}
+                  placeholder={idTouched ? 'DA001' : 'Generating…'}
+                  onChange={e=>{ setIdTouched(true); set('id', e.target.value) }}
+                  style={{ borderRadius:10 }}/>
+                <span style={{ fontSize:10, color:'#C4B49A' }}>
+                  {mode==='add' ? 'Auto-generated — edit if you need a different ID.' : 'Editing this renames the employee everywhere it appears.'}
+                </span>
+              </div>
               {inp('Full Name *', 'name', 'text', '', 'Mohammed Al Rashid')}
               {inp('Amazon / Transporter ID', 'amazon_id', 'text', '', 'TRS-00123')}
               {inp('Emirates ID', 'emirates_id', 'text', '', '784-XXXX-XXXXXXX-X')}

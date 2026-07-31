@@ -868,7 +868,12 @@ export default function PettyCashPage() {
   // Admin oversees petty cash rather than spending against it personally — no reason
   // for them to record/upload expenses against their own (always-AED-0) balance.
   const isAdmin = user?.role === 'admin'
+  // These two only need their own balance (and, for Iftikhar, the "Record For"
+  // delegate dropdown further below — a separate mechanism, untouched by this)
+  // — not visibility into everyone else's petty cash.
+  const TEAM_OVERVIEW_EXCLUDED = ['Asma Qadri', 'Muhammad Iftikhar']
   const canViewTeam = ['admin','accountant','general_manager','manager'].includes(user?.role)
+    && !TEAM_OVERVIEW_EXCLUDED.includes(user?.name)
   const canDelete   = ['admin','accountant'].includes(user?.role)
   // Admins/accountants distribute cash rather than hold it personally, so they get
   // an all-users "Recent Entries" feed instead of the "My Balance" tab.
