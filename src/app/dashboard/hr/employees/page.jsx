@@ -11,6 +11,7 @@ import PageHero from '@/components/employees/PageHero'
 import { setEmps } from '@/lib/empCache'
 import {
   STATUS, SC_COLOR, SC_BG, SC_BORDER, projectLabel, expiry, profileCompletion,
+  CLIENT_PROJECTS, isClientProject,
 } from '@/lib/employees'
 import { Search, Plus, X, Pencil, Trash2, Users, RefreshCw, UploadCloud, Download, Check, AlertCircle } from 'lucide-react'
 import Papa from 'papaparse'
@@ -195,6 +196,7 @@ function EmpCard({ emp, onEdit, onDelete, index, userRole, isProjectScoped }) {
   const hasAlert = exp && (exp.label === 'Expired' || parseInt(exp.label) <= 60)
   const pct      = profileCompletion(emp)
   const isOwn    = (emp.visa_type || 'company') === 'own'
+  const isClient = isClientProject(emp.project_type)
 
   const bc = hasAlert ? '#EF4444' : s.dot
 
@@ -227,8 +229,14 @@ function EmpCard({ emp, onEdit, onDelete, index, userRole, isProjectScoped }) {
             <span style={{ fontSize:9.5, fontWeight:700, color:s.c, background:s.bg, border:`1px solid ${s.bc}`, borderRadius:20, padding:'2px 8px', flexShrink:0, whiteSpace:'nowrap' }}>{s.l}</span>
           </div>
           <div style={{ fontSize:11.5, color:'var(--text-muted)', display:'flex', alignItems:'center', gap:5, flexWrap:'wrap' }}>
-            <span style={{ fontWeight:700, color:sc }}>{emp.station_code || '—'}</span>
-            {emp.project_type && <>· {projectLabel(emp.project_type)}</>}
+            {isClient ? (
+              <span style={{ fontWeight:700, color:'#7C3AED' }}>{projectLabel(emp.project_type)}</span>
+            ) : (
+              <>
+                <span style={{ fontWeight:700, color:sc }}>{emp.station_code || '—'}</span>
+                {emp.project_type && <>· {projectLabel(emp.project_type)}</>}
+              </>
+            )}
             {emp.nationality && <>· {emp.nationality}</>}
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:5 }}>
@@ -282,6 +290,7 @@ export default function EmployeesPage() {
   const [allEmployees, setAllEmployees] = useState([])
   const [loading,      setLoading]      = useState(true)
   const [search,       setSearch]       = useState('')
+  const [category,     setCategory]     = useState('amazon')
   const [filterValue,  setFilterValue]  = useState('All')
   const [filterTab,    setFilterTab]    = useState('all')
   const [modal,        setModal]        = useState(null)
@@ -294,9 +303,18 @@ export default function EmployeesPage() {
 
   // A manager scoped to specific non-Amazon client projects (assigned_projects set)
   // has no use for the DDB1/DXE6 Amazon-station toggle — show their actual projects
-  // instead, filtering by project_type rather than station_code.
+  // instead, filtering by project_type rather than station_code. Amazon and client
+  // projects are otherwise unrelated programs, so an unscoped viewer (admin/HR) gets
+  // an explicit category toggle instead of one flat 180-DA list mixing both.
   const isProjectScoped = Array.isArray(user?.assigned_projects) && user.assigned_projects.length > 0
-  const filterOptions = isProjectScoped ? user.assigned_projects : ['DDB1','DXE6']
+  const filterOptions = isProjectScoped
+    ? user.assigned_projects
+    : (category === 'client' ? CLIENT_PROJECTS : ['DDB1','DXE6'])
+  // A scoped manager's own projects are always client projects — treat her the
+  // same as the "Client Projects" toggle for pill labels/colors.
+  const isClientView = isProjectScoped || category === 'client'
+
+  function setCategoryAndReset(c) { setCategory(c); setFilterValue('All') }
 
   const load = useCallback(async () => {
     try {
@@ -310,12 +328,21 @@ export default function EmployeesPage() {
 
   useEffect(() => { load() }, [load])
 
+  // Category split only applies for the unscoped (admin/HR) view — a scoped manager's
+  // /api/employees list is already server-side filtered to just their own projects.
+  const categoryEmps = useMemo(() => {
+    if (isProjectScoped) return allEmployees
+    return category === 'client'
+      ? allEmployees.filter(e => isClientProject(e.project_type))
+      : allEmployees.filter(e => !isClientProject(e.project_type))
+  }, [allEmployees, category, isProjectScoped])
+
   const stationEmps = useMemo(() => {
-    if (filterValue==='All') return allEmployees
-    return isProjectScoped
-      ? allEmployees.filter(e=>e.project_type===filterValue)
-      : allEmployees.filter(e=>e.station_code===filterValue)
-  }, [allEmployees, filterValue, isProjectScoped])
+    if (filterValue==='All') return categoryEmps
+    return (isProjectScoped || category === 'client')
+      ? categoryEmps.filter(e=>e.project_type===filterValue)
+      : categoryEmps.filter(e=>e.station_code===filterValue)
+  }, [categoryEmps, filterValue, isProjectScoped, category])
 
   const active  = stationEmps.filter(e=>e.status==='active').length
   const onLeave = stationEmps.filter(e=>e.status==='on_leave').length
@@ -376,15 +403,28 @@ export default function EmployeesPage() {
 
         <PageHero icon={Users} title="DAs" subtitle="Delivery Associates — assignments & profiles"
           actions={<>
+            {!isProjectScoped && (
+              <div style={{ display:'flex', gap:3, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:3 }}>
+                {[{id:'amazon',label:'Amazon'},{id:'client',label:'Client Projects'}].map(c => (
+                  <button key={c.id} onClick={()=>setCategoryAndReset(c.id)}
+                    style={{ padding:'6px 14px', borderRadius:20, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:12, whiteSpace:'nowrap', transition:'all var(--t-fast)',
+                      background: category===c.id ? (c.id==='client'?'#7C3AED':'#3B82F6') : 'transparent',
+                      color: category===c.id ? 'white' : 'rgba(255,255,255,0.55)',
+                    }}>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
             <div style={{ display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
               {filterOptions.map(opt => (
                 <button key={opt} onClick={()=>setFilterValue(filterValue===opt?'All':opt)}
                   style={{ padding:'5px 14px', borderRadius:20, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:12, transition:'all var(--t-fast)', whiteSpace:'nowrap',
-                    background: filterValue===opt ? '#3B82F6' : 'rgba(255,255,255,0.08)',
+                    background: filterValue===opt ? (isClientView?'#7C3AED':'#3B82F6') : 'rgba(255,255,255,0.08)',
                     color: filterValue===opt ? 'white' : 'rgba(255,255,255,0.55)',
-                    boxShadow: filterValue===opt ? '0 2px 8px rgba(59,130,246,0.4)' : 'none',
+                    boxShadow: filterValue===opt ? `0 2px 8px ${isClientView?'rgba(124,58,237,0.4)':'rgba(59,130,246,0.4)'}` : 'none',
                   }}>
-                  {isProjectScoped ? projectLabel(opt) : opt}
+                  {isClientView ? projectLabel(opt) : opt}
                 </button>
               ))}
             </div>
@@ -395,7 +435,7 @@ export default function EmployeesPage() {
           </>}>
           <div className="da-hero-kpi">
             {[
-              { label:'Total DAs',  val:loading?'—':allEmployees.length, color:'#B8860B' },
+              { label:'Total DAs',  val:loading?'—':categoryEmps.length, color:'#B8860B' },
               { label:'Active',     val:loading?'—':active,              color:'#4ADE80' },
               { label:'On Leave',   val:loading?'—':onLeave,             color:'#FBBF24' },
               { label:'Alerts',     val:loading?'—':alerts,              color:alerts>0?'#F87171':'#4ADE80' },

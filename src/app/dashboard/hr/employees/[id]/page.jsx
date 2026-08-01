@@ -7,7 +7,7 @@ import { getEmp, setEmp } from '@/lib/empCache'
 import BackLink from '@/components/employees/BackLink'
 import { expiryStatus } from '@/components/documents/DocModal'
 import {
-  STATUS, SC_COLOR, projectLabel, docDays, docChip, hdr, DA_HERO_GRADIENT,
+  STATUS, SC_COLOR, projectLabel, docDays, docChip, hdr, DA_HERO_GRADIENT, isClientProject,
 } from '@/lib/employees'
 import {
   Phone, Mail, Calendar, Building2, Briefcase, CreditCard, User,
@@ -431,7 +431,7 @@ export default function DriverDashboardPage() {
                 <span style={{ fontSize:10, fontWeight:700, color:s.c, background:`${s.c}22`, border:`1px solid ${s.c}50`, borderRadius:99, padding:'2px 9px' }}>{s.l}</span>
               </div>
               <div style={{ fontSize:11.5, color:'rgba(255,255,255,0.45)', marginBottom:8 }}>
-                {emp.role} · {emp.station_code||'DDB1'} · <span style={{ fontFamily:'monospace', fontSize:10.5 }}>#{emp.id}</span>
+                {emp.role}{!isClientProject(emp.project_type) && <> · {emp.station_code||'DDB1'}</>} · <span style={{ fontFamily:'monospace', fontSize:10.5 }}>#{emp.id}</span>
               </div>
               <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
                 {emp.project_type && <span style={{ fontSize:10, fontWeight:700, color:'#A78BFA', background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)', borderRadius:99, padding:'2px 8px' }}>{projectLabel(emp.project_type).toUpperCase()}</span>}
@@ -514,7 +514,7 @@ export default function DriverDashboardPage() {
                 <InfoRow icon={CreditCard} label="Passport"    value={emp.passport_no} mono/>
               </Section>
               <Section title="Employment" icon={Briefcase}>
-                <InfoRow icon={Building2}  label="Station"     value={emp.station_code}/>
+                {!isClientProject(emp.project_type) && <InfoRow icon={Building2}  label="Station"     value={emp.station_code}/>}
                 <InfoRow icon={Briefcase}  label="Project"     value={emp.project_type ? projectLabel(emp.project_type) : null}/>
                 <InfoRow icon={Calendar}   label="Join Date"   value={emp.joined?.slice(0,10)}/>
                 <InfoRow icon={Wallet}     label="Base Salary" value={emp.salary ? `AED ${Number(emp.salary).toLocaleString('en-US')}` : null} accent="#B8860B"/>

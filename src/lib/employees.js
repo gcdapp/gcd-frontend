@@ -15,6 +15,13 @@ export const PROJECT_LABELS = {
 }
 export function projectLabel(v) { return PROJECT_LABELS[v] || (v ? v.charAt(0).toUpperCase()+v.slice(1) : v) }
 
+// Client-project DAs (Creative Packers, IG RAK, IMILE, Jnt Express, Le Chocola)
+// aren't tied to an Amazon warehouse station — DDB1/DXE6 only means something
+// for the Amazon-side programs (Pulser/CRET/etc). Keep the two lists in one
+// place so "is this an Amazon DA" is answered the same way everywhere.
+export const CLIENT_PROJECTS = ['creative_packers', 'ig_rak', 'imile', 'jnt_express', 'le_chocola']
+export function isClientProject(v) { return CLIENT_PROJECTS.includes(v) }
+
 export const STATUS = {
   active:   { l:'Active',   c:'#10B981', bg:'#F0FDF4', bc:'#A7F3D0', dot:'#10B981' },
   on_leave: { l:'On Leave', c:'#F59E0B', bg:'#FFFBEB', bc:'#FDE68A', dot:'#F59E0B' },
