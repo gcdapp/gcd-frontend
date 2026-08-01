@@ -58,6 +58,7 @@ export const empApi = {
   list:       (params = {}) => api.get(`/api/employees?${new URLSearchParams(params)}`),
   get:        (id)          => api.get(`/api/employees/${id}`),
   create:     (data)        => api.post('/api/employees', data),
+  bulkCreate: (records)     => api.post('/api/employees/bulk', { records }),
   nextId:     (role, project_type) => api.get(`/api/employees/next-id?${new URLSearchParams({ role: role||'', project_type: project_type||'' })}`),
   update:     (id, data)    => api.put(`/api/employees/${id}`, data),
   delete:     (id)          => api.delete(`/api/employees/${id}`),

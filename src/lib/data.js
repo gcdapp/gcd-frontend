@@ -42,13 +42,13 @@ export const NAV = [
   // ── Operations ────────────────────────────────────────────────
   { type:'section', label:'Operations', roles:['admin','general_manager','poc','manager'] },
   { label:'Attendance',          href:'/dashboard/poc/attendance',         icon:'Clock',          roles:['admin','general_manager','poc'], hideIfScoped:true },
-  { label:'DAs',                 href:'/dashboard/poc/das',                icon:'UserCircle',     roles:['admin','general_manager','poc'] },
+  { label:'DAs',                 href:'/dashboard/poc/das',                icon:'UserCircle',     roles:['admin','general_manager','poc'], hideIfScoped:true },
   { label:'Fleet',               href:'/dashboard/poc/fleet',              icon:'Truck',          roles:['admin','general_manager','poc'], alertKey:'fleet', hideIfScoped:true },
   { label:'Vehicle Handovers',   href:'/dashboard/poc/handovers',          icon:'ArrowLeftRight', roles:['admin','general_manager','manager','poc'], hideIfScoped:true },
   { label:'Vehicle Inspections', href:'/dashboard/hr/vehicle-inspection',  icon:'ClipboardCheck', roles:['admin','general_manager','hr','poc'], hideIfScoped:true },
   { label:'Deliveries',          href:'/dashboard/poc/deliveries',         icon:'Package',        roles:['admin','general_manager','poc'], hideIfScoped:true },
-  { label:'SIM Cards',           href:'/dashboard/poc/sims',               icon:'Smartphone',     roles:['admin','general_manager','poc'], alertKey:'sims' },
-  { label:'Leaves',              href:'/dashboard/poc/leaves',             icon:'CalendarOff',    roles:['admin','general_manager','poc'], alertKey:'leaves' },
+  { label:'SIM Cards',           href:'/dashboard/poc/sims',               icon:'Smartphone',     roles:['admin','general_manager','poc'], alertKey:'sims', hideIfScoped:true },
+  { label:'Leaves',              href:'/dashboard/poc/leaves',             icon:'CalendarOff',    roles:['admin','general_manager','poc'], alertKey:'leaves', hideIfScoped:true },
   { label:'Notices',             href:'/dashboard/poc/notices',            icon:'Bell',           roles:['admin','general_manager','poc'] },
 
   // ── System ────────────────────────────────────────────────────

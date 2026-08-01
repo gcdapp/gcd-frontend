@@ -12,7 +12,8 @@ import { setEmps } from '@/lib/empCache'
 import {
   STATUS, SC_COLOR, SC_BG, SC_BORDER, projectLabel, expiry, profileCompletion,
 } from '@/lib/employees'
-import { Search, Plus, X, Pencil, Trash2, Users, RefreshCw } from 'lucide-react'
+import { Search, Plus, X, Pencil, Trash2, Users, RefreshCw, UploadCloud, Download, Check, AlertCircle } from 'lucide-react'
+import Papa from 'papaparse'
 
 /* ── Completion Ring (SVG) ───────────────────────────────────── */
 function CompletionRing({ pct, size=52, stroke=3 }) {
@@ -35,6 +36,152 @@ function EmpModal({ emp, onSave, onClose, mode }) {
   return createPortal(
     <div className="modal-overlay" style={{ zIndex:9999 }}>
       <EmpForm emp={emp} mode={mode} onSaved={onSave} onCancel={onClose} maxWidth={540}/>
+    </div>,
+    document.body
+  )
+}
+
+/* ── Bulk Upload Modal ───────────────────────────────────────── */
+function BulkUploadModal({ isProjectScoped, defaultProject, onSave, onClose }) {
+  const [rows,      setRows]      = useState([])
+  const [fileName,  setFileName]  = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [err,       setErr]       = useState(null)
+  const [result,    setResult]    = useState(null)
+
+  function downloadTemplate() {
+    const csv = 'name,phone,visa_type,project_type,station_code\n'
+      + `Mohammed Al Rashid,+971 50 XXX XXXX,${isProjectScoped ? 'own' : 'company'},${defaultProject},DDB1\n`
+    const blob = new Blob([csv], { type:'text/csv' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href = url; a.download = 'das_template.csv'
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  function handleFile(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setFileName(file.name); setErr(null); setResult(null)
+    Papa.parse(file, {
+      header: true, skipEmptyLines: true,
+      complete: (res) => {
+        const parsed = res.data.map((r, i) => {
+          const name = (r.name || '').trim()
+          const errors = []
+          if (!name) errors.push('name required')
+          return {
+            row: i + 2, name, phone: (r.phone || '').trim(),
+            visa_type: (r.visa_type || '').trim(), project_type: (r.project_type || '').trim(),
+            station_code: (r.station_code || '').trim(), errors,
+          }
+        })
+        setRows(parsed)
+      },
+      error: (e) => setErr(e.message),
+    })
+  }
+
+  const validRows = rows.filter(r => r.errors.length === 0)
+
+  async function handleUpload() {
+    if (!validRows.length) return
+    setUploading(true); setErr(null)
+    try {
+      const data = await empApi.bulkCreate(validRows.map(({ row, errors, ...r }) => r))
+      setResult(data)
+    } catch(e) { setErr(e.message) } finally { setUploading(false) }
+  }
+
+  return createPortal(
+    <div style={{ position:'fixed', top:0, right:0, bottom:0, left:0, background:'rgba(0,0,0,0.55)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:9999, padding:16 }}
+      onClick={onClose}>
+      <div style={{ background:'var(--card)', borderRadius:20, width:'100%', maxWidth:640, maxHeight:'85vh', border:'1px solid var(--border)', overflow:'hidden', display:'flex', flexDirection:'column', animation:'slideUp 0.2s ease' }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#FDF6E3', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(184,134,11,0.3)' }}>
+              <UploadCloud size={17} color="white"/>
+            </div>
+            <div>
+              <div style={{ fontWeight:800, fontSize:15, color:'#1A1612' }}>Bulk Upload DAs</div>
+              <div style={{ fontSize:11, color:'#A89880', marginTop:1 }}>Add many Delivery Associates from a CSV file</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background:'rgba(184,134,11,0.1)', border:'1px solid #F0D78C', cursor:'pointer', color:'#B8860B', display:'flex', padding:6, borderRadius:'50%' }}><X size={16}/></button>
+        </div>
+
+        <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14, overflowY:'auto', flex:1 }}>
+          {err && (
+            <div style={{ background:'#FEF2F2', border:'1px solid #FCA5A5', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#DC2626', display:'flex', gap:8, alignItems:'center' }}>
+              <AlertCircle size={14}/> {err}
+            </div>
+          )}
+
+          {result ? (
+            <div style={{ textAlign:'center', padding:'20px 10px' }}>
+              <div style={{ width:52, height:52, borderRadius:'50%', background:'#ECFDF5', border:'1px solid #A7F3D0', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }}>
+                <Check size={24} color="#22C55E"/>
+              </div>
+              <div style={{ fontWeight:800, fontSize:16, color:'var(--text)', marginBottom:6 }}>{result.created} DA{result.created!==1?'s':''} added</div>
+              {result.skipped > 0 && <div style={{ fontSize:12.5, color:'var(--text-muted)' }}>{result.skipped} row{result.skipped!==1?'s':''} skipped</div>}
+              {result.failures?.length > 0 && (
+                <div style={{ marginTop:12, textAlign:'left', maxHeight:160, overflowY:'auto', border:'1px solid var(--border)', borderRadius:10 }}>
+                  {result.failures.map((f,i) => (
+                    <div key={i} style={{ padding:'7px 12px', fontSize:11.5, color:'#DC2626', borderTop: i>0?'1px solid var(--border)':'none' }}>
+                      Row {f.row}: {f.reason}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button onClick={onSave} className="btn btn-primary" style={{ marginTop:16 }}>Done</button>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize:12.5, color:'var(--text-muted)', lineHeight:1.5 }}>
+                Download the template, fill in one row per DA (columns: <code>name, phone, visa_type, project_type, station_code</code> — only <code>name</code> is required, everything else falls back to a sensible default), then upload it back here. Employee IDs are generated automatically.
+              </div>
+              <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+                <button onClick={downloadTemplate} type="button"
+                  style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:10, border:'1px solid var(--border)', background:'var(--bg-alt)', color:'var(--text)', fontWeight:600, fontSize:12.5, cursor:'pointer', fontFamily:'inherit' }}>
+                  <Download size={13}/> Download Template
+                </button>
+                <label style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:10, border:'1px solid rgba(184,134,11,0.5)', background:'rgba(184,134,11,0.15)', color:'#B8860B', fontWeight:700, fontSize:12.5, cursor:'pointer' }}>
+                  <UploadCloud size={13}/> Choose CSV File
+                  <input type="file" accept=".csv" onChange={handleFile} style={{ display:'none' }}/>
+                </label>
+                {fileName && <span style={{ fontSize:11.5, color:'var(--text-muted)' }}>{fileName}</span>}
+              </div>
+
+              {rows.length > 0 && (
+                <div style={{ border:'1px solid var(--border)', borderRadius:12, overflow:'hidden' }}>
+                  <div style={{ padding:'9px 14px', background:'var(--bg-alt)', fontSize:11.5, fontWeight:700, color:'var(--text-muted)', display:'flex', justifyContent:'space-between' }}>
+                    <span>{rows.length} row{rows.length!==1?'s':''} parsed</span>
+                    <span style={{ color: validRows.length===rows.length ? '#22C55E' : '#D97706' }}>{validRows.length} valid</span>
+                  </div>
+                  <div style={{ maxHeight:240, overflowY:'auto' }}>
+                    {rows.map((r,i) => (
+                      <div key={i} title={r.errors.join(', ')}
+                        style={{ display:'flex', gap:10, alignItems:'center', padding:'8px 14px', borderTop:'1px solid var(--border)', fontSize:12, background: r.errors.length ? '#FEF2F2' : 'transparent' }}>
+                        <span style={{ width:26, color:'var(--text-muted)', flexShrink:0 }}>#{r.row}</span>
+                        <span style={{ flex:1, minWidth:0, color:'var(--text)', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.name || '—'}</span>
+                        <span style={{ width:130, color:'var(--text-muted)', flexShrink:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.phone || '—'}</span>
+                        {r.errors.length > 0 && <AlertCircle size={12} color="#DC2626" style={{ flexShrink:0 }}/>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button onClick={handleUpload} disabled={uploading || !validRows.length}
+                style={{ padding:'13px', borderRadius:12, border:'none', cursor:(uploading||!validRows.length)?'not-allowed':'pointer', background:(uploading||!validRows.length)?'var(--border)':'linear-gradient(135deg,#B8860B,#D4A017)', color:(uploading||!validRows.length)?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'Poppins,sans-serif', marginTop:4, transition:'all 0.2s' }}>
+                {uploading ? 'Uploading…' : validRows.length ? `Upload ${validRows.length} DA${validRows.length!==1?'s':''}` : 'Choose a file to continue'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
     </div>,
     document.body
   )
@@ -138,6 +285,7 @@ export default function EmployeesPage() {
   const [filterValue,  setFilterValue]  = useState('All')
   const [filterTab,    setFilterTab]    = useState('all')
   const [modal,        setModal]        = useState(null)
+  const [bulkOpen,     setBulkOpen]     = useState(false)
   const [userRole,     setUserRole]     = useState(null)
 
   useEffect(() => {
@@ -272,12 +420,18 @@ export default function EmployeesPage() {
             {search && <button onClick={()=>setSearch('')} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:0, display:'flex' }}><X size={13}/></button>}
           </div>
           {(['admin','accountant'].includes(userRole) || isProjectScoped) && (
-            <button onClick={()=>setModal({mode:'add',emp:null})}
-              style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background var(--t-fast)' }}
-              onMouseEnter={e=>e.currentTarget.style.background='#9a7209'}
-              onMouseLeave={e=>e.currentTarget.style.background='#B8860B'}>
-              <Plus size={14}/> Add DA
-            </button>
+            <>
+              <button onClick={()=>setBulkOpen(true)}
+                style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 16px', borderRadius:10, border:'1px solid var(--border)', background:'var(--card)', color:'var(--text)', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap' }}>
+                <UploadCloud size={14}/> Bulk Upload
+              </button>
+              <button onClick={()=>setModal({mode:'add',emp:null})}
+                style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background var(--t-fast)' }}
+                onMouseEnter={e=>e.currentTarget.style.background='#9a7209'}
+                onMouseLeave={e=>e.currentTarget.style.background='#B8860B'}>
+                <Plus size={14}/> Add DA
+              </button>
+            </>
           )}
         </div>
 
@@ -318,6 +472,10 @@ export default function EmployeesPage() {
       </div>
 
       {modal && <EmpModal key={`${modal.mode}-${modal.emp?.id||'new'}`} mode={modal.mode} emp={modal.emp} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
+      {bulkOpen && (
+        <BulkUploadModal isProjectScoped={isProjectScoped} defaultProject={isProjectScoped ? user.assigned_projects[0] : 'pulser'}
+          onClose={()=>setBulkOpen(false)} onSave={()=>{setBulkOpen(false);load()}}/>
+      )}
     </>
   )
 }
