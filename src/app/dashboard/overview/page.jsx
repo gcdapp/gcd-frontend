@@ -41,6 +41,9 @@ export default function OverviewPage() {
 
   const [summary,        setSummary]        = useState(null)
   const [expChart,       setExpChart]       = useState([])
+  // Combined = stacked Amazon + Client Projects (+ unattributed company spend);
+  // the other two views isolate a single category's bars.
+  const [expView,        setExpView]        = useState('combined')
   const [expenses,       setExpenses]       = useState([])
   const [simStats,       setSimStats]       = useState(null)
   const [simByStation,   setSimByStation]   = useState([])
@@ -355,9 +358,28 @@ export default function OverviewPage() {
             see the whole org's spend, only their own. */}
         {user?.role === 'admin' && (
         <div className="ov-card">
-          <div style={{ padding:'20px 24px 0' }}>
-            <div className="ov-card-title">Expense Trend — Last 12 Months</div>
-            <div className="ov-card-sub">Total company spend by month</div>
+          <div style={{ padding:'20px 24px 0', display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
+            <div>
+              <div className="ov-card-title">Expense Trend — Last 12 Months</div>
+              <div className="ov-card-sub">
+                {expView==='combined' ? 'Amazon + Client Projects, stacked by month' : expView==='amazon' ? 'Amazon-side spend only' : 'Client Project spend only'}
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:3, background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:24, padding:3, flexShrink:0 }}>
+              {[
+                { id:'combined', label:'Combined',        c:'#B8860B' },
+                { id:'amazon',   label:'Amazon',           c:'#3B82F6' },
+                { id:'client',   label:'Client Projects',  c:'#7C3AED' },
+              ].map(v => (
+                <button key={v.id} onClick={()=>setExpView(v.id)}
+                  style={{ padding:'6px 14px', borderRadius:20, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:11.5, whiteSpace:'nowrap',
+                    background: expView===v.id ? v.c : 'transparent',
+                    color: expView===v.id ? 'white' : 'var(--text-muted)',
+                  }}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div style={{ padding:'16px 12px 8px' }}>
@@ -386,6 +408,14 @@ export default function OverviewPage() {
                       <stop offset="0%"   stopColor="#FCD34D" stopOpacity={1}/>
                       <stop offset="100%" stopColor="#FCD34D" stopOpacity={0.5}/>
                     </linearGradient>
+                    <linearGradient id="gradAmazon" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor="#60A5FA" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#60A5FA" stopOpacity={0.5}/>
+                    </linearGradient>
+                    <linearGradient id="gradClient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor="#A78BFA" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#A78BFA" stopOpacity={0.5}/>
+                    </linearGradient>
                   </defs>
                   <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 4" strokeOpacity={0.7}/>
                   <XAxis dataKey="month" tick={{ fontSize:11, fill:'var(--text-muted)', fontWeight:600, fontFamily:'inherit' }} axisLine={false} tickLine={false}
@@ -397,25 +427,36 @@ export default function OverviewPage() {
                     contentStyle={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, fontSize:12, boxShadow:'0 8px 24px rgba(0,0,0,0.10)', padding:'10px 14px' }}
                     labelStyle={{ fontWeight:700, color:'var(--text)', marginBottom:6, fontSize:12 }}
                     labelFormatter={v => { const [y,m] = v.split('-'); return new Date(+y,+m-1).toLocaleDateString('en-US',{month:'long',year:'numeric'}) }}
-                    formatter={val => [`AED ${Number(val).toLocaleString()}`, 'Expenses']}
+                    formatter={(val, name) => [`AED ${Number(val).toLocaleString()}`, name]}
                   />
-                  <Bar dataKey="total" name="Expenses" fill="url(#gradExp)" radius={[7,7,0,0]}/>
+                  {expView === 'combined' ? (
+                    <>
+                      <Bar dataKey="amazon"  name="Amazon"          stackId="exp" fill="url(#gradAmazon)"/>
+                      <Bar dataKey="client"  name="Client Projects" stackId="exp" fill="url(#gradClient)"/>
+                      <Bar dataKey="company" name="Unattributed"    stackId="exp" fill="url(#gradExp)" radius={[7,7,0,0]}/>
+                    </>
+                  ) : (
+                    <Bar dataKey={expView} name={expView==='amazon'?'Amazon':'Client Projects'}
+                      fill={expView==='amazon'?'url(#gradAmazon)':'url(#gradClient)'} radius={[7,7,0,0]}/>
+                  )}
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
 
           {expChart.length > 0 && (() => {
-            const totalExp6 = expChart.reduce((s,r) => s + (r.total||0), 0)
+            const field    = expView === 'combined' ? 'total' : expView
+            const totalExp6 = expChart.reduce((s,r) => s + (r[field]||0), 0)
             const avgExp6   = totalExp6 / expChart.length
-            const peak      = expChart.reduce((max,r) => (r.total||0) > (max?.total||0) ? r : max, expChart[0])
+            const peak      = expChart.reduce((max,r) => (r[field]||0) > (max?.[field]||0) ? r : max, expChart[0])
             const peakLabel = (() => { const [y,m] = peak.month.split('-'); return new Date(+y,+m-1).toLocaleDateString('en-US',{month:'short'}) })()
+            const accent    = expView==='amazon' ? '#3B82F6' : expView==='client' ? '#7C3AED' : '#FCD34D'
             return (
               <div style={{ display:'flex', borderTop:'1px solid var(--border)', background:'var(--bg-alt)' }}>
                 {[
                   { label:`Total (${expChart.length} month${expChart.length!==1?'s':''})`, value:`AED ${totalExp6.toLocaleString()}`, c:'var(--text)' },
-                  { label:'Monthly Average',        value:`AED ${Math.round(avgExp6).toLocaleString()}`,   c:'#FCD34D' },
-                  { label:`Peak Month (${peakLabel})`, value:`AED ${peak.total.toLocaleString()}`,          c:'#F59E0B' },
+                  { label:'Monthly Average',        value:`AED ${Math.round(avgExp6).toLocaleString()}`,   c:accent },
+                  { label:`Peak Month (${peakLabel})`, value:`AED ${(peak[field]||0).toLocaleString()}`,   c:'#F59E0B' },
                 ].map(({ label, value, c }) => (
                   <div key={label} style={{ flex:1, padding:'12px 20px', borderRight:'1px solid var(--border)', textAlign:'center' }}>
                     <div style={{ fontWeight:800, fontSize:16, color:c, letterSpacing:'-0.03em' }}>{value}</div>
