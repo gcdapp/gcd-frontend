@@ -404,10 +404,6 @@ export default function OverviewPage() {
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={expChart} barSize={28} barCategoryGap="36%" margin={{ top:8, right:8, left:0, bottom:0 }}>
                   <defs>
-                    <linearGradient id="gradExp" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%"   stopColor="#FCD34D" stopOpacity={1}/>
-                      <stop offset="100%" stopColor="#FCD34D" stopOpacity={0.5}/>
-                    </linearGradient>
                     <linearGradient id="gradAmazon" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%"   stopColor="#60A5FA" stopOpacity={1}/>
                       <stop offset="100%" stopColor="#60A5FA" stopOpacity={0.5}/>
@@ -432,8 +428,7 @@ export default function OverviewPage() {
                   {expView === 'combined' ? (
                     <>
                       <Bar dataKey="amazon"  name="Amazon"          stackId="exp" fill="url(#gradAmazon)"/>
-                      <Bar dataKey="client"  name="Client Projects" stackId="exp" fill="url(#gradClient)"/>
-                      <Bar dataKey="company" name="Unattributed"    stackId="exp" fill="url(#gradExp)" radius={[7,7,0,0]}/>
+                      <Bar dataKey="client"  name="Client Projects" stackId="exp" fill="url(#gradClient)" radius={[7,7,0,0]}/>
                     </>
                   ) : (
                     <Bar dataKey={expView} name={expView==='amazon'?'Amazon':'Client Projects'}
