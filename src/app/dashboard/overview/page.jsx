@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts'
 import {
   Users, Car, Wallet, ChevronRight, Smartphone,
   Receipt, ScrollText, Activity, RefreshCw,
@@ -409,7 +409,7 @@ export default function OverviewPage() {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={expChart} barSize={28} barCategoryGap="36%" margin={{ top:8, right:8, left:0, bottom:0 }}>
+                <BarChart data={expChart} barSize={28} barCategoryGap="36%" margin={{ top:26, right:8, left:0, bottom:0 }}>
                   <defs>
                     <linearGradient id="gradAmazon" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%"   stopColor="#60A5FA" stopOpacity={1}/>
@@ -435,11 +435,19 @@ export default function OverviewPage() {
                   {expView === 'combined' ? (
                     <>
                       <Bar dataKey="amazon"  name="Amazon"          stackId="exp" fill="url(#gradAmazon)"/>
-                      <Bar dataKey="client"  name="Other Projects"  stackId="exp" fill="url(#gradClient)" radius={[7,7,0,0]}/>
+                      <Bar dataKey="client"  name="Other Projects"  stackId="exp" fill="url(#gradClient)" radius={[7,7,0,0]}>
+                        <LabelList dataKey="total" position="top" offset={9}
+                          formatter={v => `AED ${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
+                          style={{ fontSize:10.5, fontWeight:800, fill:'var(--text)' }}/>
+                      </Bar>
                     </>
                   ) : (
                     <Bar dataKey={expView} name={expView==='amazon'?'Amazon':'Other Projects'}
-                      fill={expView==='amazon'?'url(#gradAmazon)':'url(#gradClient)'} radius={[7,7,0,0]}/>
+                      fill={expView==='amazon'?'url(#gradAmazon)':'url(#gradClient)'} radius={[7,7,0,0]}>
+                      <LabelList dataKey={expView} position="top" offset={9}
+                        formatter={v => `AED ${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
+                        style={{ fontSize:10.5, fontWeight:800, fill:'var(--text)' }}/>
+                    </Bar>
                   )}
                 </BarChart>
               </ResponsiveContainer>
