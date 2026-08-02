@@ -41,7 +41,7 @@ export default function OverviewPage() {
 
   const [summary,        setSummary]        = useState(null)
   const [expChart,       setExpChart]       = useState([])
-  // Combined = stacked Amazon + Client Projects (+ unattributed company spend);
+  // Combined = stacked Amazon + Other Projects (+ unattributed company spend);
   // the other two views isolate a single category's bars.
   const [expView,        setExpView]        = useState('combined')
   const [expenses,       setExpenses]       = useState([])
@@ -139,9 +139,9 @@ export default function OverviewPage() {
   const activeEmp   = summary?.employees?.active   || 0
   const onLeaveEmp  = summary?.employees?.on_leave || 0
   const inactiveEmp = Math.max(0, totalEmp - activeEmp - onLeaveEmp)
-  // Amazon vs Client Project split — meaningless (and omitted) for a project-scoped
+  // Amazon vs Other Projects split — meaningless (and omitted) for a project-scoped
   // manager, whose /api/analytics/summary is already server-side filtered to just
-  // their own client projects.
+  // their own projects.
   const amazonEmp  = summary?.employees?.amazon || 0
   const clientEmp  = summary?.employees?.client || 0
 
@@ -369,14 +369,14 @@ export default function OverviewPage() {
             <div>
               <div className="ov-card-title">Expense Trend — Last 12 Months</div>
               <div className="ov-card-sub">
-                {expView==='combined' ? 'Amazon + Client Projects, stacked by month' : expView==='amazon' ? 'Amazon-side spend only' : 'Client Project spend only'}
+                {expView==='combined' ? 'Amazon + Other Projects, stacked by month' : expView==='amazon' ? 'Amazon-side spend only' : 'Other Projects spend only'}
               </div>
             </div>
             <div style={{ display:'flex', gap:3, background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:24, padding:3, flexShrink:0 }}>
               {[
                 { id:'combined', label:'Combined',        c:'#B8860B' },
                 { id:'amazon',   label:'Amazon',           c:'#3B82F6' },
-                { id:'client',   label:'Client Projects',  c:'#7C3AED' },
+                { id:'client',   label:'Other Projects',  c:'#7C3AED' },
               ].map(v => (
                 <button key={v.id} onClick={()=>setExpView(v.id)}
                   style={{ padding:'6px 14px', borderRadius:20, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:11.5, whiteSpace:'nowrap',
@@ -435,10 +435,10 @@ export default function OverviewPage() {
                   {expView === 'combined' ? (
                     <>
                       <Bar dataKey="amazon"  name="Amazon"          stackId="exp" fill="url(#gradAmazon)"/>
-                      <Bar dataKey="client"  name="Client Projects" stackId="exp" fill="url(#gradClient)" radius={[7,7,0,0]}/>
+                      <Bar dataKey="client"  name="Other Projects"  stackId="exp" fill="url(#gradClient)" radius={[7,7,0,0]}/>
                     </>
                   ) : (
-                    <Bar dataKey={expView} name={expView==='amazon'?'Amazon':'Client Projects'}
+                    <Bar dataKey={expView} name={expView==='amazon'?'Amazon':'Other Projects'}
                       fill={expView==='amazon'?'url(#gradAmazon)':'url(#gradClient)'} radius={[7,7,0,0]}/>
                   )}
                 </BarChart>
@@ -511,7 +511,7 @@ export default function OverviewPage() {
                 </div>
                 <div style={{ flex: Math.max(clientEmp,0.3), padding:'9px 12px', background:'rgba(124,58,237,0.1)' }}>
                   <div style={{ fontSize:15, fontWeight:800, color:'#7C3AED', letterSpacing:'-0.02em' }}>{clientEmp}</div>
-                  <div style={{ fontSize:9.5, fontWeight:700, color:'#7C3AED', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:1 }}>Client Projects</div>
+                  <div style={{ fontSize:9.5, fontWeight:700, color:'#7C3AED', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:1 }}>Other Projects</div>
                 </div>
               </div>
             )}

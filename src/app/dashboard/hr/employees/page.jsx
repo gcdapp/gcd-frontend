@@ -311,7 +311,7 @@ export default function EmployeesPage() {
     ? user.assigned_projects
     : (category === 'client' ? CLIENT_PROJECTS : ['DDB1','DXE6'])
   // A scoped manager's own projects are always client projects — treat her the
-  // same as the "Client Projects" toggle for pill labels/colors.
+  // same as the "Other Projects" toggle for pill labels/colors.
   const isClientView = isProjectScoped || category === 'client'
 
   function setCategoryAndReset(c) { setCategory(c); setFilterValue('All') }
@@ -405,7 +405,7 @@ export default function EmployeesPage() {
           actions={<>
             {!isProjectScoped && (
               <div style={{ display:'flex', gap:3, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:3 }}>
-                {[{id:'amazon',label:'Amazon'},{id:'client',label:'Client Projects'}].map(c => (
+                {[{id:'amazon',label:'Amazon'},{id:'client',label:'Other Projects'}].map(c => (
                   <button key={c.id} onClick={()=>setCategoryAndReset(c.id)}
                     style={{ padding:'6px 14px', borderRadius:20, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:12, whiteSpace:'nowrap', transition:'all var(--t-fast)',
                       background: category===c.id ? (c.id==='client'?'#7C3AED':'#3B82F6') : 'transparent',
