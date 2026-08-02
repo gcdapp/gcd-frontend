@@ -740,7 +740,7 @@ export default function DriverPortal() {
   const net          = payroll ? Number(payroll.base_salary||0) + Number(payroll.bonus_total||0) - Number(payroll.deduction_total||0) : 0
   const payslipNet   = payslip ? Number(payslip.base_salary||0) + Number(payslip.bonus_total||0) - Number(payslip.deduction_total||0) : 0
   const isCurrentPayMonth = payMonth === new Date().toISOString().slice(0, 7)
-  const payMonthLabel = new Date(payMonth+'-01').toLocaleString('en-US',{month:'long',year:'numeric'}).toUpperCase()
+  const payMonthLabel = new Date(payMonth+'-01').toLocaleString('en-US',{month:'long',year:'numeric',timeZone:'UTC'}).toUpperCase()
   const isShipmentEmp = profile?.station_code === 'DXE6'
   const attRecords   = attEarnings?.records || []
   const attPresent   = attRecords.filter(r => r.status === 'present').length
@@ -1171,7 +1171,7 @@ export default function DriverPortal() {
               <select value={payMonth} onChange={e=>setPayMonth(e.target.value)}
                 style={{ fontSize:12, fontWeight:700, color:'#111', background:'#FFF', border:'1px solid #E5E7EB', borderRadius:10, padding:'7px 10px', fontFamily:'inherit' }}>
                 {PAY_MONTHS.map(m => (
-                  <option key={m} value={m}>{new Date(m+'-01').toLocaleString('en-US',{month:'long',year:'numeric'})}</option>
+                  <option key={m} value={m}>{new Date(m+'-01').toLocaleString('en-US',{month:'long',year:'numeric',timeZone:'UTC'})}</option>
                 ))}
               </select>
             </div>
@@ -1354,7 +1354,7 @@ export default function DriverPortal() {
                   const plate = v.vehicle_plate || v.plate || myPendingReturn.vehicle_plate || '—'
                   const makeModel = [v.make, v.model].filter(Boolean).join(' ') || 'Vehicle'
                   const assignedOn = v.submitted_at || v.date
-                    ? new Date(v.submitted_at || v.date).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})
+                    ? new Date(v.submitted_at || v.date).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'UTC'})
                     : '—'
                   return (
                     <Card>

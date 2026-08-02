@@ -291,7 +291,12 @@ export default function DriverDashboardPage() {
       setSalaryLoad(true)
       const now = new Date()
       for (let i = 0; i < 12; i++) {
-        const month = new Date(now.getFullYear(), now.getMonth() - i, 1).toISOString().slice(0, 7)
+        // Not `new Date(y, m-i, 1).toISOString()` — that constructs a LOCAL
+        // midnight then reads it back via UTC, which silently walks the
+        // whole search back one month early on any positive-UTC-offset
+        // machine (e.g. Dubai, UTC+4) and finds the wrong month's payslip.
+        const total = now.getFullYear() * 12 + now.getMonth() - i
+        const month = `${Math.floor(total / 12)}-${String(total % 12 + 1).padStart(2, '0')}`
         try {
           const d = await payrollApi.list({ emp_id: id, month })
           const row = (d.payroll || [])[0]

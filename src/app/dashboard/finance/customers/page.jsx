@@ -1843,7 +1843,7 @@ export default function CustomersPage() {
                       </div>
                       <div className="cust-bal-stats">
                         <span><FileText size={10}/> {invoiceCount} invoice{invoiceCount === 1 ? '' : 's'}</span>
-                        {c.last_activity && <span><Clock size={10}/> {new Date(c.last_activity).toLocaleDateString('en-AE', { day:'2-digit', month:'short', year:'numeric' })}</span>}
+                        {c.last_activity && <span><Clock size={10}/> {new Date(c.last_activity).toLocaleDateString('en-AE', { day:'2-digit', month:'short', year:'numeric', timeZone:'UTC' })}</span>}
                       </div>
                     </div>
                   ) : (

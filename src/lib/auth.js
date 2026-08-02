@@ -19,6 +19,11 @@ export function AuthProvider({ children }) {
     const token  = localStorage.getItem('gcd_token')
     if (stored && token) {
       try { setUser(JSON.parse(stored)) } catch {}
+      // Render the dashboard immediately from the cached profile instead of making
+      // every navigation sit through a "Loading…" splash for this round-trip — it
+      // still runs, just in the background, to catch a revoked/expired session and
+      // refresh the cached profile.
+      setLoading(false)
       authApi.me()
         .then(d => {
           setUser(d.user)
@@ -29,7 +34,6 @@ export function AuthProvider({ children }) {
           localStorage.removeItem('gcd_user')
           setUser(null)
         })
-        .finally(() => setLoading(false))
     } else {
       setLoading(false)
     }

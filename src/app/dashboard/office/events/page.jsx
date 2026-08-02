@@ -189,8 +189,8 @@ export default function EventsPage() {
                     return (
                       <div key={ev.id} style={{ background:'var(--card)', border:`1px solid ${isSoon?et.color+'40':'var(--border)'}`, borderLeft:`4px solid ${et.color}`, borderRadius:12, padding:'12px 14px', display:'flex', gap:12, alignItems:'flex-start' }}>
                         <div style={{ flexShrink:0, textAlign:'center', minWidth:40, paddingTop:2 }}>
-                          <div style={{ fontSize:20, fontWeight:900, color:et.color, lineHeight:1 }}>{new Date(ev.event_date).toLocaleDateString('en-AE',{day:'numeric'})}</div>
-                          <div style={{ fontSize:9, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', marginTop:1 }}>{new Date(ev.event_date).toLocaleDateString('en-AE',{month:'short'})}</div>
+                          <div style={{ fontSize:20, fontWeight:900, color:et.color, lineHeight:1 }}>{new Date(ev.event_date).toLocaleDateString('en-AE',{day:'numeric',timeZone:'UTC'})}</div>
+                          <div style={{ fontSize:9, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', marginTop:1 }}>{new Date(ev.event_date).toLocaleDateString('en-AE',{month:'short',timeZone:'UTC'})}</div>
                         </div>
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:3 }}>

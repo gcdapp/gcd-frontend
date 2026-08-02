@@ -153,7 +153,7 @@ function slipData(slip, month) {
   const otherAddition= otherBon.slice(0,-1).reduce((s,b)=>s+Number(b.amount),0)
   const monthBonusLabel = otherBon.length&&otherBon[otherBon.length-1].description
     ? otherBon[otherBon.length-1].description
-    : new Date(month+'-01').toLocaleString('en-US',{month:'long'})+' Bonus'
+    : new Date(month+'-01').toLocaleString('en-US',{month:'long',timeZone:'UTC'})+' Bonus'
   // cash_advance and cash_variance are distinct sheet columns — cash_advance gets its own
   // labeled slot on the payslip; cash_variance/ILOE fee/fine fold into the "Other" slot
   // since the printable layout only has 4 named deduction rows.
@@ -173,8 +173,8 @@ function slipData(slip, month) {
   const carryForward      = Number(slip.deduction_carry_fwd||0)
   const net      = Number(slip.net_pay||(totalAdd-totalDed))
   const isPaid   = slip.payroll_status==='paid'
-  const paidOn   = slip.paid_on ? new Date(slip.paid_on).toLocaleDateString('en-GB') : '—'
-  const monthShort = new Date(month+'-01').toLocaleString('en-US',{month:'short',year:'2-digit'}).replace(' ','-')
+  const paidOn   = slip.paid_on ? new Date(slip.paid_on).toLocaleDateString('en-GB',{timeZone:'UTC'}) : '—'
+  const monthShort = new Date(month+'-01').toLocaleString('en-US',{month:'short',year:'2-digit',timeZone:'UTC'}).replace(' ','-')
   const roleLabel  = {driver:'Driver',admin:'Admin',hr:'HR Manager',poc:'POC',accountant:'Accountant',manager:'Manager',general_manager:'General Manager'}[slip.role]||slip.role||'Staff'
   const row = (l1,v1,l2,v2) => `<tr><td class="lbl">${l1}</td><td class="val">${fmtN(v1)}</td><td class="lbl">${l2}</td><td class="val">${fmtN(v2)}</td></tr>`
 

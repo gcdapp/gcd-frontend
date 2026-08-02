@@ -139,6 +139,11 @@ export default function OverviewPage() {
   const activeEmp   = summary?.employees?.active   || 0
   const onLeaveEmp  = summary?.employees?.on_leave || 0
   const inactiveEmp = Math.max(0, totalEmp - activeEmp - onLeaveEmp)
+  // Amazon vs Client Project split — meaningless (and omitted) for a project-scoped
+  // manager, whose /api/analytics/summary is already server-side filtered to just
+  // their own client projects.
+  const amazonEmp  = summary?.employees?.amazon || 0
+  const clientEmp  = summary?.employees?.client || 0
 
   const hour      = new Date().getHours()
   const greeting  = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -189,7 +194,9 @@ export default function OverviewPage() {
         .ov-alert:hover { box-shadow:0 6px 24px rgba(180,130,0,0.2); transform:translateY(-1px); }
 
         /* ── Section card ── */
-        .ov-card { background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+        .ov-card { background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; animation:slideUp 0.35s ease both; transition:box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease; }
+        .ov-card:hover { box-shadow:0 10px 28px rgba(0,0,0,0.07); border-color:var(--border-strong,var(--border)); transform:translateY(-2px); }
+        .ov-two > .ov-card:nth-child(2) { animation-delay:0.05s; }
         .ov-card-hd { padding:18px 20px; display:flex; align-items:flex-end; justify-content:space-between; gap:8px; border-bottom:1px solid var(--border); }
         .ov-card-hd-icon { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
         .ov-card-title { font-weight:800; font-size:14px; color:var(--text); letter-spacing:-0.02em; margin:0; }
@@ -496,6 +503,18 @@ export default function OverviewPage() {
                 </div>
               ))}
             </div>
+            {!isProjectScoped && !loadingHero && totalEmp > 0 && (
+              <div style={{ margin:'0 20px 16px', display:'flex', borderRadius:12, overflow:'hidden', border:'1px solid var(--border)' }}>
+                <div style={{ flex: Math.max(amazonEmp,0.3), padding:'9px 12px', background:'rgba(59,130,246,0.1)', borderRight:'1px solid var(--border)' }}>
+                  <div style={{ fontSize:15, fontWeight:800, color:'#3B82F6', letterSpacing:'-0.02em' }}>{amazonEmp}</div>
+                  <div style={{ fontSize:9.5, fontWeight:700, color:'#3B82F6', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:1 }}>Amazon</div>
+                </div>
+                <div style={{ flex: Math.max(clientEmp,0.3), padding:'9px 12px', background:'rgba(124,58,237,0.1)' }}>
+                  <div style={{ fontSize:15, fontWeight:800, color:'#7C3AED', letterSpacing:'-0.02em' }}>{clientEmp}</div>
+                  <div style={{ fontSize:9.5, fontWeight:700, color:'#7C3AED', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:1 }}>Client Projects</div>
+                </div>
+              </div>
+            )}
             <div className="ov-strip">
               <div style={{ width:38, height:38, borderRadius:11, background:'#F59E0B18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                 <Users size={17} color="#F59E0B"/>
