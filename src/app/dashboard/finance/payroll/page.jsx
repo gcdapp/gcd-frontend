@@ -530,6 +530,9 @@ const emptySheetFields = () => ({perfBonus:'',incentive:'',otherAddition:'',eidO
 
 const PROJECT_TYPE_LABELS = { staff:'Staff/Admin', pulser:'Pulser', cret:'CRET', tradelink:'Tradelink', external:'External',
   jnt_express:'JNT DAs', imile:'iMile DAs', le_chocola:'Le Chocola Packers', creative_packers:'Creative Packers' }
+// Mirrors backend's ROSTER_PROJECT_TYPES (payroll.js GET /) — these 4 list their full
+// roster up front instead of staying empty until pay is entered.
+const ROSTER_PAY_TABS = ['jnt_express', 'imile', 'le_chocola', 'creative_packers']
 function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onClose}) {
   const isStaff     = projectType === 'staff'
   const isExternal  = projectType === 'external'
@@ -1122,12 +1125,16 @@ const PAY_CSS = `
 `
 
 /* ── Payroll Card ── */
-const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, markingPaid, onEditSalary, onRemoveDed, onRemoveBonus, onEditEntry, onDeleteEntry, month, index, canPay, selectMode, selectedIds, onToggleSelect}) {
+const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, markingPaid, onEditSalary, onRemoveDed, onRemoveBonus, onEditEntry, onDeleteEntry, month, index, canPay, canAddMod, selectMode, selectedIds, onToggleSelect}) {
   const [open,      setOpen]      = useState(false)
   const [payMethod, setPayMethod] = useState('bank')
   const calc   = slip._calc
   const net    = calc.net
   const isPaid = slip.payroll_status === 'paid'
+  // false only for the 4 piece-work project types' roster rows (jnt/imile/le chocola/
+  // creative packers) that now list every employee before anyone's entered their pay —
+  // see GET /api/payroll on the backend. Every other row always has an entry.
+  const hasEntry = slip.has_entry !== false
   const role   = resolveRole(slip.role)
   const selected = !!(selectMode && selectedIds?.has(slip.id))
 
@@ -1154,7 +1161,7 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
           <div className="py-sr">
             {Number(slip.bonus_total)>0 && <span className="py-chip py-chip-bon">+{fmt(slip.bonus_total)}</span>}
             {Number(slip.deduction_total)>0 && <span className="py-chip py-chip-ded">-{fmt(slip.deduction_total)}</span>}
-            <span className={`py-status ${isPaid?'py-status-paid':'py-status-pend'}`}>{isPaid?'✓ Paid':'Pending'}</span>
+            <span className={`py-status ${isPaid?'py-status-paid':'py-status-pend'}`}>{isPaid?'✓ Paid':(hasEntry?'Pending':'Not Entered')}</span>
             <ChevronDown size={12} className={`py-chevron${open?' py-chevron-open':''}`}/>
           </div>
         </div>
@@ -1202,24 +1209,29 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
               <Download size={11}/> CSV
             </button>
             <div className="py-spacer"/>
-            {canPay && (
+            {canAddMod && (
               <button onClick={()=>!isPaid&&onEditEntry(slip)} disabled={isPaid} className="py-act py-act-blue"
                 style={isPaid?{opacity:0.55,cursor:'not-allowed'}:undefined}
                 title={isPaid?'Mark unpaid first to edit':undefined}>
-                <Pencil size={11}/> Edit
+                <Pencil size={11}/> {hasEntry ? 'Edit' : 'Add Pay'}
               </button>
             )}
-            {canPay && (
+            {canPay && hasEntry && (
               <button onClick={()=>!isPaid&&onDeleteEntry(slip)} disabled={isPaid} className="py-act"
                 style={{color:isPaid?'var(--text-muted)':'#EF4444', borderColor:isPaid?'var(--border)':'rgba(239,68,68,0.3)', opacity:isPaid?0.55:1, cursor:isPaid?'not-allowed':'pointer'}}
                 title={isPaid?'Mark unpaid first to delete':'Remove from this month\'s payroll'}>
                 <Trash2 size={11}/> Delete
               </button>
             )}
-            {canPay && !isPaid && (
+            {canPay && !isPaid && hasEntry && (
               <button onClick={()=>!markingPaid&&onMarkPaid(slip)} disabled={markingPaid} className="py-pay-btn">
                 {markingPaid ? <><span className="py-spin"/> Saving…</> : <><Check size={11}/> Mark Paid</>}
               </button>
+            )}
+            {canPay && !isPaid && !hasEntry && (
+              <span className="py-act" style={{cursor:'default',color:'var(--text-muted)'}} title="Add their pay for this month before it can be marked paid">
+                No pay entered yet
+              </span>
             )}
             {canPay && isPaid && (
               <button onClick={()=>onMarkUnpaid(slip)} className="py-unpay-btn">
@@ -1282,7 +1294,7 @@ function Section({title, slips, onMarkAllPaid, selectMode, selectedIds, onToggle
   const [page, setPage] = useState(1)
   useEffect(() => { setPage(1) }, [slips])
 
-  const unpaidCount   = slips.filter(s=>s.payroll_status!=='paid').length
+  const unpaidCount   = slips.filter(s=>s.payroll_status!=='paid' && s.has_entry!==false).length
   const totalPages    = Math.max(1, Math.ceil(slips.length / SECTION_PAGE_SIZE))
   const pageSlips      = slips.slice((page-1)*SECTION_PAGE_SIZE, page*SECTION_PAGE_SIZE)
   const selectedCount = selectedIds ? selectedIds.size : 0
@@ -1398,7 +1410,7 @@ export default function PayrollPage() {
     })
   }
   function markAllPaidInGroup(group) {
-    const unpaid=group.filter(p=>p.payroll_status!=='paid')
+    const unpaid=group.filter(p=>p.payroll_status!=='paid' && p.has_entry!==false)
     if (!unpaid.length) return
     setConfirmDlg({
       title:`Mark ${unpaid.length} employees as paid?`,
@@ -1536,7 +1548,7 @@ export default function PayrollPage() {
   })), [filtered])
   const pieData = [{name:'Earned',value:totalEarned,color:'#B8860B'},{name:'Bonus',value:totalBonus,color:'#10B981'},{name:'Deductions',value:totalDed,color:'#EF4444'}].filter(d=>d.value>0)
 
-  const cardProps = {month, onMarkPaid:markPaidSlip, onMarkUnpaid:markUnpaidSlip, onEditSalary:s=>setModal({type:'salary',emp:s}), onRemoveDed:removeDed, onRemoveBonus:removeBonus, onEditEntry:editEntry, onDeleteEntry:deleteEntry, canPay}
+  const cardProps = {month, onMarkPaid:markPaidSlip, onMarkUnpaid:markUnpaidSlip, onEditSalary:s=>setModal({type:'salary',emp:s}), onRemoveDed:removeDed, onRemoveBonus:removeBonus, onEditEntry:editEntry, onDeleteEntry:deleteEntry, canPay, canAddMod}
 
   // Selection is scoped to whichever tab/month is on screen — switching either clears it.
   useEffect(() => { exitEntrySelectMode() }, [payTab, month])
@@ -1674,8 +1686,10 @@ export default function PayrollPage() {
             ) : (
               <div style={{textAlign:'center',padding:'40px 20px',color:'var(--text-muted)',background:'var(--card)',border:'1px solid var(--border)',borderRadius:12}}>
                 <Wallet size={28} style={{margin:'0 auto 10px',display:'block',opacity:0.2}}/>
-                <div style={{fontWeight:700,fontSize:13,color:'var(--text)',marginBottom:4}}>No {currentTabLabel.toLowerCase()} added for {month}</div>
-                <div style={{fontSize:12}}>Use Add Manually or Bulk Upload to add {payTab==='staff'||payTab==='tradelink'?'salary':payTab==='pulser'||payTab==='le_chocola'?'hours worked':payTab==='creative_packers'?'days worked':'shipments'} — nobody appears here until their pay is entered.</div>
+                <div style={{fontWeight:700,fontSize:13,color:'var(--text)',marginBottom:4}}>No {currentTabLabel} entries for {month}</div>
+                <div style={{fontSize:12}}>{ROSTER_PAY_TABS.includes(payTab)
+                  ? 'No employees are registered for this project yet — add one under DAs first.'
+                  : `Use Add Manually or Bulk Upload to add ${payTab==='staff'||payTab==='tradelink'?'salary':payTab==='pulser'?'hours worked':'shipments'} — nobody appears here until their pay is entered.`}</div>
               </div>
             )}
           </div>
