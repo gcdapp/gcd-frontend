@@ -530,17 +530,30 @@ const emptySheetFields = () => ({perfBonus:'',incentive:'',otherAddition:'',eidO
 
 const PROJECT_TYPE_LABELS = { staff:'Staff/Admin', pulser:'Pulser', cret:'CRET', tradelink:'Tradelink', external:'External',
   jnt_express:'JNT DAs', imile:'iMile DAs', le_chocola:'Le Chocola Packers', creative_packers:'Creative Packers' }
+// These 4 client-project piece-work types don't get their own tab — they live under
+// "External" (client/non-Amazon work, same as ad-hoc external drivers), so the tab bar
+// isn't 5 mostly-empty tabs deep. Each keeps its own pay formula/rate fields — this only
+// changes which tab groups them, not how their pay is calculated.
+const EXTERNAL_MERGED_TYPES = ['jnt_express', 'imile', 'le_chocola', 'creative_packers']
 function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onClose}) {
-  const isStaff     = projectType === 'staff'
-  const isExternal  = projectType === 'external'
-  const isCret      = projectType === 'cret'
-  const isPulser    = projectType === 'pulser'
-  const isTradelink = projectType === 'tradelink'
-  const isDaSplit       = projectType === 'jnt_express' || projectType === 'imile'
-  const isPackerDaily  = projectType === 'creative_packers'
-  const isPackerHourly = projectType === 'le_chocola'
+  // Opened from the merged "External" tab (projectType==='external'), the actual formula
+  // is ambiguous until the accountant says which one applies — JNT/iMile/Le Chocola/
+  // Creative Packers are calculated completely differently from a flat-rate external
+  // driver. Editing an existing entry always passes that employee's real type directly
+  // (see editEntry below), so this selector only matters for a brand-new entry.
+  const [subType, setSubType] = useState(projectType)
+  const effType = projectType === 'external' ? subType : projectType
+
+  const isStaff     = effType === 'staff'
+  const isExternal  = effType === 'external'
+  const isCret      = effType === 'cret'
+  const isPulser    = effType === 'pulser'
+  const isTradelink = effType === 'tradelink'
+  const isDaSplit       = effType === 'jnt_express' || effType === 'imile'
+  const isPackerDaily  = effType === 'creative_packers'
+  const isPackerHourly = effType === 'le_chocola'
   const isDriverTab = isExternal || isCret || isPulser || isTradelink || isDaSplit || isPackerDaily || isPackerHourly
-  const label = PROJECT_TYPE_LABELS[projectType] || projectType
+  const label = PROJECT_TYPE_LABELS[effType] || effType
   const valueLabel = isStaff ? 'Salary Amount (AED)' : isPulser || isPackerHourly ? 'Hours Worked' : isPackerDaily ? 'Days Worked' : isDaSplit ? 'COD Shipments' : 'Shipments'
   // Drivers genuinely move between Pulser/CRET/Tradelink/External month to month (the
   // real accountant sheet proves this — same driver, different formula, different
@@ -550,8 +563,8 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
   const empOptions = isStaff
     ? employees.filter(e => (e.role||'').toLowerCase()!=='driver')
     : employees.filter(e => (e.role||'').toLowerCase()==='driver').sort((a,b) => {
-        const aMatch = (a.project_type||'pulser').toLowerCase()===projectType
-        const bMatch = (b.project_type||'pulser').toLowerCase()===projectType
+        const aMatch = (a.project_type||'pulser').toLowerCase()===effType
+        const bMatch = (b.project_type||'pulser').toLowerCase()===effType
         if (aMatch !== bMatch) return aMatch ? -1 : 1
         return (a.name||'').localeCompare(b.name||'')
       })
@@ -652,7 +665,7 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
         name: !empId ? name : undefined,
         external_company: !empId ? (company||undefined) : undefined,
         per_shipment_rate: !empId ? (parseFloat(rate)||0.5) : undefined,
-        project_type: isDriverTab ? projectType : undefined,
+        project_type: isDriverTab ? effType : undefined,
         ...sheetPayload,
       })
       onSave()
@@ -672,6 +685,17 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
         </div>
         <div style={{padding:'16px 22px 20px',display:'flex',flexDirection:'column',gap:12,overflowY:'auto'}}>
           {err&&<div style={{background:'#FEF2F2',border:'1px solid #FCA5A5',borderRadius:9,padding:'8px 12px',fontSize:12,color:'#EF4444',display:'flex',gap:6,alignItems:'center'}}><AlertCircle size={12}/>{err}</div>}
+
+          {projectType === 'external' && (
+            <div><label className="input-label">Pay Type *</label>
+              <select className="input" value={subType} onChange={e=>{setSubType(e.target.value); pickEmp('')}}>
+                <option value="external">External (ad-hoc driver)</option>
+                <option value="jnt_express">JNT DAs</option>
+                <option value="imile">iMile DAs</option>
+                <option value="le_chocola">Le Chocola Packers</option>
+                <option value="creative_packers">Creative Packers</option>
+              </select></div>
+          )}
 
           <div><label className="input-label">{isExternal ? 'Existing Driver (optional)' : isStaff ? 'Staff / Admin *' : 'Driver *'}</label>
             <select className="input" value={empId} onChange={e=>pickEmp(e.target.value)}>
@@ -786,16 +810,22 @@ const SHEET_CSV_COLS = ['performance_bonus','incentive','other_addition','eid_ot
 
 /* ── Bulk Upload Pay Modal ── */
 function BulkUnitsModal({month, projectType, onSave, onClose}) {
-  const isStaff     = projectType === 'staff'
-  const isExternal  = projectType === 'external'
-  const isCret       = projectType === 'cret'
-  const isPulser     = projectType === 'pulser'
-  const isTradelink  = projectType === 'tradelink'
-  const isDaSplit       = projectType === 'jnt_express' || projectType === 'imile'
-  const isPackerDaily  = projectType === 'creative_packers'
-  const isPackerHourly = projectType === 'le_chocola'
+  // Same ambiguity as AddUnitsModal above when opened from the merged "External" tab —
+  // the CSV format itself differs per formula, so the accountant has to pick before
+  // downloading a template or uploading a file.
+  const [subType, setSubType] = useState(projectType)
+  const effType = projectType === 'external' ? subType : projectType
+
+  const isStaff     = effType === 'staff'
+  const isExternal  = effType === 'external'
+  const isCret       = effType === 'cret'
+  const isPulser     = effType === 'pulser'
+  const isTradelink  = effType === 'tradelink'
+  const isDaSplit       = effType === 'jnt_express' || effType === 'imile'
+  const isPackerDaily  = effType === 'creative_packers'
+  const isPackerHourly = effType === 'le_chocola'
   const isDriverTab  = isExternal || isCret || isPulser || isTradelink || isDaSplit || isPackerDaily || isPackerHourly
-  const label = PROJECT_TYPE_LABELS[projectType] || projectType
+  const label = PROJECT_TYPE_LABELS[effType] || effType
   const valueLabel = isStaff ? 'AED' : isPackerHourly ? 'hours' : isPackerDaily ? 'days' : isDaSplit ? 'COD shipments' : isPulser ? 'hours' : 'shipments'
 
   const [rows,      setRows]      = useState([])
@@ -803,6 +833,8 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
   const [uploading, setUploading] = useState(false)
   const [err,       setErr]       = useState(null)
   const [result,    setResult]    = useState(null)
+
+  function resetSubType(v) { setSubType(v); setRows([]); setFileName(''); setErr(null); setResult(null) }
 
   function downloadTemplate() {
     const base = isStaff
@@ -826,7 +858,7 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
     const blob = new Blob([csv], { type:'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
-    a.href = url; a.download = `${projectType}_pay_template.csv`
+    a.href = url; a.download = `${effType}_pay_template.csv`
     document.body.appendChild(a); a.click(); document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
@@ -879,7 +911,7 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
     if (!validRows.length) return
     setUploading(true); setErr(null)
     try {
-      const data = await payrollApi.addUnitsBulk(month, validRows.map(({row,errors,...r}) => r), isDriverTab ? projectType : undefined)
+      const data = await payrollApi.addUnitsBulk(month, validRows.map(({row,errors,...r}) => r), isDriverTab ? effType : undefined)
       setResult(data)
     } catch(e) { setErr(e.message) } finally { setUploading(false) }
   }
@@ -896,6 +928,17 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
 
         <div style={{padding:'16px 22px 20px',display:'flex',flexDirection:'column',gap:14,overflowY:'auto',flex:1}}>
           {err&&<div style={{background:'#FEF2F2',border:'1px solid #FCA5A5',borderRadius:9,padding:'8px 12px',fontSize:12,color:'#EF4444',display:'flex',gap:6,alignItems:'center'}}><AlertCircle size={12}/>{err}</div>}
+
+          {projectType === 'external' && !result && (
+            <div><label className="input-label">Pay Type *</label>
+              <select className="input" value={subType} onChange={e=>resetSubType(e.target.value)}>
+                <option value="external">External (ad-hoc driver)</option>
+                <option value="jnt_express">JNT DAs</option>
+                <option value="imile">iMile DAs</option>
+                <option value="le_chocola">Le Chocola Packers</option>
+                <option value="creative_packers">Creative Packers</option>
+              </select></div>
+          )}
 
           {result ? (
             <div style={{textAlign:'center',padding:'16px 8px'}}>
@@ -1485,29 +1528,33 @@ export default function PayrollPage() {
   const driverSlips    = useMemo(() => filtered.filter(isDriverRole), [filtered])
   const pulserSlips    = useMemo(() => driverSlips.filter(s=>(s.project_type||'pulser').toLowerCase()==='pulser'), [driverSlips])
   const cretSlips      = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='cret'), [driverSlips])
-  const externalSlips  = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='external'), [driverSlips])
+  // "External" covers ad-hoc external drivers AND the 4 client-project piece-work types
+  // (JNT/iMile/Le Chocola/Creative Packers) — they don't get their own tabs, see
+  // EXTERNAL_MERGED_TYPES above. Each row still carries and is paid on its own real
+  // project_type; this only changes which tab groups them together.
+  const externalSlips  = useMemo(() => driverSlips.filter(s=>{
+    const t = (s.project_type||'').toLowerCase()
+    return t==='external' || EXTERNAL_MERGED_TYPES.includes(t)
+  }), [driverSlips])
   const tradelinkSlips = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='tradelink'), [driverSlips])
-  const jntSlips              = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='jnt_express'), [driverSlips])
-  const imileSlips            = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='imile'), [driverSlips])
-  const lechocolaSlips        = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='le_chocola'), [driverSlips])
-  const creativePackersSlips  = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='creative_packers'), [driverSlips])
   const [payTab, setPayTab] = useState('staff')
   const ALL_PAY_TABS = [
     ['staff','Staff & Admins',staffSlips.length],['pulser','Pulser',pulserSlips.length],['cret','CRET',cretSlips.length],
     ['tradelink','Tradelink',tradelinkSlips.length],['external','External',externalSlips.length],
-    ['jnt_express','JNT DAs',jntSlips.length],['imile','iMile DAs',imileSlips.length],
-    ['le_chocola','Le Chocola Packers',lechocolaSlips.length],['creative_packers','Creative Packers',creativePackersSlips.length],
   ]
   // A project-scoped manager (e.g. Asma) only manages her own client-project workers —
   // same restriction already applied to the DAs list and Overview pages. The backend
   // GET /api/payroll already scopes the underlying data; this just declutters her tab
-  // bar down to the ones that can ever have anyone in them.
+  // bar down to the ones that can ever have anyone in them. Her assigned_projects hold
+  // the specific project_type values (e.g. 'jnt_express'), not the literal 'external'
+  // tab value they're grouped under, so External is granted separately when any of
+  // those match.
   const isProjectScoped = Array.isArray(user?.assigned_projects) && user.assigned_projects.length > 0
   const PAY_TABS = isProjectScoped
-    ? ALL_PAY_TABS.filter(([v]) => user.assigned_projects.includes(v))
+    ? ALL_PAY_TABS.filter(([v]) => user.assigned_projects.includes(v)
+        || (v === 'external' && user.assigned_projects.some(p => EXTERNAL_MERGED_TYPES.includes(p))))
     : ALL_PAY_TABS
-  const TAB_SLIPS = { staff:staffSlips, pulser:pulserSlips, cret:cretSlips, tradelink:tradelinkSlips, external:externalSlips,
-    jnt_express:jntSlips, imile:imileSlips, le_chocola:lechocolaSlips, creative_packers:creativePackersSlips }
+  const TAB_SLIPS = { staff:staffSlips, pulser:pulserSlips, cret:cretSlips, tradelink:tradelinkSlips, external:externalSlips }
   const activeTabSlips = TAB_SLIPS[payTab] || staffSlips
   // payTab can briefly point at a tab PAY_TABS just filtered out (e.g. a scoped
   // manager's first render, before the effect below corrects it) — .find() would
@@ -1675,7 +1722,7 @@ export default function PayrollPage() {
               <div style={{textAlign:'center',padding:'40px 20px',color:'var(--text-muted)',background:'var(--card)',border:'1px solid var(--border)',borderRadius:12}}>
                 <Wallet size={28} style={{margin:'0 auto 10px',display:'block',opacity:0.2}}/>
                 <div style={{fontWeight:700,fontSize:13,color:'var(--text)',marginBottom:4}}>No {currentTabLabel} entries for {month}</div>
-                <div style={{fontSize:12}}>Use Add Manually or Bulk Upload to add {payTab==='staff'||payTab==='tradelink'?'salary':payTab==='pulser'||payTab==='le_chocola'?'hours worked':payTab==='creative_packers'?'days worked':'shipments'} — nobody appears here until their pay is entered.</div>
+                <div style={{fontSize:12}}>Use Add Manually or Bulk Upload to add {payTab==='staff'||payTab==='tradelink'?'salary':payTab==='pulser'?'hours worked':payTab==='external'?'their pay':'shipments'} — nobody appears here until their pay is entered.</div>
               </div>
             )}
           </div>
