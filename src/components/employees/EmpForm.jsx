@@ -12,7 +12,7 @@ const EMPTY = {
   iloe_expiry:'', annual_leave_start:'',
   amazon_id:'', emirates_id:'', annual_leave_balance:30,
   visa_type:'company',
-  project_type:'pulser', per_shipment_rate:'0.5', performance_bonus:'100',
+  project_type:'pulser', per_shipment_rate:'0.5', per_shipment_rate_non_cod:'', daily_rate:'', performance_bonus:'100',
   login_email:'', login_password:'',
   // Extended personal / WPS fields
   sub_group_name:'', beneficiary_first_name:'', beneficiary_middle_name:'',
@@ -56,6 +56,8 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
     visa_type:            emp.visa_type||'company',
     project_type:         emp.project_type||'pulser',
     per_shipment_rate:    emp.per_shipment_rate||'0.5',
+    per_shipment_rate_non_cod: emp.per_shipment_rate_non_cod||'',
+    daily_rate:           emp.daily_rate||'',
     performance_bonus:    emp.performance_bonus||'100',
     sub_group_name:           emp.sub_group_name||'',
     beneficiary_first_name:   emp.beneficiary_first_name||'',
@@ -158,8 +160,13 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
   const previewSalary = () => {
     const base=Number(form.salary||0), rate=Number(form.hourly_rate||3.85)
     const perf=Number(form.performance_bonus||100), perShip=Number(form.per_shipment_rate||0.5)
+    const nonCodRate=Number(form.per_shipment_rate_non_cod||0), dailyRate=Number(form.daily_rate||0)
     if (form.project_type==='cret')   return `AED ${base} + shipments × ${perShip}`
     if (form.project_type==='pulser') return `AED ${base} + hours × ${rate} + ${perf} bonus`
+    if (form.project_type==='jnt_express' || form.project_type==='imile')
+      return `COD shipments × AED${perShip} + Non-COD × AED${nonCodRate} (no base salary)`
+    if (form.project_type==='le_chocola') return `Hours worked × AED${rate}/hr (no base salary)`
+    if (form.project_type==='creative_packers') return `Days worked × AED${dailyRate}/day (no base salary)`
     return `AED ${base} (fixed salary)`
   }
 
@@ -320,11 +327,11 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
                 <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'2px 0 6px' }}>Other Clients</div>
                 <div className="modal-proj-col" style={{ marginBottom:12 }}>
                   {[
-                    {v:'creative_packers',l:'Creative Packers',d:'Fixed Base Salary'},
+                    {v:'creative_packers',l:'Creative Packers',d:'Days × Daily Rate'},
                     {v:'ig_rak',l:'IG RAK',d:'Fixed Base Salary'},
-                    {v:'imile',l:'IMILE Delivery Services',d:'Fixed Base Salary'},
-                    {v:'jnt_express',l:'Jnt Express',d:'Fixed Base Salary'},
-                    {v:'le_chocola',l:'Le Chocola',d:'Fixed Base Salary'},
+                    {v:'imile',l:'IMILE Delivery Services',d:'COD/Non-COD Shipments × Rate'},
+                    {v:'jnt_express',l:'Jnt Express',d:'COD/Non-COD Shipments × Rate'},
+                    {v:'le_chocola',l:'Le Chocola',d:'Hours × Hourly Rate'},
                   ].map(p=>(
                     <button key={p.v} onClick={e=>{e.stopPropagation();set('project_type',p.v)}} type="button"
                       style={{ padding:'11px', borderRadius:10, border:`2px solid ${form.project_type===p.v?'#7C3AED':'var(--border)'}`, background:form.project_type===p.v?'var(--purple-bg)':'var(--card)', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
@@ -334,10 +341,16 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
                   ))}
                 </div>
                 <div className="modal-proj-col">
-                  {inp('Base Salary (AED)','salary','number','3800')}
+                  {!['jnt_express','imile','le_chocola','creative_packers'].includes(form.project_type) && inp('Base Salary (AED)','salary','number','3800')}
                   {form.project_type==='pulser' && inp('Hourly Rate','hourly_rate','number','3.85')}
                   {form.project_type==='cret' && inp('Per Shipment Rate','per_shipment_rate','number','0.5')}
                   {form.project_type==='pulser' && inp('Performance Bonus','performance_bonus','number','100')}
+                  {(form.project_type==='jnt_express'||form.project_type==='imile') && (<>
+                    {inp('COD Rate (AED/shipment)','per_shipment_rate','number',form.project_type==='jnt_express'?'4':'e.g. 2, 4, 4.5, 5, 7')}
+                    {inp('Non-COD Rate (AED/shipment)','per_shipment_rate_non_cod','number',form.project_type==='jnt_express'?'3.5':'e.g. 2, 3, 4, 5, 7')}
+                  </>)}
+                  {form.project_type==='le_chocola' && inp('Hourly Rate (AED/hr)','hourly_rate','number','6.99')}
+                  {form.project_type==='creative_packers' && inp('Daily Rate (AED/day)','daily_rate','number','73.08')}
                 </div>
                 <div style={{ marginTop:10, background:form.project_type==='pulser'?'var(--green-bg)':form.project_type==='cret'?'var(--blue-bg)':'var(--amber-bg)', borderRadius:9, padding:'8px 12px', fontSize:12, color:form.project_type==='pulser'?'var(--green)':form.project_type==='cret'?'var(--blue)':'#92400E', fontWeight:600 }}>
                   Formula: {previewSalary()}

@@ -86,11 +86,17 @@ function slipData(slip, month) {
   const totalHours = Number(slip.total_hours||0)
 
   const projectType = (slip.project_type||'').toLowerCase()
-  const isCret       = projectType === 'cret'
-  const isExternal   = projectType === 'external'
-  const isTradelink  = projectType === 'tradelink'
+  const isCret         = projectType === 'cret'
+  const isExternal     = projectType === 'external'
+  const isTradelink    = projectType === 'tradelink'
+  const isDaSplit       = projectType === 'jnt_express' || projectType === 'imile'
+  const isPackerDaily  = projectType === 'creative_packers'
+  const isPackerHourly = projectType === 'le_chocola'
   const rawBase      = Number(slip.base_salary||0)
   const perShipRate  = Number(slip.per_shipment_rate||0)
+  const nonCodRate   = Number(slip.per_shipment_rate_non_cod||0)
+  const unitsNonCod  = Number(slip.units_non_cod||0)
+  const dailyRate    = Number(slip.daily_rate||0)
 
   // Basic salary is prorated by working days out of the days in the month —
   // e.g. 29 working days in a 31-day month = base × 29/31.
@@ -133,6 +139,31 @@ function slipData(slip, month) {
     displayRate   = null
     rateLabel     = null
     hoursLabel    = null
+  } else if (isDaSplit) {
+    // COD + Non-COD shipments, each at their own rate, no base salary — verified
+    // against the real JNT sheet (e.g. 79 COD×AED4 + 1509 Non-COD×AED3.5 = 5597.5).
+    effectiveBase = 0
+    hoursEarnings = parseFloat((totalHours*perShipRate + unitsNonCod*nonCodRate).toFixed(2))
+    displayRate   = perShipRate
+    rateLabel     = 'COD / Non-COD Rate'
+    hoursLabel    = `COD ${totalHours} · Non-COD ${unitsNonCod}`
+  } else if (isPackerDaily) {
+    // Days worked × daily rate, no base salary — verified against the real Creative
+    // Packers sheet (e.g. 14 days × AED73.0769 = 1023.08).
+    effectiveBase = 0
+    hoursEarnings = parseFloat((totalHours*dailyRate).toFixed(2))
+    displayRate   = dailyRate
+    rateLabel     = 'Daily Rate'
+    hoursLabel    = `Days Worked (${totalHours})`
+  } else if (isPackerHourly) {
+    // Hours worked × hourly rate, no base salary — verified against the real Le
+    // Chocola sheet (e.g. 160 hours × AED6.993007 = 1118.88).
+    const packerHourlyRate = Number(slip.hourly_rate||0)
+    effectiveBase = 0
+    hoursEarnings = parseFloat((totalHours*packerHourlyRate).toFixed(2))
+    displayRate   = packerHourlyRate
+    rateLabel     = 'Hourly Rate'
+    hoursLabel    = `Hours Worked (${totalHours})`
   } else {
     const hourlyRate_ = Number(slip.hourly_rate||3.85)
     effectiveBase = proratedBase
@@ -181,7 +212,7 @@ function slipData(slip, month) {
   return {fmtN,totalHours,hoursEarnings,incentive,perfBonus,eidOt,monthBonus,otherAddition,monthBonusLabel,
     cashAdv,trafficFine,absentDays,otherDed,base,hourlyRate:displayRate,
     totalAdd,totalDed,pendingDeduction,carryForward,net,isPaid,paidOn,monthShort,roleLabel,row,
-    isCret,isExternal,isTradelink,rateLabel,hoursLabel,hasOverride}
+    isCret,isExternal,isTradelink,isDaSplit,isPackerDaily,isPackerHourly,rateLabel,hoursLabel,hasOverride}
 }
 
 function slipInnerHtml(slip, month, logoUrl, payMethod='bank') {
@@ -497,16 +528,20 @@ const SHEET_DEDUCTION_FIELDS = [
 ]
 const emptySheetFields = () => ({perfBonus:'',incentive:'',otherAddition:'',eidOt:'',trafficFine:'',cashAdvance:'',cashVariance:'',absentDaysDed:'',others:''})
 
-const PROJECT_TYPE_LABELS = { staff:'Staff/Admin', pulser:'Pulser', cret:'CRET', tradelink:'Tradelink', external:'External' }
+const PROJECT_TYPE_LABELS = { staff:'Staff/Admin', pulser:'Pulser', cret:'CRET', tradelink:'Tradelink', external:'External',
+  jnt_express:'JNT DAs', imile:'iMile DAs', le_chocola:'Le Chocola Packers', creative_packers:'Creative Packers' }
 function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onClose}) {
   const isStaff     = projectType === 'staff'
   const isExternal  = projectType === 'external'
   const isCret      = projectType === 'cret'
   const isPulser    = projectType === 'pulser'
   const isTradelink = projectType === 'tradelink'
-  const isDriverTab = isExternal || isCret || isPulser || isTradelink
+  const isDaSplit       = projectType === 'jnt_express' || projectType === 'imile'
+  const isPackerDaily  = projectType === 'creative_packers'
+  const isPackerHourly = projectType === 'le_chocola'
+  const isDriverTab = isExternal || isCret || isPulser || isTradelink || isDaSplit || isPackerDaily || isPackerHourly
   const label = PROJECT_TYPE_LABELS[projectType] || projectType
-  const valueLabel = isStaff ? 'Salary Amount (AED)' : isPulser ? 'Hours Worked' : 'Shipments'
+  const valueLabel = isStaff ? 'Salary Amount (AED)' : isPulser || isPackerHourly ? 'Hours Worked' : isPackerDaily ? 'Days Worked' : isDaSplit ? 'COD Shipments' : 'Shipments'
   // Drivers genuinely move between Pulser/CRET/Tradelink/External month to month (the
   // real accountant sheet proves this — same driver, different formula, different
   // months), so every driver tab lists ALL drivers rather than only ones whose stored
@@ -526,6 +561,7 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
   const [company,     setCompany]     = useState('')
   const [rate,        setRate]        = useState('0.5')
   const [value,       setValue]       = useState('')
+  const [valueNonCod, setValueNonCod] = useState('')
   const [workingDays, setWorkingDays] = useState('')
   const [cretRate,    setCretRate]    = useState('0.5')
   const [pending,        setPending]        = useState(null)
@@ -543,7 +579,7 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
   // defaults for a brand-new entry (employee's stored salary/performance-bonus default).
   async function pickEmp(id) {
     setEmpId(id); setPending(null); setSchedule([]); setDedDone(''); setSheet(emptySheetFields()); setCashAdvMonths('')
-    setWorkingDays(''); setCretRate('0.5')
+    setWorkingDays(''); setCretRate('0.5'); setValueNonCod('')
     if (!id) { setValue(''); return }
     const e = empOptions.find(o=>o.id===id)
     setValue(isStaff ? String(e?.salary||'') : '')
@@ -555,6 +591,7 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
       if (entry) {
         if (!isStaff && !isTradelink) setValue(entry.units!=null ? String(entry.units) : '')
         else if (entry.amount!=null) setValue(String(entry.amount))
+        if (entry.units_non_cod!=null) setValueNonCod(String(entry.units_non_cod))
         if (entry.working_days!=null) setWorkingDays(String(entry.working_days))
         if (entry.cret_rate!=null) setCretRate(String(entry.cret_rate))
         setDedDone(entry.deductions_done!=null ? String(entry.deductions_done) : (d.suggested>0?String(d.suggested):''))
@@ -592,6 +629,11 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
       v = parseFloat(value)
       if (isNaN(v) || v < 0) return setErr(`Enter a valid ${valueLabel.toLowerCase()} value`)
     }
+    let vNonCod = 0
+    if (isDaSplit) {
+      vNonCod = parseFloat(valueNonCod || 0)
+      if (isNaN(vNonCod) || vNonCod < 0) return setErr('Enter a valid Non-COD shipments value')
+    }
     if (!empId && (!isExternal || !name)) return setErr(isExternal ? 'Select a driver or enter a name for a new one' : `Select a ${isStaff?'staff member':'driver'}`)
     setSaving(true); setErr(null)
     try {
@@ -601,6 +643,7 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
       await payrollApi.addUnits({
         month,
         units:  isStaff ? undefined : (isTradelink ? 0 : v),
+        units_non_cod: isDaSplit ? vNonCod : undefined,
         amount: isStaff ? v : undefined,
         working_days: (isPulser||isCret||isTradelink) && workingDays!=='' ? workingDays : undefined,
         cret_rate: isCret ? cretRate : undefined,
@@ -664,6 +707,11 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
           {!isTradelink && (
             <div><label className="input-label">{valueLabel} *</label>
               <input className="input" type="number" step="0.01" min="0" value={value} onChange={e=>setValue(e.target.value)} placeholder="0"/></div>
+          )}
+
+          {isDaSplit && (
+            <div><label className="input-label">Non-COD Shipments *</label>
+              <input className="input" type="number" step="0.01" min="0" value={valueNonCod} onChange={e=>setValueNonCod(e.target.value)} placeholder="0"/></div>
           )}
 
           {loadingEntry && <div style={{fontSize:11.5,color:'var(--text-muted)'}}>Loading existing entry…</div>}
@@ -743,9 +791,12 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
   const isCret       = projectType === 'cret'
   const isPulser     = projectType === 'pulser'
   const isTradelink  = projectType === 'tradelink'
-  const isDriverTab  = isExternal || isCret || isPulser || isTradelink
+  const isDaSplit       = projectType === 'jnt_express' || projectType === 'imile'
+  const isPackerDaily  = projectType === 'creative_packers'
+  const isPackerHourly = projectType === 'le_chocola'
+  const isDriverTab  = isExternal || isCret || isPulser || isTradelink || isDaSplit || isPackerDaily || isPackerHourly
   const label = PROJECT_TYPE_LABELS[projectType] || projectType
-  const valueLabel = isStaff ? 'AED' : isPulser ? 'hours' : 'shipments'
+  const valueLabel = isStaff ? 'AED' : isPackerHourly ? 'hours' : isPackerDaily ? 'days' : isDaSplit ? 'COD shipments' : isPulser ? 'hours' : 'shipments'
 
   const [rows,      setRows]      = useState([])
   const [fileName,  setFileName]  = useState('')
@@ -762,6 +813,12 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
       ? ['emp_id,units,working_days,cret_rate,deductions_done', 'E001,900,31,0.5,0']
       : isTradelink
       ? ['emp_id,working_days,deductions_done', 'E001,31,0']
+      : isDaSplit
+      ? ['emp_id,cod_shipments,non_cod_shipments,deductions_done', 'JNT001,79,1509,0']
+      : isPackerDaily
+      ? ['emp_id,days_worked,deductions_done', 'CRP001,14,0']
+      : isPackerHourly
+      ? ['emp_id,hours_worked,deductions_done', 'LEC001,160,0']
       : ['emp_id,units,working_days,deductions_done', 'E001,160,31,0']
     const header = `${base[0]},${SHEET_CSV_COLS.join(',')}`
     const sample  = `${base[1]},${SHEET_CSV_COLS.map(()=>'0').join(',')}`
@@ -781,12 +838,15 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
     Papa.parse(file, {
       header: true, skipEmptyLines: true,
       complete: (res) => {
+        const unitsCol = isStaff ? 'amount' : isDaSplit ? 'cod_shipments' : isPackerDaily ? 'days_worked' : isPackerHourly ? 'hours_worked' : 'units'
         const parsed = res.data.map((r,i) => {
-          const value  = isTradelink ? 0 : parseFloat(isStaff ? r.amount : r.units)
+          const value      = isTradelink ? 0 : parseFloat(r[unitsCol])
+          const valueNonCod = isDaSplit ? parseFloat(r.non_cod_shipments) : null
           const emp_id = (r.emp_id||'').trim()
           const name   = (r.name||'').trim()
           const errors = []
-          if (!isTradelink && (isNaN(value) || value < 0)) errors.push(`${isStaff?'amount':'units'} must be a non-negative number`)
+          if (!isTradelink && (isNaN(value) || value < 0)) errors.push(`${unitsCol} must be a non-negative number`)
+          if (isDaSplit && (isNaN(valueNonCod) || valueNonCod < 0)) errors.push('non_cod_shipments must be a non-negative number')
           if (isStaff && !emp_id) errors.push('emp_id required')
           if (isExternal && !emp_id && !name) errors.push('name required (or emp_id for an existing driver)')
           if (!isStaff && !isExternal && !emp_id) errors.push('emp_id required')
@@ -801,6 +861,7 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
             cret_rate: isCret && r.cret_rate ? parseFloat(r.cret_rate) : undefined,
             deductions_done: r.deductions_done !== undefined && r.deductions_done !== '' ? parseFloat(r.deductions_done) : undefined,
             units:  isStaff ? undefined : value,
+            units_non_cod: isDaSplit ? valueNonCod : undefined,
             amount: isStaff ? value : undefined,
             ...sheetCols,
             errors,
@@ -868,6 +929,12 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
                   ? <>Download the template, fill one row per driver (<code>emp_id, units, working_days, cret_rate</code> — rate is 0.5, 2, or 3 — plus optional <code>deductions_done</code>), then upload it back here.</>
                   : isTradelink
                   ? <>Download the template, fill one row per driver (<code>emp_id, working_days</code> — a flat prorated salary, no hours/shipments — plus optional <code>deductions_done</code>), then upload it back here.</>
+                  : isDaSplit
+                  ? <>Download the template, fill one row per DA (<code>emp_id, cod_shipments, non_cod_shipments</code> — paid at that DA's own COD/Non-COD rate, no base salary — plus optional <code>deductions_done</code>), then upload it back here.</>
+                  : isPackerDaily
+                  ? <>Download the template, fill one row per Packer (<code>emp_id, days_worked</code> — paid at their daily rate, no base salary — plus optional <code>deductions_done</code>), then upload it back here.</>
+                  : isPackerHourly
+                  ? <>Download the template, fill one row per Packer (<code>emp_id, hours_worked</code> — paid at their hourly rate, no base salary — plus optional <code>deductions_done</code>), then upload it back here.</>
                   : <>Download the template, fill one row per driver (<code>emp_id, units, working_days</code>, plus optional <code>deductions_done</code>), then upload it back here.</>}
                 {' '}The template also includes selectable bonus columns (<code>performance_bonus, incentive, other_addition, eid_ot</code>) and deduction columns (<code>traffic_fine, cash_advance, cash_variance, absent_days, others</code>) matching the salary sheet — leave any of them at 0 or blank to skip. Add <code>cash_advance_installments</code> to spread a cash advance's deduction over that many months instead of it being due in full immediately.
               </div>
@@ -1096,7 +1163,7 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
       {open && (
         <div className="py-expanded">
           <div className="py-actions">
-            {!calc.isExternal && (
+            {!calc.isExternal && !calc.isDaSplit && !calc.isPackerDaily && !calc.isPackerHourly && (
               <button onClick={()=>!isPaid&&onEditSalary(slip)} disabled={isPaid} className="py-act"
                 style={isPaid?{opacity:0.55,cursor:'not-allowed'}:undefined}
                 title={isPaid?'Mark unpaid first to edit':undefined}>
@@ -1420,9 +1487,41 @@ export default function PayrollPage() {
   const cretSlips      = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='cret'), [driverSlips])
   const externalSlips  = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='external'), [driverSlips])
   const tradelinkSlips = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='tradelink'), [driverSlips])
+  const jntSlips              = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='jnt_express'), [driverSlips])
+  const imileSlips            = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='imile'), [driverSlips])
+  const lechocolaSlips        = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='le_chocola'), [driverSlips])
+  const creativePackersSlips  = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='creative_packers'), [driverSlips])
   const [payTab, setPayTab] = useState('staff')
-  const PAY_TABS = [['staff','Staff & Admins',staffSlips.length],['pulser','Pulser',pulserSlips.length],['cret','CRET',cretSlips.length],['tradelink','Tradelink',tradelinkSlips.length],['external','External',externalSlips.length]]
-  const activeTabSlips = payTab==='staff' ? staffSlips : payTab==='pulser' ? pulserSlips : payTab==='cret' ? cretSlips : payTab==='tradelink' ? tradelinkSlips : externalSlips
+  const ALL_PAY_TABS = [
+    ['staff','Staff & Admins',staffSlips.length],['pulser','Pulser',pulserSlips.length],['cret','CRET',cretSlips.length],
+    ['tradelink','Tradelink',tradelinkSlips.length],['external','External',externalSlips.length],
+    ['jnt_express','JNT DAs',jntSlips.length],['imile','iMile DAs',imileSlips.length],
+    ['le_chocola','Le Chocola Packers',lechocolaSlips.length],['creative_packers','Creative Packers',creativePackersSlips.length],
+  ]
+  // A project-scoped manager (e.g. Asma) only manages her own client-project workers —
+  // same restriction already applied to the DAs list and Overview pages. The backend
+  // GET /api/payroll already scopes the underlying data; this just declutters her tab
+  // bar down to the ones that can ever have anyone in them.
+  const isProjectScoped = Array.isArray(user?.assigned_projects) && user.assigned_projects.length > 0
+  const PAY_TABS = isProjectScoped
+    ? ALL_PAY_TABS.filter(([v]) => user.assigned_projects.includes(v))
+    : ALL_PAY_TABS
+  const TAB_SLIPS = { staff:staffSlips, pulser:pulserSlips, cret:cretSlips, tradelink:tradelinkSlips, external:externalSlips,
+    jnt_express:jntSlips, imile:imileSlips, le_chocola:lechocolaSlips, creative_packers:creativePackersSlips }
+  const activeTabSlips = TAB_SLIPS[payTab] || staffSlips
+  // payTab can briefly point at a tab PAY_TABS just filtered out (e.g. a scoped
+  // manager's first render, before the effect below corrects it) — .find() would
+  // then return undefined and crash on [1] wherever the label is read.
+  const currentTabLabel = PAY_TABS.find(([v])=>v===payTab)?.[1] || PROJECT_TYPE_LABELS[payTab] || payTab
+
+  // Land a scoped manager on one of her own tabs instead of the default "Staff &
+  // Admins" (which she'd never have anyone in, or may not even be allowed to open).
+  useEffect(() => {
+    if (isProjectScoped && PAY_TABS.length && !PAY_TABS.some(([v]) => v === payTab)) {
+      setPayTab(PAY_TABS[0][0])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isProjectScoped, PAY_TABS.map(([v]) => v).join(',')])
 
   const totalEarned = payrollCalc.reduce((s,p)=>s+p._calc.base+p._calc.hoursEarnings,0)
   const totalBonus  = payrollCalc.reduce((s,p)=>s+(p._calc.totalAdd-p._calc.base-p._calc.hoursEarnings),0)
@@ -1564,7 +1663,7 @@ export default function PayrollPage() {
               )}
             </div>
             {activeTabSlips.length > 0 ? (
-              <Section title={PAY_TABS.find(([v])=>v===payTab)[1]}
+              <Section title={currentTabLabel}
                 slips={activeTabSlips} onMarkAllPaid={markAllPaidInGroup} {...cardProps}
                 markingPaid={(id)=>markingPaid.has(id)}
                 selectMode={entrySelectMode} selectedIds={selectedEntryIds} onToggleSelect={toggleEntrySelect}
@@ -1575,8 +1674,8 @@ export default function PayrollPage() {
             ) : (
               <div style={{textAlign:'center',padding:'40px 20px',color:'var(--text-muted)',background:'var(--card)',border:'1px solid var(--border)',borderRadius:12}}>
                 <Wallet size={28} style={{margin:'0 auto 10px',display:'block',opacity:0.2}}/>
-                <div style={{fontWeight:700,fontSize:13,color:'var(--text)',marginBottom:4}}>No {PAY_TABS.find(([v])=>v===payTab)[1].toLowerCase()} added for {month}</div>
-                <div style={{fontSize:12}}>Use Add Manually or Bulk Upload to add {payTab==='staff'||payTab==='tradelink'?'salary':payTab==='pulser'?'hours worked':'shipments'} — nobody appears here until their pay is entered.</div>
+                <div style={{fontWeight:700,fontSize:13,color:'var(--text)',marginBottom:4}}>No {currentTabLabel.toLowerCase()} added for {month}</div>
+                <div style={{fontSize:12}}>Use Add Manually or Bulk Upload to add {payTab==='staff'||payTab==='tradelink'?'salary':payTab==='pulser'||payTab==='le_chocola'?'hours worked':payTab==='creative_packers'?'days worked':'shipments'} — nobody appears here until their pay is entered.</div>
               </div>
             )}
           </div>
