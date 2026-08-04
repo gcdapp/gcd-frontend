@@ -555,25 +555,13 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
   const isDriverTab = isExternal || isCret || isPulser || isTradelink || isDaSplit || isPackerDaily || isPackerHourly
   const label = PROJECT_TYPE_LABELS[effType] || effType
   const valueLabel = isStaff ? 'Salary Amount (AED)' : isPulser || isPackerHourly ? 'Hours Worked' : isPackerDaily ? 'Days Worked' : isDaSplit ? 'COD Shipments' : 'Shipments'
-  // Pulser/CRET/Tradelink are alternate Amazon payment formulas a driver can genuinely
-  // rotate through month to month (the real accountant sheet proves this — same driver,
-  // different formula, different months), so those tabs list ALL drivers, matching ones
-  // sorted first. External and the 4 client-project types are different in kind, not just
-  // formula — they're each a specific employer/client roster (JNT DAs work for JNT, an
-  // "External" driver is a one-off outside every roster), so the picker here only shows
-  // that roster instead of every driver in the company.
-  const STRICT_MATCH_TYPES = ['external', 'jnt_express', 'imile', 'le_chocola', 'creative_packers']
+  // Every driver category only shows its own roster — a Pulser driver isn't a CRET
+  // candidate, a JNT DA isn't a Creative Packer, and so on. Null/unset project_type
+  // defaults to 'pulser' (the historical default before project_type existed).
   const empOptions = isStaff
     ? employees.filter(e => (e.role||'').toLowerCase()!=='driver')
-    : STRICT_MATCH_TYPES.includes(effType)
-    ? employees.filter(e => (e.role||'').toLowerCase()==='driver' && (e.project_type||'').toLowerCase()===effType)
+    : employees.filter(e => (e.role||'').toLowerCase()==='driver' && (e.project_type||'pulser').toLowerCase()===effType)
         .sort((a,b) => (a.name||'').localeCompare(b.name||''))
-    : employees.filter(e => (e.role||'').toLowerCase()==='driver').sort((a,b) => {
-        const aMatch = (a.project_type||'pulser').toLowerCase()===effType
-        const bMatch = (b.project_type||'pulser').toLowerCase()===effType
-        if (aMatch !== bMatch) return aMatch ? -1 : 1
-        return (a.name||'').localeCompare(b.name||'')
-      })
 
   const [empId,       setEmpId]       = useState('')
   const [name,        setName]        = useState('')
