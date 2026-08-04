@@ -957,24 +957,6 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
             </div>
           ) : (
             <>
-              <div style={{fontSize:12.5,color:'var(--text-muted)',lineHeight:1.5}}>
-                {isStaff
-                  ? <>Download the template, fill one row per person (<code>emp_id, amount</code> — their confirmed salary for {month} — plus an optional <code>deductions_done</code> column), then upload it back here.</>
-                  : isExternal
-                  ? <>Download the template, fill one row per driver (<code>name, external_company, units, per_shipment_rate</code>, plus optional <code>emp_id</code> to update an existing external driver instead of creating a new one, and optional <code>deductions_done</code>), then upload it back here.</>
-                  : isCret
-                  ? <>Download the template, fill one row per driver (<code>emp_id, units, working_days, cret_rate</code> — rate is 0.5, 2, or 3 — plus optional <code>deductions_done</code>), then upload it back here.</>
-                  : isTradelink
-                  ? <>Download the template, fill one row per driver (<code>emp_id, working_days</code> — a flat prorated salary, no hours/shipments — plus optional <code>deductions_done</code>), then upload it back here.</>
-                  : isDaSplit
-                  ? <>Download the template, fill one row per DA (<code>emp_id, cod_shipments, non_cod_shipments</code> — paid at that DA's own COD/Non-COD rate, no base salary — plus optional <code>deductions_done</code>), then upload it back here.</>
-                  : isPackerDaily
-                  ? <>Download the template, fill one row per Packer (<code>emp_id, days_worked</code> — paid at their daily rate, no base salary — plus optional <code>deductions_done</code>), then upload it back here.</>
-                  : isPackerHourly
-                  ? <>Download the template, fill one row per Packer (<code>emp_id, hours_worked</code> — paid at their hourly rate, no base salary — plus optional <code>deductions_done</code>), then upload it back here.</>
-                  : <>Download the template, fill one row per driver (<code>emp_id, units, working_days</code>, plus optional <code>deductions_done</code>), then upload it back here.</>}
-                {' '}The template also includes selectable bonus columns (<code>performance_bonus, incentive, other_addition, eid_ot</code>) and deduction columns (<code>traffic_fine, cash_advance, cash_variance, absent_days, others</code>) matching the salary sheet — leave any of them at 0 or blank to skip. Add <code>cash_advance_installments</code> to spread a cash advance's deduction over that many months instead of it being due in full immediately.
-              </div>
               <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}>
                 <button onClick={downloadTemplate} type="button"
                   style={{display:'flex',alignItems:'center',gap:6,padding:'9px 14px',borderRadius:10,border:'1px solid var(--border)',background:'var(--bg-alt)',color:'var(--text)',fontWeight:600,fontSize:12.5,cursor:'pointer',fontFamily:'inherit'}}>

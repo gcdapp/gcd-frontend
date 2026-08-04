@@ -140,9 +140,6 @@ function BulkUploadModal({ isProjectScoped, defaultProject, onSave, onClose }) {
             </div>
           ) : (
             <>
-              <div style={{ fontSize:12.5, color:'var(--text-muted)', lineHeight:1.5 }}>
-                Download the template, fill in one row per DA (columns: <code>name, phone, visa_type, project_type, station_code</code> — only <code>name</code> is required, everything else falls back to a sensible default), then upload it back here. Employee IDs are generated automatically.
-              </div>
               <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
                 <button onClick={downloadTemplate} type="button"
                   style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:10, border:'1px solid var(--border)', background:'var(--bg-alt)', color:'var(--text)', fontWeight:600, fontSize:12.5, cursor:'pointer', fontFamily:'inherit' }}>

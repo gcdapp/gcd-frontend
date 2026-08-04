@@ -587,8 +587,7 @@ export function SimBulkModal({ station, emps, onClose, onSave }) {
           <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
             <div style={{ background:'var(--bg-alt)', border:'1.5px dashed var(--border-med)', borderRadius:12, padding:'28px 24px', textAlign:'center' }}>
               <Upload size={32} style={{ margin:'0 auto 10px', display:'block', color:'var(--text-muted)' }}/>
-              <div style={{ fontWeight:700, fontSize:14, color:'var(--text)', marginBottom:4 }}>Upload CSV file</div>
-              <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:16 }}>Columns: sim_number, phone_number, carrier, status, station_code, monthly_cost, notes, emp_id</div>
+              <div style={{ fontWeight:700, fontSize:14, color:'var(--text)', marginBottom:16 }}>Upload CSV file</div>
               <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} style={{ display:'none' }}/>
               <button className="btn btn-primary" onClick={() => fileRef.current?.click()} style={{ justifyContent:'center', marginBottom:10 }}><FileText size={14}/> Choose CSV File</button>
             </div>
