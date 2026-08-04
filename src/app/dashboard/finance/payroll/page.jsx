@@ -555,13 +555,19 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
   const isDriverTab = isExternal || isCret || isPulser || isTradelink || isDaSplit || isPackerDaily || isPackerHourly
   const label = PROJECT_TYPE_LABELS[effType] || effType
   const valueLabel = isStaff ? 'Salary Amount (AED)' : isPulser || isPackerHourly ? 'Hours Worked' : isPackerDaily ? 'Days Worked' : isDaSplit ? 'COD Shipments' : 'Shipments'
-  // Drivers genuinely move between Pulser/CRET/Tradelink/External month to month (the
-  // real accountant sheet proves this — same driver, different formula, different
-  // months), so every driver tab lists ALL drivers rather than only ones whose stored
-  // default happens to match. Drivers already defaulting to this tab's category sort
-  // first since that's the common case; everyone else follows, alphabetically.
+  // Pulser/CRET/Tradelink are alternate Amazon payment formulas a driver can genuinely
+  // rotate through month to month (the real accountant sheet proves this — same driver,
+  // different formula, different months), so those tabs list ALL drivers, matching ones
+  // sorted first. External and the 4 client-project types are different in kind, not just
+  // formula — they're each a specific employer/client roster (JNT DAs work for JNT, an
+  // "External" driver is a one-off outside every roster), so the picker here only shows
+  // that roster instead of every driver in the company.
+  const STRICT_MATCH_TYPES = ['external', 'jnt_express', 'imile', 'le_chocola', 'creative_packers']
   const empOptions = isStaff
     ? employees.filter(e => (e.role||'').toLowerCase()!=='driver')
+    : STRICT_MATCH_TYPES.includes(effType)
+    ? employees.filter(e => (e.role||'').toLowerCase()==='driver' && (e.project_type||'').toLowerCase()===effType)
+        .sort((a,b) => (a.name||'').localeCompare(b.name||''))
     : employees.filter(e => (e.role||'').toLowerCase()==='driver').sort((a,b) => {
         const aMatch = (a.project_type||'pulser').toLowerCase()===effType
         const bMatch = (b.project_type||'pulser').toLowerCase()===effType
