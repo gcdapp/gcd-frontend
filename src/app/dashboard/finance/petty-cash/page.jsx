@@ -639,7 +639,7 @@ function Pagination({ page, totalPages, onChange, loading }) {
 }
 
 /* ── Transaction Row ────────────────────────────────────────── */
-function TxRow({ record, canDelete, onDelete, onEdit, selectMode, selected, onToggleSelect, showUser }) {
+function TxRow({ record, canEdit, canDelete, onDelete, onEdit, selectMode, selected, onToggleSelect, showUser }) {
   const isAlloc = record.type === 'allocation'
   return (
     <div onClick={selectMode ? () => onToggleSelect(record.id) : undefined}
@@ -678,20 +678,24 @@ function TxRow({ record, canDelete, onDelete, onEdit, selectMode, selected, onTo
         </div>
         <div style={{ fontSize:10, color:'var(--text-muted)', marginTop:2 }}>{fmtDate(record.date)}</div>
       </div>
-      {canDelete && !selectMode && (
+      {(canEdit || canDelete) && !selectMode && (
         <div style={{ display:'flex', gap:2, flexShrink:0 }}>
-          <button onClick={() => onEdit(record)}
-            style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:4, display:'flex', borderRadius:6 }}
-            onMouseEnter={e => e.currentTarget.style.color='#2563EB'}
-            onMouseLeave={e => e.currentTarget.style.color='var(--text-muted)'}>
-            <Pencil size={13}/>
-          </button>
-          <button onClick={() => onDelete(record.id)}
-            style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:4, display:'flex', borderRadius:6 }}
-            onMouseEnter={e => e.currentTarget.style.color='#EF4444'}
-            onMouseLeave={e => e.currentTarget.style.color='var(--text-muted)'}>
-            <Trash2 size={13}/>
-          </button>
+          {canEdit && (
+            <button onClick={() => onEdit(record)}
+              style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:4, display:'flex', borderRadius:6 }}
+              onMouseEnter={e => e.currentTarget.style.color='#2563EB'}
+              onMouseLeave={e => e.currentTarget.style.color='var(--text-muted)'}>
+              <Pencil size={13}/>
+            </button>
+          )}
+          {canDelete && (
+            <button onClick={() => onDelete(record.id)}
+              style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:4, display:'flex', borderRadius:6 }}
+              onMouseEnter={e => e.currentTarget.style.color='#EF4444'}
+              onMouseLeave={e => e.currentTarget.style.color='var(--text-muted)'}>
+              <Trash2 size={13}/>
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -699,7 +703,7 @@ function TxRow({ record, canDelete, onDelete, onEdit, selectMode, selected, onTo
 }
 
 /* ── User Detail Panel ──────────────────────────────────────── */
-function UserDetailPanel({ userId, userName, userRole, onBack, canDelete, drivers }) {
+function UserDetailPanel({ userId, userName, userRole, onBack, canEdit, canDelete, drivers }) {
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
   const [editRecord, setEditRecord] = useState(null)
@@ -823,7 +827,7 @@ function UserDetailPanel({ userId, userName, userRole, onBack, canDelete, driver
           <div style={{ padding:40, textAlign:'center', color:'var(--text-muted)', fontSize:13 }}>No transactions in this month</div>
         ) : (
           filteredRecords.map(r => (
-            <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDelete} onEdit={setEditRecord}
+            <TxRow key={r.id} record={r} canEdit={canEdit || canDelete} canDelete={canDelete} onDelete={handleDelete} onEdit={setEditRecord}
               selectMode={selectMode} selected={selectedIds.has(r.id)} onToggleSelect={toggleSelect}/>
           ))
         )}
@@ -1054,10 +1058,15 @@ export default function PettyCashPage() {
   const isZero = balance === 0
 
   if (drillUser) {
+    // A delegate (e.g. Iftikhar for Waqar) can view and edit their delegated POC's
+    // records even without general Team Overview access — same relationship that
+    // already lets them record new expenses on that POC's behalf. Delete stays
+    // admin/accountant-only regardless.
+    const canEditDrillUser = canDelete || delegates.some(d => d.id === drillUser.id)
     return (
       <UserDetailPanel
         userId={drillUser.id} userName={drillUser.name} userRole={drillUser.role}
-        onBack={() => setDrillUser(null)} canDelete={canDelete} drivers={drivers}/>
+        onBack={() => setDrillUser(null)} canEdit={canEditDrillUser} canDelete={canDelete} drivers={drivers}/>
     )
   }
 
@@ -1162,6 +1171,32 @@ export default function PettyCashPage() {
           </div>
         </div>
 
+        {/* ── Delegate Access — e.g. Iftikhar managing Waqar's petty cash. Shows
+            regardless of Team Overview access, since it's scoped to specifically
+            delegated accounts, not everyone's. ── */}
+        {delegates.length > 0 && (
+          <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden', marginBottom:16 }}>
+            <div style={{ padding:'13px 16px', borderBottom:'1px solid var(--border)', fontWeight:700, fontSize:13, color:'var(--text)' }}>
+              Managing Petty Cash For
+            </div>
+            {delegates.map(d => (
+              <div key={d.id} onClick={() => setDrillUser({ id:d.id, name:d.name, role:d.role })}
+                style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', cursor:'pointer', transition:'background 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.background='var(--bg-alt)'}
+                onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                <div style={{ width:36, height:36, borderRadius:10, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:12, fontWeight:800, color:'white' }}>
+                  {d.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontWeight:700, fontSize:13, color:'var(--text)' }}>{d.name}</div>
+                  <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{ROLE_LABELS[d.role]||d.role} · View &amp; edit their petty cash</div>
+                </div>
+                <ChevronRight size={14} style={{ color:'var(--text-muted)', flexShrink:0 }}/>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* ── Main Card ── */}
         <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden' }}>
 
@@ -1222,7 +1257,7 @@ export default function PettyCashPage() {
                             {m}
                           </div>
                         )}
-                        <TxRow record={r} canDelete={canDelete} onDelete={handleDeleteRecent} onEdit={setEditRecord}
+                        <TxRow record={r} canEdit={canDelete} canDelete={canDelete} onDelete={handleDeleteRecent} onEdit={setEditRecord}
                           selectMode={recentSelectMode} selected={recentSelectedIds.has(r.id)} onToggleSelect={toggleRecentSelect} showUser/>
                       </React.Fragment>
                     )
@@ -1272,7 +1307,7 @@ export default function PettyCashPage() {
                 </div>
               ) : (
                 myFilteredRecords.map(r => (
-                  <TxRow key={r.id} record={r} canDelete={canDelete} onDelete={handleDeleteMy} onEdit={setEditRecord}
+                  <TxRow key={r.id} record={r} canEdit={canDelete} canDelete={canDelete} onDelete={handleDeleteMy} onEdit={setEditRecord}
                     selectMode={selectMode} selected={selectedIds.has(r.id)} onToggleSelect={toggleSelect}/>
                 ))
               )}
