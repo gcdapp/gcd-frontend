@@ -444,10 +444,29 @@ export default function OverviewPage() {
                     tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}/>
                   <Tooltip
                     cursor={{ fill:'rgba(184,134,11,0.06)', rx:6 }}
-                    contentStyle={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, fontSize:12, boxShadow:'0 8px 24px rgba(0,0,0,0.10)', padding:'10px 14px' }}
-                    labelStyle={{ fontWeight:700, color:'var(--text)', marginBottom:6, fontSize:12 }}
-                    labelFormatter={v => { const [y,m] = v.split('-'); return new Date(+y,+m-1).toLocaleDateString('en-US',{month:'long',year:'numeric'}) }}
-                    formatter={(val, name) => [`AED ${Number(val).toLocaleString()}`, name]}
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null
+                      const row = payload[0].payload
+                      const spend = expView === 'combined' ? row.total : row[expView]
+                      const recv  = expView === 'combined' ? row.total_received : row[`${expView}_received`]
+                      const diff  = (recv||0) - (spend||0)
+                      const [y,m] = label.split('-')
+                      const monthLabel = new Date(+y,+m-1).toLocaleDateString('en-US',{month:'long',year:'numeric'})
+                      const colors = { amazon:'#60A5FA', client:'#A78BFA', amazon_received:'#6EE7B7', client_received:'#059669' }
+                      return (
+                        <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, fontSize:12, boxShadow:'0 8px 24px rgba(0,0,0,0.10)', padding:'10px 14px', minWidth:180 }}>
+                          <div style={{ fontWeight:700, color:'var(--text)', marginBottom:6, fontSize:12 }}>{monthLabel}</div>
+                          {payload.map(p => (
+                            <div key={p.dataKey} style={{ display:'flex', justifyContent:'space-between', gap:16, color: colors[p.dataKey] || 'var(--text)' }}>
+                              <span>{p.name}</span><span style={{ fontWeight:700 }}>AED {Number(p.value).toLocaleString()}</span>
+                            </div>
+                          ))}
+                          <div style={{ display:'flex', justifyContent:'space-between', gap:16, marginTop:6, paddingTop:6, borderTop:'1px solid var(--border)', fontWeight:800, color: diff>=0?'#34D399':'#F87171' }}>
+                            <span>Difference</span><span>{diff>=0?'+':'-'}AED {Math.abs(diff).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      )
+                    }}
                   />
                   {expView === 'combined' ? (
                     <>
@@ -487,19 +506,23 @@ export default function OverviewPage() {
 
           {expChart.length > 0 && (() => {
             const field    = expView === 'combined' ? 'total' : expView
-            const totalExp6 = expChart.reduce((s,r) => s + (r[field]||0), 0)
+            const recvField = expView === 'combined' ? 'total_received' : `${expView}_received`
+            const totalExp6  = expChart.reduce((s,r) => s + (r[field]||0), 0)
+            const totalRecv6 = expChart.reduce((s,r) => s + (r[recvField]||0), 0)
+            const diff6      = totalRecv6 - totalExp6
             const avgExp6   = totalExp6 / expChart.length
             const peak      = expChart.reduce((max,r) => (r[field]||0) > (max?.[field]||0) ? r : max, expChart[0])
             const peakLabel = (() => { const [y,m] = peak.month.split('-'); return new Date(+y,+m-1).toLocaleDateString('en-US',{month:'short'}) })()
             const accent    = expView==='amazon' ? '#3B82F6' : expView==='client' ? '#7C3AED' : '#FCD34D'
             return (
-              <div style={{ display:'flex', borderTop:'1px solid var(--border)', background:'var(--bg-alt)' }}>
+              <div style={{ display:'flex', borderTop:'1px solid var(--border)', background:'var(--bg-alt)', flexWrap:'wrap' }}>
                 {[
-                  { label:`Total (${expChart.length} month${expChart.length!==1?'s':''})`, value:`AED ${totalExp6.toLocaleString()}`, c:'var(--text)' },
+                  { label:`Total Spend (${expChart.length} month${expChart.length!==1?'s':''})`, value:`AED ${totalExp6.toLocaleString()}`, c:'var(--text)' },
                   { label:'Monthly Average',        value:`AED ${Math.round(avgExp6).toLocaleString()}`,   c:accent },
                   { label:`Peak Month (${peakLabel})`, value:`AED ${(peak[field]||0).toLocaleString()}`,   c:'#F59E0B' },
+                  { label:'Difference (Received − Spend)', value:`${diff6>=0?'+':'-'}AED ${Math.abs(diff6).toLocaleString()}`, c: diff6>=0?'#34D399':'#F87171' },
                 ].map(({ label, value, c }) => (
-                  <div key={label} style={{ flex:1, padding:'12px 20px', borderRight:'1px solid var(--border)', textAlign:'center' }}>
+                  <div key={label} style={{ flex:1, minWidth:150, padding:'12px 20px', borderRight:'1px solid var(--border)', textAlign:'center' }}>
                     <div style={{ fontWeight:800, fontSize:16, color:c, letterSpacing:'-0.03em' }}>{value}</div>
                     <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:2, fontWeight:600 }}>{label}</div>
                   </div>
