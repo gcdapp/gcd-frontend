@@ -96,7 +96,12 @@ export default function OverviewPage() {
     // firing a request that will just 403).
     if (user?.role === 'admin') {
       fetch(`${API}/api/analytics/expenses-chart?months=12`, h)
-        .then(r => r.json()).then(d => { setExpChart(d.chart || []); setLoadingExpChart(false) })
+        .then(r => r.json()).then(d => {
+          // total_received mirrors the backend's own `total` (amazon+client spend)
+          // so the Combined view's received bar can stack the same way.
+          const chart = (d.chart || []).map(r => ({ ...r, total_received: (r.amazon_received||0) + (r.client_received||0) }))
+          setExpChart(chart); setLoadingExpChart(false)
+        })
         .catch(() => setLoadingExpChart(false))
     } else {
       setLoadingExpChart(false)
@@ -369,7 +374,7 @@ export default function OverviewPage() {
             <div>
               <div className="ov-card-title">Expense Trend — Last 12 Months</div>
               <div className="ov-card-sub">
-                {expView==='combined' ? 'Amazon + Other Projects, stacked by month' : expView==='amazon' ? 'Amazon-side spend vs. amount received' : 'Other Projects spend vs. amount received'}
+                {expView==='combined' ? 'Spend vs. amount received, stacked by month' : expView==='amazon' ? 'Amazon-side spend vs. amount received' : 'Other Projects spend vs. amount received'}
               </div>
             </div>
             <div style={{ display:'flex', gap:3, background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:24, padding:3, flexShrink:0 }}>
@@ -423,6 +428,14 @@ export default function OverviewPage() {
                       <stop offset="0%"   stopColor="#34D399" stopOpacity={1}/>
                       <stop offset="100%" stopColor="#34D399" stopOpacity={0.5}/>
                     </linearGradient>
+                    <linearGradient id="gradAmazonRecv" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor="#6EE7B7" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#6EE7B7" stopOpacity={0.5}/>
+                    </linearGradient>
+                    <linearGradient id="gradClientRecv" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor="#059669" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#059669" stopOpacity={0.5}/>
+                    </linearGradient>
                   </defs>
                   <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 4" strokeOpacity={0.7}/>
                   <XAxis dataKey="month" tick={{ fontSize:11, fill:'var(--text-muted)', fontWeight:600, fontFamily:'inherit' }} axisLine={false} tickLine={false}
@@ -438,11 +451,17 @@ export default function OverviewPage() {
                   />
                   {expView === 'combined' ? (
                     <>
-                      <Bar dataKey="amazon"  name="Amazon"          stackId="exp" fill="url(#gradAmazon)"/>
-                      <Bar dataKey="client"  name="Other Projects"  stackId="exp" fill="url(#gradClient)" radius={[7,7,0,0]}>
+                      <Bar dataKey="amazon"  name="Amazon spend"          stackId="exp" fill="url(#gradAmazon)"/>
+                      <Bar dataKey="client"  name="Other Projects spend"  stackId="exp" fill="url(#gradClient)" radius={[7,7,0,0]}>
                         <LabelList dataKey="total" position="top" offset={9}
                           formatter={v => `AED ${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
                           style={{ fontSize:10.5, fontWeight:800, fill:'var(--text)' }}/>
+                      </Bar>
+                      <Bar dataKey="amazon_received"  name="Amazon received"          stackId="recv" fill="url(#gradAmazonRecv)"/>
+                      <Bar dataKey="client_received"  name="Other Projects received"  stackId="recv" fill="url(#gradClientRecv)" radius={[7,7,0,0]}>
+                        <LabelList dataKey="total_received" position="top" offset={9}
+                          formatter={v => `AED ${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
+                          style={{ fontSize:10.5, fontWeight:800, fill:'#059669' }}/>
                       </Bar>
                     </>
                   ) : (
