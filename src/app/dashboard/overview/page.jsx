@@ -50,10 +50,6 @@ export default function OverviewPage() {
   const [fleetStats,     setFleetStats]     = useState(null)
   const [pendingLetters, setPendingLetters] = useState([])
   const [mounted,        setMounted]        = useState(false)
-  // Other-Projects revenue/P&L — fetched lazily (only once "Other Projects" is
-  // actually selected) since it's irrelevant to the default Combined/Amazon view.
-  const [pnl,            setPnl]            = useState(null)
-  const [loadingPnl,     setLoadingPnl]     = useState(false)
 
   // Per-section loading flags — each resolves independently
   const [loadingExp,   setLoadingExp]   = useState(true)
@@ -121,19 +117,6 @@ export default function OverviewPage() {
   }, [user?.role])
 
   useEffect(() => { load() }, [load])
-
-  // Lazy-load the Other-Projects P&L the first time that view is selected —
-  // same admin-only gate as /expenses-chart above, no point fetching it for
-  // anyone who'll never see the card it feeds.
-  useEffect(() => {
-    if (expView === 'client' && pnl === null && !loadingPnl && user?.role === 'admin') {
-      setLoadingPnl(true)
-      fetch(`${API}/api/analytics/project-pnl`, { headers: hdr() })
-        .then(r => r.json()).then(d => setPnl(d))
-        .catch(() => setPnl({ projects: [], totals: {}, unattributed_expenses: 0 }))
-        .finally(() => setLoadingPnl(false))
-    }
-  }, [expView, pnl, loadingPnl, user?.role])
 
   // Derived values — exclude expenses dated later than today (e.g. a forward-dated
   // advance) so these totals mean "spent so far this month," matching the Expense
@@ -386,7 +369,7 @@ export default function OverviewPage() {
             <div>
               <div className="ov-card-title">Expense Trend — Last 12 Months</div>
               <div className="ov-card-sub">
-                {expView==='combined' ? 'Amazon + Other Projects, stacked by month' : expView==='amazon' ? 'Amazon-side spend only' : 'Other Projects spend only'}
+                {expView==='combined' ? 'Amazon + Other Projects, stacked by month' : expView==='amazon' ? 'Amazon-side spend vs. amount received' : 'Other Projects spend vs. amount received'}
               </div>
             </div>
             <div style={{ display:'flex', gap:3, background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:24, padding:3, flexShrink:0 }}>
@@ -436,6 +419,10 @@ export default function OverviewPage() {
                       <stop offset="0%"   stopColor="#A78BFA" stopOpacity={1}/>
                       <stop offset="100%" stopColor="#A78BFA" stopOpacity={0.5}/>
                     </linearGradient>
+                    <linearGradient id="gradReceived" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor="#34D399" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#34D399" stopOpacity={0.5}/>
+                    </linearGradient>
                   </defs>
                   <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 4" strokeOpacity={0.7}/>
                   <XAxis dataKey="month" tick={{ fontSize:11, fill:'var(--text-muted)', fontWeight:600, fontFamily:'inherit' }} axisLine={false} tickLine={false}
@@ -459,12 +446,20 @@ export default function OverviewPage() {
                       </Bar>
                     </>
                   ) : (
-                    <Bar dataKey={expView} name={expView==='amazon'?'Amazon':'Other Projects'}
-                      fill={expView==='amazon'?'url(#gradAmazon)':'url(#gradClient)'} radius={[7,7,0,0]}>
-                      <LabelList dataKey={expView} position="top" offset={9}
-                        formatter={v => `AED ${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
-                        style={{ fontSize:10.5, fontWeight:800, fill:'var(--text)' }}/>
-                    </Bar>
+                    <>
+                      <Bar dataKey={expView} name={expView==='amazon'?'Amazon spend':'Other Projects spend'}
+                        fill={expView==='amazon'?'url(#gradAmazon)':'url(#gradClient)'} radius={[7,7,0,0]}>
+                        <LabelList dataKey={expView} position="top" offset={9}
+                          formatter={v => `AED ${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
+                          style={{ fontSize:10.5, fontWeight:800, fill:'var(--text)' }}/>
+                      </Bar>
+                      <Bar dataKey={`${expView}_received`} name="Amount received"
+                        fill="url(#gradReceived)" radius={[7,7,0,0]}>
+                        <LabelList dataKey={`${expView}_received`} position="top" offset={9}
+                          formatter={v => `AED ${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
+                          style={{ fontSize:10.5, fontWeight:800, fill:'#34D399' }}/>
+                      </Bar>
+                    </>
                   )}
                 </BarChart>
               </ResponsiveContainer>
@@ -494,75 +489,6 @@ export default function OverviewPage() {
             )
           })()}
         </div>
-        )}
-
-        {/* ══ OTHER PROJECTS P&L ═══════════════════════════════════════ */}
-        {/* Revenue side of the 5 Other-Projects clients (invoices/receipts already
-            tracked on the Customers page) matched against their expenses, so this
-            reads as an actual profit/loss view instead of just spend. Admin-only
-            and lazy-loaded, same as the chart above — only relevant once "Other
-            Projects" is actually selected. */}
-        {user?.role === 'admin' && expView === 'client' && (
-          <div className="ov-card">
-            <div className="ov-card-hd">
-              <div>
-                <div className="ov-card-title">Other Projects — Profit &amp; Loss</div>
-                <div className="ov-card-sub">Invoiced/received vs. expenses, all-time, per client</div>
-              </div>
-            </div>
-
-            {loadingPnl || !pnl ? (
-              <div style={{ padding:20, display:'flex', flexDirection:'column', gap:8 }}>
-                {[0,1,2,3].map(i => <div key={i} className="ov-sk-dark" style={{ height:40, borderRadius:8 }}/>)}
-              </div>
-            ) : (
-              <>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:1, background:'var(--border)' }}>
-                  {[
-                    { label:'Amount Received',  value:pnl.totals.received,  c:'#34D399' },
-                    { label:'Total Invoiced',    value:pnl.totals.invoiced,  c:'var(--text)' },
-                    { label:'Total Expenses',    value:pnl.totals.expenses,  c:'#F87171' },
-                    { label:'Net P&L',           value:pnl.totals.net,       c: pnl.totals.net >= 0 ? '#34D399' : '#F87171' },
-                  ].map(k => (
-                    <div key={k.label} style={{ background:'var(--card)', padding:'16px 18px' }}>
-                      <div style={{ fontSize:19, fontWeight:900, color:k.c, letterSpacing:'-0.03em' }}>AED {fmt(k.value)}</div>
-                      <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:4, fontWeight:600 }}>{k.label}</div>
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{ overflowX:'auto' }}>
-                  <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12.5 }}>
-                    <thead>
-                      <tr style={{ borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', background:'var(--bg-alt)' }}>
-                        {['Project','Expenses','Invoiced','Received','Outstanding','Net'].map((h,i) => (
-                          <th key={h} style={{ padding:'9px 16px', textAlign:i===0?'left':'right', fontWeight:700, color:'var(--text-muted)', fontSize:10.5, textTransform:'uppercase', letterSpacing:'0.05em', whiteSpace:'nowrap' }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pnl.projects.map(p => (
-                        <tr key={p.project_type} style={{ borderBottom:'1px solid var(--border)' }}>
-                          <td style={{ padding:'11px 16px', fontWeight:700, color:'var(--text)' }}>{p.label}</td>
-                          <td style={{ padding:'11px 16px', textAlign:'right', color:'var(--text)' }}>AED {fmt(p.expenses)}</td>
-                          <td style={{ padding:'11px 16px', textAlign:'right', color:'var(--text)' }}>AED {fmt(p.invoiced)}</td>
-                          <td style={{ padding:'11px 16px', textAlign:'right', color:'var(--text)' }}>AED {fmt(p.received)}</td>
-                          <td style={{ padding:'11px 16px', textAlign:'right', color: p.outstanding > 0 ? '#F59E0B' : 'var(--text-muted)' }}>AED {fmt(p.outstanding)}</td>
-                          <td style={{ padding:'11px 16px', textAlign:'right', fontWeight:800, color: p.net >= 0 ? '#34D399' : '#F87171' }}>AED {fmt(p.net)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {pnl.unattributed_expenses > 0 && (
-                  <div style={{ padding:'10px 20px', fontSize:11.5, color:'var(--text-muted)', borderTop:'1px solid var(--border)', background:'var(--bg-alt)' }}>
-                    AED {fmt(pnl.unattributed_expenses)} of Other-Projects spend isn't tied to a specific project's DA (e.g. a general cash advance), so it's counted in Total Expenses above but not in any single project's row — link an expense to a driver when recording it to have it show up here.
-                  </div>
-                )}
-              </>
-            )}
-          </div>
         )}
 
         {/* ══ AGENTS + FLEET ════════════════════════════════════════ */}
