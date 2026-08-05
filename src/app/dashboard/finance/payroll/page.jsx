@@ -1370,7 +1370,11 @@ export default function PayrollPage() {
   const [payroll,     setPayroll]     = useState([])
   const [employees,   setEmployees]   = useState([])
   const [loading,     setLoading]     = useState(true)
-  const [month,       setMonth]       = useState(MONTHS[0])
+  // Default to last month, not the current (still-in-progress) one — on the 4th of
+  // August almost nobody has August pay entered yet, so opening straight into an
+  // empty current month is more confusing than useful. Still fully selectable via
+  // the dropdown, just not the default.
+  const [month,       setMonth]       = useState(MONTHS[1])
   const [modal,       setModal]       = useState(null)
   const [search,      setSearch]      = useState('')
   const [confirmDlg,  setConfirmDlg]  = useState(null)

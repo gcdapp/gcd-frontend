@@ -542,7 +542,11 @@ export default function DriverPortal() {
   const [loading,       setLoading]       = useState(true)
   const [profile,       setProfile]       = useState(null)
   const [payroll,       setPayroll]       = useState(null)
-  const [payMonth,      setPayMonth]      = useState(new Date().toISOString().slice(0, 7))
+  // Default to last month, not the current (still-in-progress) one — pay for the
+  // current month usually isn't entered yet this early, so a driver opening this
+  // right after month-start would otherwise land on an empty screen. PAY_MONTHS[1]
+  // (not a UTC ISO string) so this can't drift a day off PAY_MONTHS' own values.
+  const [payMonth,      setPayMonth]      = useState(PAY_MONTHS[1])
   const [payslip,       setPayslip]       = useState(null)
   const [attEarnings,   setAttEarnings]   = useState(null)
   const [leaves,        setLeaves]        = useState([])
