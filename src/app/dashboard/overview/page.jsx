@@ -453,15 +453,22 @@ export default function OverviewPage() {
                       const [y,m] = label.split('-')
                       const monthLabel = new Date(+y,+m-1).toLocaleDateString('en-US',{month:'long',year:'numeric'})
                       const colors = { amazon:'#60A5FA', client:'#A78BFA', amazon_received:'#6EE7B7', client_received:'#059669' }
+                      // Fixed light background regardless of the app's own dark/light theme —
+                      // text below is hardcoded black, which would be unreadable against the
+                      // dark-mode card color, so this tooltip intentionally doesn't follow it.
                       return (
-                        <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:12, fontSize:12, boxShadow:'0 8px 24px rgba(0,0,0,0.10)', padding:'10px 14px', minWidth:180 }}>
-                          <div style={{ fontWeight:700, color:'var(--text)', marginBottom:6, fontSize:12 }}>{monthLabel}</div>
+                        <div style={{ background:'#FFFFFF', border:'1px solid #E5E5E5', borderRadius:12, fontSize:12, boxShadow:'0 8px 24px rgba(0,0,0,0.10)', padding:'10px 14px', minWidth:180 }}>
+                          <div style={{ fontWeight:700, color:'#000', marginBottom:6, fontSize:12 }}>{monthLabel}</div>
                           {payload.map(p => (
-                            <div key={p.dataKey} style={{ display:'flex', justifyContent:'space-between', gap:16, color: colors[p.dataKey] || 'var(--text)' }}>
-                              <span>{p.name}</span><span style={{ fontWeight:700 }}>AED {Number(p.value).toLocaleString()}</span>
+                            <div key={p.dataKey} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, color:'#000' }}>
+                              <span style={{ display:'flex', alignItems:'center', gap:6 }}>
+                                <span style={{ width:8, height:8, borderRadius:'50%', background: colors[p.dataKey] || '#000', flexShrink:0 }}/>
+                                {p.name}
+                              </span>
+                              <span style={{ fontWeight:700 }}>AED {Number(p.value).toLocaleString()}</span>
                             </div>
                           ))}
-                          <div style={{ display:'flex', justifyContent:'space-between', gap:16, marginTop:6, paddingTop:6, borderTop:'1px solid var(--border)', fontWeight:800, color: diff>=0?'#34D399':'#F87171' }}>
+                          <div style={{ display:'flex', justifyContent:'space-between', gap:16, marginTop:6, paddingTop:6, borderTop:'1px solid #E5E5E5', fontWeight:800, color: diff>=0?'#059669':'#DC2626' }}>
                             <span>Difference</span><span>{diff>=0?'+':'-'}AED {Math.abs(diff).toLocaleString()}</span>
                           </div>
                         </div>
