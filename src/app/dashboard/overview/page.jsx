@@ -49,6 +49,9 @@ export default function OverviewPage() {
   // Combined = stacked Amazon + Other Projects (+ unattributed company spend);
   // the other two views isolate a single category's bars.
   const [expView,        setExpView]        = useState('combined')
+  // Same idea for the Delivery Agents card — Active/On Leave/Inactive/Total
+  // broken down by Amazon vs Other Projects instead of always blended together.
+  const [daView,         setDaView]         = useState('combined')
   const [expenses,       setExpenses]       = useState([])
   const [simStats,       setSimStats]       = useState(null)
   const [simByStation,   setSimByStation]   = useState([])
@@ -154,6 +157,18 @@ export default function OverviewPage() {
   // their own projects.
   const amazonEmp  = summary?.employees?.amazon || 0
   const clientEmp  = summary?.employees?.client || 0
+  // Delivery Agents card view — Active/On Leave/Inactive/Total for whichever
+  // category is selected, instead of always showing the blended total.
+  const daActiveAmazon    = summary?.employees?.active_amazon    || 0
+  const daActiveClient    = summary?.employees?.active_client    || 0
+  const daOnLeaveAmazon   = summary?.employees?.on_leave_amazon  || 0
+  const daOnLeaveClient   = summary?.employees?.on_leave_client  || 0
+  const daStats = daView === 'amazon'
+    ? { active: daActiveAmazon, onLeave: daOnLeaveAmazon, total: amazonEmp }
+    : daView === 'client'
+    ? { active: daActiveClient, onLeave: daOnLeaveClient, total: clientEmp }
+    : { active: activeEmp, onLeave: onLeaveEmp, total: totalEmp }
+  const daInactive = Math.max(0, daStats.total - daStats.active - daStats.onLeave)
 
   const hour      = new Date().getHours()
   const greeting  = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -563,12 +578,33 @@ export default function OverviewPage() {
               </div>
               <Link href="/dashboard/hr/employees" className="ov-viewall">View all <ChevronRight size={12}/></Link>
             </div>
+            {/* Amazon vs Other Projects DAs are two different workforces — this
+                toggle re-slices Active/On Leave/Inactive/Total by category instead
+                of only ever showing them blended together. Meaningless for a
+                project-scoped manager (their data is already just their own). */}
+            {!isProjectScoped && (
+              <div style={{ margin:'12px 20px 0', display:'flex', gap:3, background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:20, padding:3, width:'fit-content' }}>
+                {[
+                  { id:'combined', label:'Combined',        c:'#F59E0B' },
+                  { id:'amazon',   label:'Amazon',           c:'#3B82F6' },
+                  { id:'client',   label:'Other Projects',  c:'#7C3AED' },
+                ].map(v => (
+                  <button key={v.id} onClick={()=>setDaView(v.id)}
+                    style={{ padding:'5px 11px', borderRadius:16, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:10.5, whiteSpace:'nowrap',
+                      background: daView===v.id ? v.c : 'transparent',
+                      color: daView===v.id ? 'white' : 'var(--text-muted)',
+                    }}>
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="ov-stats">
               {[
-                { label:'Active',   value:activeEmp,   color:'#059669', bg:'#ECFDF5', border:'#A7F3D0' },
-                { label:'On Leave', value:onLeaveEmp,  color:'#D97706', bg:'#FFFBEB', border:'#FCD34D' },
-                { label:'Inactive', value:inactiveEmp, color:'#DC2626', bg:'#FEF2F2', border:'#FCA5A5' },
-                { label:'Total',    value:totalEmp,    color:'#7C3AED', bg:'#F5F3FF', border:'#DDD6FE' },
+                { label:'Active',   value:daStats.active,  color:'#059669', bg:'#ECFDF5', border:'#A7F3D0' },
+                { label:'On Leave', value:daStats.onLeave, color:'#D97706', bg:'#FFFBEB', border:'#FCD34D' },
+                { label:'Inactive', value:daInactive,      color:'#DC2626', bg:'#FEF2F2', border:'#FCA5A5' },
+                { label:'Total',    value:daStats.total,   color:'#7C3AED', bg:'#F5F3FF', border:'#DDD6FE' },
               ].map(({ label, value, color, bg, border }) => (
                 <div key={label} className="ov-stat" style={{ background:bg, borderColor:border }}>
                   {loadingHero ? <Skel w={48} h={22} r={6}/> : <div className="ov-stat-val kpi-val" style={{ color }}>{value}</div>}
@@ -576,18 +612,6 @@ export default function OverviewPage() {
                 </div>
               ))}
             </div>
-            {!isProjectScoped && !loadingHero && totalEmp > 0 && (
-              <div style={{ margin:'0 20px 16px', display:'flex', borderRadius:12, overflow:'hidden', border:'1px solid var(--border)' }}>
-                <div style={{ flex: Math.max(amazonEmp,0.3), padding:'9px 12px', background:'rgba(59,130,246,0.1)', borderRight:'1px solid var(--border)' }}>
-                  <div style={{ fontSize:15, fontWeight:800, color:'#3B82F6', letterSpacing:'-0.02em' }}>{amazonEmp}</div>
-                  <div style={{ fontSize:9.5, fontWeight:700, color:'#3B82F6', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:1 }}>Amazon</div>
-                </div>
-                <div style={{ flex: Math.max(clientEmp,0.3), padding:'9px 12px', background:'rgba(124,58,237,0.1)' }}>
-                  <div style={{ fontSize:15, fontWeight:800, color:'#7C3AED', letterSpacing:'-0.02em' }}>{clientEmp}</div>
-                  <div style={{ fontSize:9.5, fontWeight:700, color:'#7C3AED', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:1 }}>Other Projects</div>
-                </div>
-              </div>
-            )}
             <div className="ov-strip">
               <div style={{ width:38, height:38, borderRadius:11, background:'#F59E0B18', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                 <Users size={17} color="#F59E0B"/>
@@ -596,13 +620,15 @@ export default function OverviewPage() {
                 <div className="ov-progress-head">
                   {loadingHero
                     ? <span className="ov-sk-dark" style={{ display:'inline-block', width:140, height:11, borderRadius:4 }}/>
-                    : <span className="ov-progress-name">{activeEmp} active DAs across all stations</span>}
-                  {!loadingHero && totalEmp > 0 && (
-                    <span className="ov-progress-pct" style={{ color:'#F59E0B' }}>{Math.round(activeEmp/totalEmp*100)}%</span>
+                    : <span className="ov-progress-name">
+                        {daStats.active} active DA{daStats.active!==1?'s':''}{daView==='amazon'?' (Amazon)':daView==='client'?' (Other Projects)':' across all stations'}
+                      </span>}
+                  {!loadingHero && daStats.total > 0 && (
+                    <span className="ov-progress-pct" style={{ color:'#F59E0B' }}>{Math.round(daStats.active/daStats.total*100)}%</span>
                   )}
                 </div>
                 <div className="ov-bar">
-                  <div className="ov-fill" style={{ width:`${totalEmp>0?(activeEmp/totalEmp)*100:0}%`, background:'linear-gradient(90deg,#F59E0B,#FCD34D)' }}/>
+                  <div className="ov-fill" style={{ width:`${daStats.total>0?(daStats.active/daStats.total)*100:0}%`, background:'linear-gradient(90deg,#F59E0B,#FCD34D)' }}/>
                 </div>
               </div>
             </div>
