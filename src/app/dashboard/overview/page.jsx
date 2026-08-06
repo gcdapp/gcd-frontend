@@ -743,6 +743,20 @@ export default function OverviewPage() {
                 </div>
               ))}
             </div>
+            {/* Assigned SIMs by whether the DA holding it is Amazon-side or an
+                Other-Projects client — same split as Delivery Agents above. */}
+            {!isProjectScoped && !loadingSim && Number(simStats?.assigned) > 0 && (
+              <div style={{ margin:'0 20px 16px', display:'flex', borderRadius:12, overflow:'hidden', border:'1px solid var(--border)' }}>
+                <div style={{ flex: Math.max(Number(simStats?.assigned_amazon||0),0.3), padding:'9px 12px', background:'rgba(59,130,246,0.1)', borderRight:'1px solid var(--border)' }}>
+                  <div style={{ fontSize:15, fontWeight:800, color:'#3B82F6', letterSpacing:'-0.02em' }}>{simStats?.assigned_amazon||0}</div>
+                  <div style={{ fontSize:9.5, fontWeight:700, color:'#3B82F6', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:1 }}>Amazon</div>
+                </div>
+                <div style={{ flex: Math.max(Number(simStats?.assigned_client||0),0.3), padding:'9px 12px', background:'rgba(124,58,237,0.1)' }}>
+                  <div style={{ fontSize:15, fontWeight:800, color:'#7C3AED', letterSpacing:'-0.02em' }}>{simStats?.assigned_client||0}</div>
+                  <div style={{ fontSize:9.5, fontWeight:700, color:'#7C3AED', textTransform:'uppercase', letterSpacing:'0.05em', marginTop:1 }}>Other Projects</div>
+                </div>
+              </div>
+            )}
             {loadingSim ? (
               <div style={{ padding:'16px 20px', display:'flex', flexDirection:'column', gap:10 }}>
                 {[1,2].map(i => <span key={i} className="ov-sk-dark" style={{ height:68, borderRadius:12 }}/>)}
