@@ -541,7 +541,7 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
   // Creative Packers are calculated completely differently from a flat-rate external
   // driver. Editing an existing entry always passes that employee's real type directly
   // (see editEntry below), so this selector only matters for a brand-new entry.
-  const [subType, setSubType] = useState(projectType)
+  const [subType, setSubType] = useState(projectType === 'external' ? 'jnt_express' : projectType)
   const effType = projectType === 'external' ? subType : projectType
 
   const isStaff     = effType === 'staff'
@@ -683,7 +683,6 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
           {projectType === 'external' && (
             <div><label className="input-label">Pay Type *</label>
               <select className="input" value={subType} onChange={e=>{setSubType(e.target.value); pickEmp('')}}>
-                <option value="external">External (ad-hoc driver)</option>
                 <option value="jnt_express">JNT DAs</option>
                 <option value="imile">iMile DAs</option>
                 <option value="le_chocola">Le Chocola Packers</option>
@@ -807,7 +806,7 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
   // Same ambiguity as AddUnitsModal above when opened from the merged "External" tab —
   // the CSV format itself differs per formula, so the accountant has to pick before
   // downloading a template or uploading a file.
-  const [subType, setSubType] = useState(projectType)
+  const [subType, setSubType] = useState(projectType === 'external' ? 'jnt_express' : projectType)
   const effType = projectType === 'external' ? subType : projectType
 
   const isStaff     = effType === 'staff'
@@ -926,7 +925,6 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
           {projectType === 'external' && !result && (
             <div><label className="input-label">Pay Type *</label>
               <select className="input" value={subType} onChange={e=>resetSubType(e.target.value)}>
-                <option value="external">External (ad-hoc driver)</option>
                 <option value="jnt_express">JNT DAs</option>
                 <option value="imile">iMile DAs</option>
                 <option value="le_chocola">Le Chocola Packers</option>
