@@ -34,6 +34,11 @@ export default function OverviewPage() {
   // their own, and Fleet is already hidden from their sidebar nav. Overview must
   // match that instead of independently leaking the whole company's fleet count.
   const isProjectScoped = Array.isArray(user?.assigned_projects) && user.assigned_projects.length > 0
+  // Company-wide Expense Trend chart — open to every back-office role (Reports was
+  // removed, Overview now covers that same audience: admin/general_manager/hr/
+  // accountant) except a project-scoped manager, who must never see whole-company
+  // numbers. Backend enforces this too — see GET /api/analytics/expenses-chart.
+  const canSeeCompanyChart = !isProjectScoped && ['admin','general_manager','hr','accountant'].includes(user?.role)
 
   useEffect(() => {
     if (user && user.role === 'poc') router?.replace('/dashboard/poc')
@@ -91,10 +96,10 @@ export default function OverviewPage() {
         if (isRefresh) setRefreshing(false)
       }).catch(() => { setFleetStats({ total:0, active:0, grounded:0, maintenance:0 }); setRefreshing(false) })
 
-    // Company-wide total spend, unscoped by project — admin-only (backend now
-    // enforces this too; skip the call entirely for anyone else instead of
-    // firing a request that will just 403).
-    if (user?.role === 'admin') {
+    // Company-wide total spend, unscoped by project — skip the call entirely for
+    // anyone who can't see it (backend enforces this too) instead of firing a
+    // request that will just 403. See canSeeCompanyChart above.
+    if (canSeeCompanyChart) {
       fetch(`${API}/api/analytics/expenses-chart?months=12`, h)
         .then(r => r.json()).then(d => {
           // total_received mirrors the backend's own `total` (amazon+client spend)
@@ -119,7 +124,7 @@ export default function OverviewPage() {
     fetch(`${API}/api/letters?status=pending&limit=5`, h)
       .then(r => r.json()).then(d => setPendingLetters(d.letters || []))
       .catch(() => {})
-  }, [user?.role])
+  }, [user?.role, canSeeCompanyChart])
 
   useEffect(() => { load() }, [load])
 
@@ -365,10 +370,9 @@ export default function OverviewPage() {
         )}
 
         {/* ══ EXPENSE CHART ═════════════════════════════════════════ */}
-        {/* Company-wide spend total — admin-only, matches the backend's
-            /expenses-chart admin gate. A project-scoped manager must never
-            see the whole org's spend, only their own. */}
-        {user?.role === 'admin' && (
+        {/* Company-wide spend total — matches the backend's /expenses-chart gate.
+            A project-scoped manager must never see the whole org's spend. */}
+        {canSeeCompanyChart && (
         <div className="ov-card">
           <div style={{ padding:'20px 24px 0', display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
             <div>

@@ -12,8 +12,9 @@ export const ROLE_LABELS = {
 }
 
 export const NAV = [
-  { label:'Overview', href:'/dashboard/overview', icon:'LayoutDashboard', roles:['admin','general_manager'] },
-  { label:'Reports',  href:'/dashboard/analytics', icon:'BarChart3',      roles:['admin','general_manager','hr','accountant'] },
+  // Reports (formerly its own nav item, roles admin/general_manager/hr/accountant)
+  // was removed — Overview now covers that same audience instead of both existing.
+  { label:'Overview', href:'/dashboard/overview', icon:'LayoutDashboard', roles:['admin','general_manager','hr','accountant'] },
 
   // ── Office ────────────────────────────────────────────────────
   { type:'section', label:'Office', roles:['admin','general_manager','hr','accountant','poc'] },

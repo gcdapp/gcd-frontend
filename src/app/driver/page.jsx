@@ -604,7 +604,7 @@ export default function DriverPortal() {
   useEffect(() => {
     if (authLoading) return
     if (!user) { router.replace('/login'); return }
-    if (user.role !== 'driver') { router.replace('/dashboard/analytics'); return }
+    if (user.role !== 'driver') { router.replace('/dashboard/overview'); return }
 
     const hdr   = authHeader()
     const today = localDateKey()

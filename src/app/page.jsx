@@ -12,7 +12,7 @@ export default function Root() {
     if (user) {
       if (user.role === 'driver') router.replace('/driver')
       else if (user.role === 'poc') router.replace('/dashboard/poc')
-      else router.replace('/dashboard/analytics')
+      else router.replace('/dashboard/overview')
     } else {
       router.replace('/login')
     }
