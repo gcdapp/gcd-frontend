@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import { createPortal } from 'react-dom'
 import Papa from 'papaparse'
 import Link from 'next/link'
-import { payrollApi, empApi } from '@/lib/api'
+import { payrollApi, empApi, payRatesApi } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { useSocket } from '@/lib/socket'
 import {
@@ -20,9 +20,12 @@ import {
 import { API } from '@/lib/api'
 
 const APP_VERSION = '2.4.0'
-// Fixed, company-wide hourly rates for the two Packer project types — mirrors
-// PACKER_HOURLY_RATE in backend/src/lib/payrollCalc.js. Not per-employee/editable.
-const PACKER_HOURLY_RATE = { creative_packers: 6.64, le_chocola: 6.99 }
+// Fixed, company-wide hourly rates for the two Packer project types — admin-editable
+// via GET/PUT /api/pay-rates (see backend/src/routes/pay-rates.js), not per-employee.
+// Module-level so slipData() (a plain function, not a component) can read it directly;
+// PayrollPage fetches the live values once on mount and mutates this in place, bumping
+// `ratesVersion` state so the payrollCalc useMemo recomputes with the fresh numbers.
+let livePackerRates = { creative_packers: 6.64, le_chocola: 6.99 }
 // Plain year*12+month arithmetic — d.setMonth(d.getMonth()-i) overflows into
 // the next month on a 31st whenever the target month is shorter, producing
 // duplicate/skipped months.
@@ -154,8 +157,8 @@ function slipData(slip, month) {
     hoursLabel    = `COD ${totalHours} · Non-COD ${unitsNonCod}`
   } else if (isPackerDaily || isPackerHourly) {
     // Hours worked × a fixed company-wide hourly rate, no base salary — not read from
-    // the employee record (mirrors PACKER_HOURLY_RATE in backend/src/lib/payrollCalc.js).
-    const packerRate = PACKER_HOURLY_RATE[projectType]
+    // the employee record; admin-editable, see livePackerRates above.
+    const packerRate = livePackerRates[projectType]
     effectiveBase = 0
     hoursEarnings = parseFloat((totalHours*packerRate).toFixed(2))
     displayRate   = packerRate
@@ -1414,6 +1417,7 @@ export default function PayrollPage() {
   const [entrySelectMode,   setEntrySelectMode]   = useState(false)
   const [selectedEntryIds,  setSelectedEntryIds]  = useState(new Set())
   const [bulkEntryDeleting, setBulkEntryDeleting] = useState(false)
+  const [ratesVersion, setRatesVersion] = useState(0)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -1425,6 +1429,14 @@ export default function PayrollPage() {
   }, [month])
 
   useEffect(()=>{load()},[load])
+  // Packer pay rates rarely change and aren't month-scoped, so this loads once — not
+  // inside load() — and just bumps ratesVersion to make payrollCalc below recompute.
+  useEffect(() => {
+    payRatesApi.list().then(d => {
+      for (const r of d.rates||[]) livePackerRates[r.key] = r.value
+      setRatesVersion(v=>v+1)
+    }).catch(()=>{})
+  }, [])
   useSocket({'payroll:deduction_added':load,'payroll:bonus_added':load,'payroll:paid':load,'payroll:updated':load})
 
   function markPaidSlip(slip) {
@@ -1529,7 +1541,7 @@ export default function PayrollPage() {
 
   // Wire the real Pulser (hourly) / CRET (per-shipment) formula in everywhere —
   // slipData() was previously only used for the printable payslip.
-  const payrollCalc = useMemo(() => payroll.map(s => ({ ...s, _calc: slipData(s, month) })), [payroll, month])
+  const payrollCalc = useMemo(() => payroll.map(s => ({ ...s, _calc: slipData(s, month) })), [payroll, month, ratesVersion])
 
   const filtered   = useMemo(() => payrollCalc.filter(s=>!search||s.name?.toLowerCase().includes(search.toLowerCase())||s.id?.toLowerCase().includes(search.toLowerCase())), [payrollCalc, search])
   // role is stored as 'Driver' (capitalized) — compare case-insensitively, or every
@@ -1719,7 +1731,7 @@ export default function PayrollPage() {
                   </button>
                   {payTab==='external' && user?.role==='admin' && (
                     <Link href="/dashboard/finance/payroll/jnt-rates" className="py-tbtn py-tbtn-bonus" style={{padding:'6px 12px',textDecoration:'none'}}>
-                      <Settings2 size={12}/> JNT Rate Settings
+                      <Settings2 size={12}/> Rate Settings
                     </Link>
                   )}
                 </div>

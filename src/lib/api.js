@@ -101,6 +101,12 @@ export const jntSalaryApi = {
   saveEntry:       (data)               => api.post('/api/jnt-salary/entry', data),
 }
 
+// Generic admin-editable pay rates (currently the two Packer types' fixed hourly rate)
+export const payRatesApi = {
+  list:   ()             => api.get('/api/pay-rates'),
+  update: (key, value)   => api.put(`/api/pay-rates/${key}`, { value }),
+}
+
 // Leaves
 export const leaveApi = {
   list:      (params = {}) => api.get(`/api/leaves?${new URLSearchParams(params)}`),

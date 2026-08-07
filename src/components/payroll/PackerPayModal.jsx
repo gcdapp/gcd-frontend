@@ -1,16 +1,16 @@
 'use client'
 // Dedicated "Add Pay" popup for the two Packer project types — same sectioned-card /
 // live-summary template as JntSalaryModal, sized down to their much simpler formula
-// (Hours Worked × a fixed company-wide rate, no base salary — see PACKER_HOURLY_RATE
-// in backend/src/lib/payrollCalc.js, mirrored here). Bonuses/deductions still go
+// (Hours Worked × a fixed, admin-editable company-wide rate, no base salary — see
+// GET /api/pay-rates / backend/src/routes/pay-rates.js). Bonuses/deductions still go
 // through the existing generic sheet-entry + deduction-ledger routes (payrollApi.
 // addUnits/getEntry) — only the UI is dedicated, not the backend.
 import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { X, AlertCircle } from 'lucide-react'
-import { payrollApi } from '@/lib/api'
+import { payrollApi, payRatesApi } from '@/lib/api'
 
-const PACKER_HOURLY_RATE = { creative_packers: 6.64, le_chocola: 6.99 }
+const DEFAULT_PACKER_RATE = { creative_packers: 6.64, le_chocola: 6.99 }
 const PACKER_LABELS = { creative_packers: 'Creative Packers', le_chocola: 'Le Chocola Packers' }
 
 const BONUS_FIELDS = [
@@ -50,7 +50,13 @@ function fmtAED(n) {
 }
 
 export default function PackerPayModal({ employees, month, projectType, initialEmpId, onSave, onClose, onChangeType }) {
-  const rate = PACKER_HOURLY_RATE[projectType]
+  const [rates, setRates] = useState(DEFAULT_PACKER_RATE)
+  useEffect(() => {
+    payRatesApi.list()
+      .then(d => setRates(p => ({ ...p, ...Object.fromEntries((d.rates||[]).map(r => [r.key, r.value])) })))
+      .catch(() => {})
+  }, [])
+  const rate = rates[projectType]
   const empOptions = useMemo(() => (employees || [])
     .filter(e => (e.role || '').toLowerCase() === 'driver' && (e.project_type || '').toLowerCase() === projectType)
     .sort((a, b) => (a.name || '').localeCompare(b.name || '')), [employees, projectType])
