@@ -90,6 +90,17 @@ export const payrollApi = {
   deleteEntriesBulk:(emp_ids, month) => api.post('/api/payroll/entries/delete-bulk', { emp_ids, month }),
 }
 
+// JNT Salary Engine — configurable rates, unlimited components (see
+// backend/src/routes/jnt-salary.js and backend/src/lib/jntSalaryEngine.js)
+export const jntSalaryApi = {
+  rates:           ()                   => api.get('/api/jnt-salary/rates'),
+  updateRates:     (componentId, rates) => api.put(`/api/jnt-salary/rates/${componentId}`, { rates }),
+  addComponent:    (data)               => api.post('/api/jnt-salary/components', data),
+  removeComponent: (id)                 => api.delete(`/api/jnt-salary/components/${id}`),
+  getEntry:        (emp_id, month)      => api.get(`/api/jnt-salary/entry/${emp_id}?month=${month}`),
+  saveEntry:       (data)               => api.post('/api/jnt-salary/entry', data),
+}
+
 // Leaves
 export const leaveApi = {
   list:      (params = {}) => api.get(`/api/leaves?${new URLSearchParams(params)}`),

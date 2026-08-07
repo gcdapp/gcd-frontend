@@ -2,14 +2,16 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import { createPortal } from 'react-dom'
 import Papa from 'papaparse'
+import Link from 'next/link'
 import { payrollApi, empApi } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { useSocket } from '@/lib/socket'
 import {
   Plus, X, Download, Check, Search, Wallet, FileText,
-  AlertCircle, Users, ChevronDown, Undo2, UploadCloud, Pencil, Trash2
+  AlertCircle, Users, ChevronDown, Undo2, UploadCloud, Pencil, Trash2, Settings2
 } from 'lucide-react'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import JntSalaryModal from '@/components/payroll/JntSalaryModal'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell
@@ -535,6 +537,11 @@ const PROJECT_TYPE_LABELS = { staff:'Staff/Admin', pulser:'Pulser', cret:'CRET',
 // isn't 5 mostly-empty tabs deep. Each keeps its own pay formula/rate fields — this only
 // changes which tab groups them, not how their pay is calculated.
 const EXTERNAL_MERGED_TYPES = ['jnt_express', 'imile', 'le_chocola', 'creative_packers']
+// Thin router: owns the one piece of state ("which pay type is this") and picks which
+// modal actually renders. Kept separate from GenericUnitsModal below (rather than an
+// early-return partway through that component) because JNT/non-JNT need different hook
+// sets, and React requires the same hooks in the same order on every render of one
+// component instance — splitting into sibling components sidesteps that entirely.
 function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onClose}) {
   // Opened from the merged "External" tab (projectType==='external'), the actual formula
   // is ambiguous until the accountant says which one applies — JNT/iMile/Le Chocola/
@@ -542,6 +549,27 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
   // driver. Editing an existing entry always passes that employee's real type directly
   // (see editEntry below), so this selector only matters for a brand-new entry.
   const [subType, setSubType] = useState(projectType === 'external' ? 'jnt_express' : projectType)
+  const effType = projectType === 'external' ? subType : projectType
+
+  if (effType === 'jnt_express') {
+    return (
+      <JntSalaryModal
+        employees={employees} month={month} initialEmpId={initialEmpId}
+        onSave={onSave} onClose={onClose}
+        onChangeType={projectType === 'external' ? setSubType : undefined}
+      />
+    )
+  }
+
+  return (
+    <GenericUnitsModal
+      employees={employees} month={month} projectType={projectType} initialEmpId={initialEmpId}
+      subType={subType} setSubType={setSubType} onSave={onSave} onClose={onClose}
+    />
+  )
+}
+
+function GenericUnitsModal({employees, month, projectType, initialEmpId, subType, setSubType, onSave, onClose}) {
   const effType = projectType === 'external' ? subType : projectType
 
   const isStaff     = effType === 'staff'
@@ -805,8 +833,9 @@ const SHEET_CSV_COLS = ['performance_bonus','incentive','other_addition','eid_ot
 function BulkUnitsModal({month, projectType, onSave, onClose}) {
   // Same ambiguity as AddUnitsModal above when opened from the merged "External" tab —
   // the CSV format itself differs per formula, so the accountant has to pick before
-  // downloading a template or uploading a file.
-  const [subType, setSubType] = useState(projectType === 'external' ? 'jnt_express' : projectType)
+  // downloading a template or uploading a file. JNT isn't offered here — it has its own
+  // redesigned single-entry form (JntSalaryModal); CSV bulk upload isn't part of that yet.
+  const [subType, setSubType] = useState(projectType === 'external' ? 'imile' : projectType)
   const effType = projectType === 'external' ? subType : projectType
 
   const isStaff     = effType === 'staff'
@@ -925,7 +954,6 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
           {projectType === 'external' && !result && (
             <div><label className="input-label">Pay Type *</label>
               <select className="input" value={subType} onChange={e=>resetSubType(e.target.value)}>
-                <option value="jnt_express">JNT DAs</option>
                 <option value="imile">iMile DAs</option>
                 <option value="le_chocola">Le Chocola Packers</option>
                 <option value="creative_packers">Creative Packers</option>
@@ -1684,6 +1712,11 @@ export default function PayrollPage() {
                   <button onClick={()=>setModal({type:'bulkUnits',projectType:payTab})} className="py-tbtn py-tbtn-csv" style={{padding:'6px 12px'}}>
                     <UploadCloud size={12}/> Bulk Upload
                   </button>
+                  {payTab==='external' && user?.role==='admin' && (
+                    <Link href="/dashboard/finance/payroll/jnt-rates" className="py-tbtn py-tbtn-bonus" style={{padding:'6px 12px',textDecoration:'none'}}>
+                      <Settings2 size={12}/> JNT Rate Settings
+                    </Link>
+                  )}
                 </div>
               )}
             </div>
