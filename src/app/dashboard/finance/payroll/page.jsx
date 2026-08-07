@@ -19,6 +19,9 @@ import {
 import { API } from '@/lib/api'
 
 const APP_VERSION = '2.4.0'
+// Fixed, company-wide hourly rates for the two Packer project types — mirrors
+// PACKER_HOURLY_RATE in backend/src/lib/payrollCalc.js. Not per-employee/editable.
+const PACKER_HOURLY_RATE = { creative_packers: 6.64, le_chocola: 6.99 }
 // Plain year*12+month arithmetic — d.setMonth(d.getMonth()-i) overflows into
 // the next month on a 31st whenever the target month is shorter, producing
 // duplicate/skipped months.
@@ -98,7 +101,6 @@ function slipData(slip, month) {
   const perShipRate  = Number(slip.per_shipment_rate||0)
   const nonCodRate   = Number(slip.per_shipment_rate_non_cod||0)
   const unitsNonCod  = Number(slip.units_non_cod||0)
-  const dailyRate    = Number(slip.daily_rate||0)
 
   // Basic salary is prorated by working days out of the days in the month —
   // e.g. 29 working days in a 31-day month = base × 29/31.
@@ -149,21 +151,13 @@ function slipData(slip, month) {
     displayRate   = perShipRate
     rateLabel     = 'COD / Non-COD Rate'
     hoursLabel    = `COD ${totalHours} · Non-COD ${unitsNonCod}`
-  } else if (isPackerDaily) {
-    // Days worked × daily rate, no base salary — verified against the real Creative
-    // Packers sheet (e.g. 14 days × AED73.0769 = 1023.08).
+  } else if (isPackerDaily || isPackerHourly) {
+    // Hours worked × a fixed company-wide hourly rate, no base salary — not read from
+    // the employee record (mirrors PACKER_HOURLY_RATE in backend/src/lib/payrollCalc.js).
+    const packerRate = PACKER_HOURLY_RATE[projectType]
     effectiveBase = 0
-    hoursEarnings = parseFloat((totalHours*dailyRate).toFixed(2))
-    displayRate   = dailyRate
-    rateLabel     = 'Daily Rate'
-    hoursLabel    = `Days Worked (${totalHours})`
-  } else if (isPackerHourly) {
-    // Hours worked × hourly rate, no base salary — verified against the real Le
-    // Chocola sheet (e.g. 160 hours × AED6.993007 = 1118.88).
-    const packerHourlyRate = Number(slip.hourly_rate||0)
-    effectiveBase = 0
-    hoursEarnings = parseFloat((totalHours*packerHourlyRate).toFixed(2))
-    displayRate   = packerHourlyRate
+    hoursEarnings = parseFloat((totalHours*packerRate).toFixed(2))
+    displayRate   = packerRate
     rateLabel     = 'Hourly Rate'
     hoursLabel    = `Hours Worked (${totalHours})`
   } else {
@@ -582,7 +576,7 @@ function GenericUnitsModal({employees, month, projectType, initialEmpId, subType
   const isPackerHourly = effType === 'le_chocola'
   const isDriverTab = isExternal || isCret || isPulser || isTradelink || isDaSplit || isPackerDaily || isPackerHourly
   const label = PROJECT_TYPE_LABELS[effType] || effType
-  const valueLabel = isStaff ? 'Salary Amount (AED)' : isPulser || isPackerHourly ? 'Hours Worked' : isPackerDaily ? 'Days Worked' : isDaSplit ? 'COD Shipments' : 'Shipments'
+  const valueLabel = isStaff ? 'Salary Amount (AED)' : isPulser || isPackerHourly || isPackerDaily ? 'Hours Worked' : isDaSplit ? 'COD Shipments' : 'Shipments'
   // Every driver category only shows its own roster — a Pulser driver isn't a CRET
   // candidate, a JNT DA isn't a Creative Packer, and so on. Null/unset project_type
   // defaults to 'pulser' (the historical default before project_type existed).
@@ -848,7 +842,7 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
   const isPackerHourly = effType === 'le_chocola'
   const isDriverTab  = isExternal || isCret || isPulser || isTradelink || isDaSplit || isPackerDaily || isPackerHourly
   const label = PROJECT_TYPE_LABELS[effType] || effType
-  const valueLabel = isStaff ? 'AED' : isPackerHourly ? 'hours' : isPackerDaily ? 'days' : isDaSplit ? 'COD shipments' : isPulser ? 'hours' : 'shipments'
+  const valueLabel = isStaff ? 'AED' : isPackerHourly || isPackerDaily ? 'hours' : isDaSplit ? 'COD shipments' : isPulser ? 'hours' : 'shipments'
 
   const [rows,      setRows]      = useState([])
   const [fileName,  setFileName]  = useState('')
@@ -870,7 +864,7 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
       : isDaSplit
       ? ['emp_id,cod_shipments,non_cod_shipments,deductions_done', 'JNT001,79,1509,0']
       : isPackerDaily
-      ? ['emp_id,days_worked,deductions_done', 'CRP001,14,0']
+      ? ['emp_id,hours_worked,deductions_done', 'CRP001,160,0']
       : isPackerHourly
       ? ['emp_id,hours_worked,deductions_done', 'LEC001,160,0']
       : ['emp_id,units,working_days,deductions_done', 'E001,160,31,0']
@@ -892,7 +886,7 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
     Papa.parse(file, {
       header: true, skipEmptyLines: true,
       complete: (res) => {
-        const unitsCol = isStaff ? 'amount' : isDaSplit ? 'cod_shipments' : isPackerDaily ? 'days_worked' : isPackerHourly ? 'hours_worked' : 'units'
+        const unitsCol = isStaff ? 'amount' : isDaSplit ? 'cod_shipments' : (isPackerDaily || isPackerHourly) ? 'hours_worked' : 'units'
         const parsed = res.data.map((r,i) => {
           const value      = isTradelink ? 0 : parseFloat(r[unitsCol])
           const valueNonCod = isDaSplit ? parseFloat(r.non_cod_shipments) : null
