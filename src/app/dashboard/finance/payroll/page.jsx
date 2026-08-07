@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import JntSalaryModal from '@/components/payroll/JntSalaryModal'
+import PackerPayModal from '@/components/payroll/PackerPayModal'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell
@@ -549,6 +550,16 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
     return (
       <JntSalaryModal
         employees={employees} month={month} initialEmpId={initialEmpId}
+        onSave={onSave} onClose={onClose}
+        onChangeType={projectType === 'external' ? setSubType : undefined}
+      />
+    )
+  }
+
+  if (effType === 'creative_packers' || effType === 'le_chocola') {
+    return (
+      <PackerPayModal
+        employees={employees} month={month} projectType={effType} initialEmpId={initialEmpId}
         onSave={onSave} onClose={onClose}
         onChangeType={projectType === 'external' ? setSubType : undefined}
       />
