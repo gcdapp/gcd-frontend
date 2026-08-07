@@ -28,6 +28,15 @@ const ROLE_LABELS = {
   accountant: 'Accountant', poc: 'POC', manager: 'Manager',
 }
 
+// Same 5 client projects used everywhere else in the app (analytics, employees,
+// payroll). A project-scoped manager (e.g. Asma) is only ever assigned some
+// subset of these — see her user.assigned_projects.
+const CLIENT_PROJECT_LABELS = {
+  ig_rak: 'IG RAK', imile: 'iMile', jnt_express: 'JNT Express',
+  le_chocola: 'Le Chocola', creative_packers: 'Creative Packers',
+}
+const CLIENT_PROJECTS = Object.keys(CLIENT_PROJECT_LABELS)
+
 function fmt(n) {
   return `AED ${Math.abs(Number(n || 0)).toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
@@ -142,10 +151,20 @@ function DriverPicker({ drivers, value, onChange }) {
 
 /* ── Expense Modal ──────────────────────────────────────────── */
 function ExpenseModal({ drivers, delegates, onSave, onClose }) {
+  const { user } = useAuth()
+  // A project-scoped manager (e.g. Asma) juggles several client projects at once —
+  // without picking one per expense, her spend was only ever attributable to her
+  // account as a whole, never to a specific project. Mandatory for her; optional
+  // (but still available) for everyone else so their entries can feed the same
+  // per-project report too.
+  const scopedProjects = Array.isArray(user?.assigned_projects) ? user.assigned_projects.filter(p => CLIENT_PROJECTS.includes(p)) : []
+  const isScoped = scopedProjects.length > 0
+  const projectOptions = isScoped ? scopedProjects : CLIENT_PROJECTS
+
   const [form, setForm] = useState({
     expense_type:'', amount:'', note:'',
     date: new Date().toISOString().slice(0,10),
-    emp_id: '', record_for: '',
+    emp_id: '', record_for: '', project_type: '',
   })
   const [saving, setSaving] = useState(false)
   const [err, setErr]       = useState(null)
@@ -155,12 +174,14 @@ function ExpenseModal({ drivers, delegates, onSave, onClose }) {
     if (!form.expense_type || !form.amount) return setErr('Expense type and amount required')
     const amt = parseFloat(form.amount)
     if (isNaN(amt) || amt <= 0) return setErr('Amount must be positive')
+    if (isScoped && !form.project_type) return setErr('Select one of your projects for this expense')
     setSaving(true); setErr(null)
     try {
       const res = await fetch(`${API}/api/petty-cash/expense`, {
         method:'POST', headers: hdr(),
         body: JSON.stringify({
           expense_type:form.expense_type, amount:amt, note:form.note||null, date:form.date, emp_id:form.emp_id||null,
+          project_type: form.project_type || null,
           ...(form.record_for ? { user_id: form.record_for } : {}),
         }),
       })
@@ -198,6 +219,13 @@ function ExpenseModal({ drivers, delegates, onSave, onClose }) {
             <select className="input" value={form.expense_type} onChange={set('expense_type')} style={{ borderRadius:10 }}>
               <option value="">Select type…</option>
               {EXPENSE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div>
+            <Lbl>{isScoped ? 'Project *' : 'Project (optional)'}</Lbl>
+            <select className="input" value={form.project_type} onChange={set('project_type')} style={{ borderRadius:10 }}>
+              <option value="">{isScoped ? 'Select a project…' : 'Not project-specific'}</option>
+              {projectOptions.map(p => <option key={p} value={p}>{CLIENT_PROJECT_LABELS[p]}</option>)}
             </select>
           </div>
           {delegates?.length > 0 && (
@@ -260,6 +288,10 @@ function parseFlexibleDate(input) {
 
 /* ── Bulk Upload Modal ──────────────────────────────────────── */
 function BulkUploadModal({ drivers, onSave, onClose }) {
+  const { user } = useAuth()
+  const scopedProjects = Array.isArray(user?.assigned_projects) ? user.assigned_projects.filter(p => CLIENT_PROJECTS.includes(p)) : []
+  const isScoped = scopedProjects.length > 0
+
   const [rows,      setRows]      = useState([])
   const [fileName,  setFileName]  = useState('')
   const [uploading, setUploading] = useState(false)
@@ -267,8 +299,8 @@ function BulkUploadModal({ drivers, onSave, onClose }) {
   const [result,    setResult]    = useState(null)
 
   function downloadTemplate() {
-    const csv = 'date,expense_type,amount,note,emp_id\n'
-      + `${new Date().toISOString().slice(0,10)},Fuel,50.00,Example note,\n`
+    const csv = 'date,expense_type,amount,note,emp_id,project_type\n'
+      + `${new Date().toISOString().slice(0,10)},Fuel,50.00,Example note,,${isScoped?scopedProjects[0]:''}\n`
     const blob = new Blob([csv], { type:'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
@@ -290,12 +322,16 @@ function BulkUploadModal({ drivers, onSave, onClose }) {
           const rawDate      = (r.date || '').trim()
           const date         = rawDate ? parseFlexibleDate(rawDate) : new Date().toISOString().slice(0,10)
           const emp_id       = (r.emp_id || '').trim()
+          const project_type = (r.project_type || '').trim()
           const errors = []
           if (!expense_type) errors.push('expense_type required')
           if (!r.amount || isNaN(amount) || amount <= 0) errors.push('amount must be positive')
           if (rawDate && !date) errors.push(`unrecognized date "${rawDate}" (use YYYY-MM-DD or DD/MM/YYYY)`)
           if (emp_id && !drivers.find(d => d.id === emp_id)) errors.push(`unknown driver id "${emp_id}"`)
-          return { row: i + 2, expense_type, amount, date: date || rawDate, note: r.note || '', emp_id, errors }
+          if (isScoped && !project_type) errors.push('project_type required')
+          else if (isScoped && !scopedProjects.includes(project_type)) errors.push(`"${project_type}" is not one of your assigned projects`)
+          else if (project_type && !CLIENT_PROJECTS.includes(project_type)) errors.push(`unknown project_type "${project_type}"`)
+          return { row: i + 2, expense_type, amount, date: date || rawDate, note: r.note || '', emp_id, project_type, errors }
         })
         setRows(parsed)
       },
@@ -512,6 +548,7 @@ function EditModal({ record, drivers, onSave, onClose }) {
     note: record.note || '',
     expense_type: record.expense_type || '',
     emp_id: record.emp_id || '',
+    project_type: record.project_type || '',
   })
   const [saving, setSaving] = useState(false)
   const [err, setErr]       = useState(null)
@@ -525,7 +562,7 @@ function EditModal({ record, drivers, onSave, onClose }) {
     setSaving(true); setErr(null)
     try {
       const body = { amount:amt, date:form.date, note:form.note||null }
-      if (isExpense) { body.expense_type = form.expense_type; body.emp_id = form.emp_id||null }
+      if (isExpense) { body.expense_type = form.expense_type; body.emp_id = form.emp_id||null; body.project_type = form.project_type||null }
       const res = await fetch(`${API}/api/petty-cash/${record.id}`, {
         method:'PUT', headers: hdr(), body: JSON.stringify(body),
       })
@@ -564,6 +601,15 @@ function EditModal({ record, drivers, onSave, onClose }) {
               <select className="input" value={form.expense_type} onChange={set('expense_type')} style={{ borderRadius:10 }}>
                 <option value="">Select type…</option>
                 {EXPENSE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+          )}
+          {isExpense && (
+            <div>
+              <Lbl>Project (optional)</Lbl>
+              <select className="input" value={form.project_type} onChange={set('project_type')} style={{ borderRadius:10 }}>
+                <option value="">Not project-specific</option>
+                {CLIENT_PROJECTS.map(p => <option key={p} value={p}>{CLIENT_PROJECT_LABELS[p]}</option>)}
               </select>
             </div>
           )}
@@ -864,6 +910,8 @@ export default function PettyCashPage() {
   const [recentMonth,  setRecentMonth]  = useState('all')
   const [recentMonths, setRecentMonths] = useState([])
   const [myMonthFilter, setMyMonthFilter] = useState('all')
+  const [byProject,        setByProject]        = useState(null)
+  const [loadingByProject, setLoadingByProject]  = useState(false)
 
   const canGiveCash = ['admin','accountant'].includes(user?.role)
   // Admin oversees petty cash rather than spending against it personally — no reason
@@ -875,6 +923,12 @@ export default function PettyCashPage() {
   const TEAM_OVERVIEW_EXCLUDED = ['Asma Qadri', 'Muhammad Iftikhar']
   const canViewTeam = ['admin','accountant','general_manager','manager'].includes(user?.role)
     && !TEAM_OVERVIEW_EXCLUDED.includes(user?.name)
+  // "Project wise expense" — admin/accountant (see every project) plus a project-
+  // scoped manager like Asma (sees only her own). Using assigned_projects rather
+  // than name/role directly is what correctly excludes Iftikhar (also general_
+  // manager, but unscoped — Amazon-side, no client projects to report on).
+  const isScopedManager = Array.isArray(user?.assigned_projects) && user.assigned_projects.length > 0
+  const canViewByProject = ['admin','accountant'].includes(user?.role) || isScopedManager
   const canDelete   = ['admin','accountant'].includes(user?.role)
   // Admins/accountants distribute cash rather than hold it personally, so they get
   // an all-users "Recent Entries" feed instead of the "My Balance" tab.
@@ -936,6 +990,18 @@ export default function PettyCashPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCashManager, activeTab])
+
+  // Lazy-load the project breakdown only once that tab is actually opened.
+  useEffect(() => {
+    if (activeTab === 'byproject' && canViewByProject && byProject === null && !loadingByProject) {
+      setLoadingByProject(true)
+      fetch(`${API}/api/petty-cash/by-project`, { headers: hdr() })
+        .then(r => r.json()).then(d => setByProject(d))
+        .catch(() => setByProject({ projects: [], unattributed: { total:0, count:0 } }))
+        .finally(() => setLoadingByProject(false))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, canViewByProject])
 
   function handleRecentMonthChange(m) {
     setRecentMonth(m)
@@ -1198,9 +1264,13 @@ export default function PettyCashPage() {
         <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden' }}>
 
           {/* Tabs */}
-          {canViewTeam && (
+          {(canViewTeam || canViewByProject) && (
             <div style={{ padding:'0 16px', borderBottom:'1px solid var(--border)', display:'flex', gap:2 }}>
-              {(isCashManager ? [['recent','Recent Entries'],['team','Team Overview']] : [['my','My Balance'],['team','Team Overview']]).map(([v,l]) => (
+              {[
+                ...(isCashManager ? [['recent','Recent Entries']] : [['my','My Balance']]),
+                ...(canViewByProject ? [['byproject','By Project']] : []),
+                ...(canViewTeam ? [['team','Team Overview']] : []),
+              ].map(([v,l]) => (
                 <button key={v} onClick={() => setTab(v)} className={`pc-tab${activeTab===v?' active':''}`}>{l}</button>
               ))}
             </div>
@@ -1307,6 +1377,42 @@ export default function PettyCashPage() {
                   <TxRow key={r.id} record={r} canEdit={canDelete} canDelete={canDelete} onDelete={handleDeleteMy} onEdit={setEditRecord}
                     selectMode={selectMode} selected={selectedIds.has(r.id)} onToggleSelect={toggleSelect}/>
                 ))
+              )}
+            </div>
+          )}
+
+          {/* ── By Project — expense totals per client project ── */}
+          {activeTab === 'byproject' && canViewByProject && (
+            <div>
+              <div style={{ padding:'13px 16px', fontWeight:700, fontSize:13, color:'var(--text)', borderBottom:'1px solid var(--border)' }}>
+                Expenses by Project
+              </div>
+              {loadingByProject || !byProject ? (
+                <div style={{ padding:20, display:'flex', flexDirection:'column', gap:8 }}>
+                  {[0,1,2].map(i => <div key={i} style={{ height:56, borderRadius:10, background:'var(--bg-alt)' }}/>)}
+                </div>
+              ) : !byProject.projects.length ? (
+                <div style={{ padding:40, textAlign:'center', color:'var(--text-muted)', fontSize:13 }}>No projects assigned</div>
+              ) : (
+                <>
+                  {byProject.projects.map(p => (
+                    <div key={p.project_type} style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderBottom:'1px solid var(--border)' }}>
+                      <div style={{ width:40, height:40, borderRadius:12, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:13, fontWeight:800, color:'white' }}>
+                        {p.label.slice(0,2).toUpperCase()}
+                      </div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontWeight:700, fontSize:13, color:'var(--text)' }}>{p.label}</div>
+                        <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{p.count} expense{p.count!==1?'s':''}</div>
+                      </div>
+                      <div style={{ fontSize:14, fontWeight:800, color:'#EF4444' }}>{fmt(p.total)}</div>
+                    </div>
+                  ))}
+                  {byProject.unattributed.count > 0 && (
+                    <div style={{ padding:'10px 16px', fontSize:11.5, color:'var(--text-muted)', background:'var(--bg-alt)' }}>
+                      {byProject.unattributed.count} expense{byProject.unattributed.count!==1?'s':''} totalling {fmt(byProject.unattributed.total)} {byProject.unattributed.count!==1?"aren't":"isn't"} tagged to a project — select one when recording an expense to have it show up above.
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
