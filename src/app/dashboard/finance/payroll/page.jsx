@@ -13,6 +13,7 @@ import {
 import ConfirmDialog from '@/components/ConfirmDialog'
 import JntSalaryModal from '@/components/payroll/JntSalaryModal'
 import PackerPayModal from '@/components/payroll/PackerPayModal'
+import ImileSalaryModal from '@/components/payroll/ImileSalaryModal'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell
@@ -569,6 +570,16 @@ function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onC
     )
   }
 
+  if (effType === 'imile') {
+    return (
+      <ImileSalaryModal
+        employees={employees} month={month} initialEmpId={initialEmpId}
+        onSave={onSave} onClose={onClose}
+        onChangeType={projectType === 'external' ? setSubType : undefined}
+      />
+    )
+  }
+
   return (
     <GenericUnitsModal
       employees={employees} month={month} projectType={projectType} initialEmpId={initialEmpId}
@@ -841,9 +852,10 @@ const SHEET_CSV_COLS = ['performance_bonus','incentive','other_addition','eid_ot
 function BulkUnitsModal({month, projectType, onSave, onClose}) {
   // Same ambiguity as AddUnitsModal above when opened from the merged "External" tab —
   // the CSV format itself differs per formula, so the accountant has to pick before
-  // downloading a template or uploading a file. JNT isn't offered here — it has its own
-  // redesigned single-entry form (JntSalaryModal); CSV bulk upload isn't part of that yet.
-  const [subType, setSubType] = useState(projectType === 'external' ? 'imile' : projectType)
+  // downloading a template or uploading a file. JNT/iMile aren't offered here — both
+  // have their own redesigned single-entry forms (JntSalaryModal/ImileSalaryModal);
+  // CSV bulk upload isn't part of either rebuild.
+  const [subType, setSubType] = useState(projectType === 'external' ? 'le_chocola' : projectType)
   const effType = projectType === 'external' ? subType : projectType
 
   const isStaff     = effType === 'staff'
@@ -962,7 +974,6 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
           {projectType === 'external' && !result && (
             <div><label className="input-label">Pay Type *</label>
               <select className="input" value={subType} onChange={e=>resetSubType(e.target.value)}>
-                <option value="imile">iMile DAs</option>
                 <option value="le_chocola">Le Chocola Packers</option>
                 <option value="creative_packers">Creative Packers</option>
               </select></div>

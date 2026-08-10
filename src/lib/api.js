@@ -101,6 +101,15 @@ export const jntSalaryApi = {
   saveEntry:       (data)               => api.post('/api/jnt-salary/entry', data),
 }
 
+// iMile Salary Engine — rate depends on Project × DA Type × Branch (see
+// backend/src/routes/imile-salary.js)
+export const imileSalaryApi = {
+  rates:      ()                   => api.get('/api/imile-salary/rates'),
+  updateRate: (id, cod_rate, non_cod_rate) => api.put(`/api/imile-salary/rates/${id}`, { cod_rate, non_cod_rate }),
+  getEntry:   (emp_id, month)      => api.get(`/api/imile-salary/entry/${emp_id}?month=${month}`),
+  saveEntry:  (data)               => api.post('/api/imile-salary/entry', data),
+}
+
 // Generic admin-editable pay rates (currently the two Packer types' fixed hourly rate)
 export const payRatesApi = {
   list:   ()             => api.get('/api/pay-rates'),
