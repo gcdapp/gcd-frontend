@@ -99,6 +99,7 @@ export const jntSalaryApi = {
   removeComponent: (id)                 => api.delete(`/api/jnt-salary/components/${id}`),
   getEntry:        (emp_id, month)      => api.get(`/api/jnt-salary/entry/${emp_id}?month=${month}`),
   saveEntry:       (data)               => api.post('/api/jnt-salary/entry', data),
+  saveEntriesBulk: (month, records)     => api.post('/api/jnt-salary/entries/bulk', { month, records }),
 }
 
 // iMile Salary Engine — rate depends on Project × DA Type × Branch (see
@@ -108,6 +109,7 @@ export const imileSalaryApi = {
   updateRate: (id, cod_rate, non_cod_rate) => api.put(`/api/imile-salary/rates/${id}`, { cod_rate, non_cod_rate }),
   getEntry:   (emp_id, month)      => api.get(`/api/imile-salary/entry/${emp_id}?month=${month}`),
   saveEntry:  (data)               => api.post('/api/imile-salary/entry', data),
+  saveEntriesBulk: (month, records) => api.post('/api/imile-salary/entries/bulk', { month, records }),
 }
 
 // Generic admin-editable pay rates (currently the two Packer types' fixed hourly rate)

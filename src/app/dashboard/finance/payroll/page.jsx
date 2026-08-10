@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import { createPortal } from 'react-dom'
 import Papa from 'papaparse'
 import Link from 'next/link'
-import { payrollApi, empApi, payRatesApi } from '@/lib/api'
+import { payrollApi, empApi, payRatesApi, jntSalaryApi, imileSalaryApi } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { useSocket } from '@/lib/socket'
 import {
@@ -849,13 +849,13 @@ function GenericUnitsModal({employees, month, projectType, initialEmpId, subType
 const SHEET_CSV_COLS = ['performance_bonus','incentive','other_addition','eid_ot','traffic_fine','cash_advance','cash_advance_installments','cash_variance','absent_days','others']
 
 /* ── Bulk Upload Pay Modal ── */
-function BulkUnitsModal({month, projectType, onSave, onClose}) {
+function BulkUnitsModal({month, projectType, employees, onSave, onClose}) {
   // Same ambiguity as AddUnitsModal above when opened from the merged "External" tab —
   // the CSV format itself differs per formula, so the accountant has to pick before
-  // downloading a template or uploading a file. JNT/iMile aren't offered here — both
-  // have their own redesigned single-entry forms (JntSalaryModal/ImileSalaryModal);
-  // CSV bulk upload isn't part of either rebuild.
-  const [subType, setSubType] = useState(projectType === 'external' ? 'le_chocola' : projectType)
+  // downloading a template or uploading a file. JNT and iMile each go through their
+  // own dedicated engine (jntSalaryApi/imileSalaryApi saveEntriesBulk) instead of the
+  // generic payrollApi.addUnitsBulk — see handleUpload below.
+  const [subType, setSubType] = useState(projectType === 'external' ? 'jnt_express' : projectType)
   const effType = projectType === 'external' ? subType : projectType
 
   const isStaff     = effType === 'staff'
@@ -863,12 +863,20 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
   const isCret       = effType === 'cret'
   const isPulser     = effType === 'pulser'
   const isTradelink  = effType === 'tradelink'
-  const isDaSplit       = effType === 'jnt_express' || effType === 'imile'
+  const isJnt   = effType === 'jnt_express'
+  const isImile = effType === 'imile'
   const isPackerDaily  = effType === 'creative_packers'
   const isPackerHourly = effType === 'le_chocola'
-  const isDriverTab  = isExternal || isCret || isPulser || isTradelink || isDaSplit || isPackerDaily || isPackerHourly
+  const isDriverTab  = isExternal || isCret || isPulser || isTradelink || isJnt || isImile || isPackerDaily || isPackerHourly
   const label = PROJECT_TYPE_LABELS[effType] || effType
-  const valueLabel = isStaff ? 'AED' : isPackerHourly || isPackerDaily ? 'hours' : isDaSplit ? 'COD shipments' : isPulser ? 'hours' : 'shipments'
+  const valueLabel = isStaff ? 'AED' : isPackerHourly || isPackerDaily ? 'hours' : (isJnt || isImile) ? 'COD shipments' : isPulser ? 'hours' : 'shipments'
+  // Everyone currently on this project's roster — the template is pre-filled with
+  // their real ID/name so the accountant just fills in numbers next to each name,
+  // instead of hand-typing IDs (and risking a typo the upload then rejects).
+  const roster = isStaff
+    ? (employees||[]).filter(e => (e.role||'').toLowerCase() !== 'driver')
+    : (employees||[]).filter(e => (e.role||'').toLowerCase() === 'driver' && (e.project_type||'pulser').toLowerCase() === effType)
+        .sort((a,b) => (a.name||'').localeCompare(b.name||''))
 
   const [rows,      setRows]      = useState([])
   const [fileName,  setFileName]  = useState('')
@@ -879,30 +887,54 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
   function resetSubType(v) { setSubType(v); setRows([]); setFileName(''); setErr(null); setResult(null) }
 
   function downloadTemplate() {
-    const base = isStaff
-      ? ['emp_id,amount,deductions_done', 'E001,5000,0']
-      : isExternal
-      ? ['name,external_company,units,per_shipment_rate,deductions_done', 'John Doe,JNT,120,0.75,0']
-      : isCret
-      ? ['emp_id,units,working_days,cret_rate,deductions_done', 'E001,900,31,0.5,0']
-      : isTradelink
-      ? ['emp_id,working_days,deductions_done', 'E001,31,0']
-      : isDaSplit
-      ? ['emp_id,cod_shipments,non_cod_shipments,deductions_done', 'JNT001,79,1509,0']
-      : isPackerDaily
-      ? ['emp_id,hours_worked,deductions_done', 'CRP001,160,0']
-      : isPackerHourly
-      ? ['emp_id,hours_worked,deductions_done', 'LEC001,160,0']
-      : ['emp_id,units,working_days,deductions_done', 'E001,160,31,0']
-    const header = `${base[0]},${SHEET_CSV_COLS.join(',')}`
-    const sample  = `${base[1]},${SHEET_CSV_COLS.map(()=>'0').join(',')}`
-    const csv = `${header}\n${sample}\n`
+    if (isExternal) {
+      // Ad-hoc/subcontracted drivers aren't on any roster to pre-fill from — this is
+      // the only type where a brand-new person can be created straight from the CSV.
+      const csv = 'name,external_company,units,per_shipment_rate,deductions_done\nJohn Doe,JNT,120,0.75,0\n'
+      const blob = new Blob([csv], { type:'text/csv' })
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href = url; a.download = `${effType}_pay_template.csv`
+      document.body.appendChild(a); a.click(); document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      return
+    }
+
+    // cols[0]/[1] are always emp_id,name — everything after is left blank for the
+    // accountant to fill in. JNT/iMile have their own deduction sets and skip the
+    // generic bonus/deduction sheet columns entirely (extraCols=[]); JNT bulk also
+    // doesn't cover "Additional Earnings" components — those still need the single
+    // JNT DA Salary form.
+    let cols, extraCols = SHEET_CSV_COLS
+    if (isStaff) cols = ['emp_id','name','amount','deductions_done']
+    else if (isCret) cols = ['emp_id','name','units','working_days','cret_rate','deductions_done']
+    else if (isTradelink) cols = ['emp_id','name','working_days','deductions_done']
+    else if (isJnt) { cols = ['emp_id','name','cod_shipments','non_cod_shipments','pickup_shipments','reverse_pickup_shipments','traffic_fine','cash_advance','cash_variance','sim_charge','car_rent','carry_forward','other_deduction']; extraCols = [] }
+    else if (isImile) { cols = ['emp_id','name','project','da_type','branch','cod_shipments','non_cod_shipments','imile_deduction','sim_charge','car_rent','rta_fine','carry_forward','cash_advance']; extraCols = [] }
+    else if (isPackerDaily || isPackerHourly) cols = ['emp_id','name','hours_worked','deductions_done']
+    else cols = ['emp_id','name','units','working_days','deductions_done'] // pulser
+
+    const allCols = [...cols, ...extraCols]
+    const blankRow = id => allCols.map(c => c==='emp_id' ? id : '').join(',')
+    const rosterLines = roster.map(e => [e.id, `"${(e.name||'').replace(/"/g,'""')}"`, ...allCols.slice(2).map(()=>'')].join(','))
+    const lines = rosterLines.length ? rosterLines : [blankRow('E001')]
+    const csv = `${allCols.join(',')}\n${lines.join('\n')}\n`
     const blob = new Blob([csv], { type:'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
     a.href = url; a.download = `${effType}_pay_template.csv`
     document.body.appendChild(a); a.click(); document.body.removeChild(a)
     URL.revokeObjectURL(url)
+  }
+
+  // Blank cell → 0, same "not filled in yet" convention every other numeric column
+  // in this uploader already uses; only flags an error if something non-numeric or
+  // negative was actually typed in.
+  function numField(r, col, errors) {
+    if (r[col] === undefined || r[col] === '') return 0
+    const v = parseFloat(r[col])
+    if (isNaN(v) || v < 0) { errors.push(`${col} must be a non-negative number`); return 0 }
+    return v
   }
 
   function handleFile(e) {
@@ -912,19 +944,43 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
     Papa.parse(file, {
       header: true, skipEmptyLines: true,
       complete: (res) => {
-        const unitsCol = isStaff ? 'amount' : isDaSplit ? 'cod_shipments' : (isPackerDaily || isPackerHourly) ? 'hours_worked' : 'units'
+        const unitsCol = isStaff ? 'amount' : (isJnt || isImile) ? 'cod_shipments' : (isPackerDaily || isPackerHourly) ? 'hours_worked' : 'units'
         const parsed = res.data.map((r,i) => {
-          const value      = isTradelink ? 0 : parseFloat(r[unitsCol])
-          const valueNonCod = isDaSplit ? parseFloat(r.non_cod_shipments) : null
           const emp_id = (r.emp_id||'').trim()
           const name   = (r.name||'').trim()
           const errors = []
-          if (!isTradelink && (isNaN(value) || value < 0)) errors.push(`${unitsCol} must be a non-negative number`)
-          if (isDaSplit && (isNaN(valueNonCod) || valueNonCod < 0)) errors.push('non_cod_shipments must be a non-negative number')
           if (isStaff && !emp_id) errors.push('emp_id required')
           if (isExternal && !emp_id && !name) errors.push('name required (or emp_id for an existing driver)')
           if (!isStaff && !isExternal && !emp_id) errors.push('emp_id required')
           if (isCret && r.cret_rate && isNaN(parseFloat(r.cret_rate))) errors.push('cret_rate must be a number')
+
+          if (isJnt) {
+            return {
+              row: i+2, emp_id, name,
+              cod: numField(r,'cod_shipments',errors), non_cod: numField(r,'non_cod_shipments',errors),
+              pickup: numField(r,'pickup_shipments',errors), reverse_pickup: numField(r,'reverse_pickup_shipments',errors),
+              traffic_fine: numField(r,'traffic_fine',errors), cash_advance: numField(r,'cash_advance',errors),
+              cash_variance: numField(r,'cash_variance',errors), sim_charge: numField(r,'sim_charge',errors),
+              car_rent: numField(r,'car_rent',errors), carry_forward: numField(r,'carry_forward',errors),
+              other: numField(r,'other_deduction',errors),
+              get units() { return this.cod }, errors,
+            }
+          }
+          if (isImile) {
+            const project = (r.project||'').trim(), da_type = (r.da_type||'').trim().toLowerCase(), branch = (r.branch||'').trim()
+            if (!project || !da_type || !branch) errors.push('project, da_type and branch are required')
+            return {
+              row: i+2, emp_id, name, project, da_type, branch,
+              cod: numField(r,'cod_shipments',errors), non_cod: numField(r,'non_cod_shipments',errors),
+              imile_deduction: numField(r,'imile_deduction',errors), sim_charge: numField(r,'sim_charge',errors),
+              car_rent: numField(r,'car_rent',errors), rta_fine: numField(r,'rta_fine',errors),
+              carry_forward: numField(r,'carry_forward',errors), cash_advance: numField(r,'cash_advance',errors),
+              get units() { return this.cod }, errors,
+            }
+          }
+
+          const value      = isTradelink ? 0 : parseFloat(r[unitsCol])
+          if (!isTradelink && (isNaN(value) || value < 0)) errors.push(`${unitsCol} must be a non-negative number`)
           const sheetCols = {}
           for (const col of SHEET_CSV_COLS) if (r[col] !== undefined) sheetCols[col] = col === 'cash_advance_installments' ? (parseInt(r[col],10)||undefined) : (parseFloat(r[col])||0)
           return {
@@ -935,7 +991,6 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
             cret_rate: isCret && r.cret_rate ? parseFloat(r.cret_rate) : undefined,
             deductions_done: r.deductions_done !== undefined && r.deductions_done !== '' ? parseFloat(r.deductions_done) : undefined,
             units:  isStaff ? undefined : value,
-            units_non_cod: isDaSplit ? valueNonCod : undefined,
             amount: isStaff ? value : undefined,
             ...sheetCols,
             errors,
@@ -953,7 +1008,14 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
     if (!validRows.length) return
     setUploading(true); setErr(null)
     try {
-      const data = await payrollApi.addUnitsBulk(month, validRows.map(({row,errors,...r}) => r), isDriverTab ? effType : undefined)
+      let data
+      if (isJnt) {
+        data = await jntSalaryApi.saveEntriesBulk(month, validRows.map(({row,errors,units,name,...r}) => r))
+      } else if (isImile) {
+        data = await imileSalaryApi.saveEntriesBulk(month, validRows.map(({row,errors,units,name,...r}) => r))
+      } else {
+        data = await payrollApi.addUnitsBulk(month, validRows.map(({row,errors,name,...r}) => r), isDriverTab ? effType : undefined)
+      }
       setResult(data)
     } catch(e) { setErr(e.message) } finally { setUploading(false) }
   }
@@ -974,9 +1036,16 @@ function BulkUnitsModal({month, projectType, onSave, onClose}) {
           {projectType === 'external' && !result && (
             <div><label className="input-label">Pay Type *</label>
               <select className="input" value={subType} onChange={e=>resetSubType(e.target.value)}>
+                <option value="jnt_express">JNT DAs</option>
+                <option value="imile">iMile DAs</option>
                 <option value="le_chocola">Le Chocola Packers</option>
                 <option value="creative_packers">Creative Packers</option>
               </select></div>
+          )}
+          {(isJnt) && !result && (
+            <div style={{fontSize:11.5,color:'var(--text-muted)',background:'var(--bg-alt)',borderRadius:9,padding:'8px 12px'}}>
+              Bulk upload covers Base Shipment Pay + the 7 deductions only — Fuel Subsidy, Eid Incentive and other "Additional Earnings" still need the single JNT DA Salary form.
+            </div>
           )}
 
           {result ? (
@@ -1771,7 +1840,7 @@ export default function PayrollPage() {
         {modal==='deduction'    && <DeductionModal employees={employees} month={month} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
         {modal?.type==='salary' && <SalaryModal    emp={modal.emp}       onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
         {modal?.type==='addUnits' && <AddUnitsModal employees={employees} month={month} projectType={modal.projectType} initialEmpId={modal.initialEmpId} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
-        {modal?.type==='bulkUnits' && <BulkUnitsModal month={month} projectType={modal.projectType} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
+        {modal?.type==='bulkUnits' && <BulkUnitsModal month={month} projectType={modal.projectType} employees={employees} onClose={()=>setModal(null)} onSave={()=>{setModal(null);load()}}/>}
 
         <ConfirmDialog
           open={!!confirmDlg}
