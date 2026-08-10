@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { empApi, API } from '@/lib/api'
+import { empApi, API, jntSalaryApi, payRatesApi } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { X, AlertCircle } from 'lucide-react'
 
@@ -12,7 +12,7 @@ const EMPTY = {
   iloe_expiry:'', annual_leave_start:'',
   amazon_id:'', emirates_id:'', annual_leave_balance:30,
   visa_type:'company',
-  project_type:'pulser', per_shipment_rate:'0.5', per_shipment_rate_non_cod:'', performance_bonus:'100',
+  project_type:'pulser', per_shipment_rate:'0.5', performance_bonus:'100',
   login_email:'', login_password:'',
   // Extended personal / WPS fields
   sub_group_name:'', beneficiary_first_name:'', beneficiary_middle_name:'',
@@ -56,7 +56,6 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
     visa_type:            emp.visa_type||'company',
     project_type:         emp.project_type||'pulser',
     per_shipment_rate:    emp.per_shipment_rate||'0.5',
-    per_shipment_rate_non_cod: emp.per_shipment_rate_non_cod||'',
     performance_bonus:    emp.performance_bonus||'100',
     sub_group_name:           emp.sub_group_name||'',
     beneficiary_first_name:   emp.beneficiary_first_name||'',
@@ -81,6 +80,21 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
   // Tracks whether the Employee ID was hand-typed, so the auto-suggest effect
   // below never clobbers a value the user deliberately chose.
   const [idTouched, setIdTouched] = useState(mode !== 'add')
+  // Live rates for the formula preview below — JNT's base shipment rates and both
+  // Packer types' hourly rate are now global/admin-editable (Payroll → Rate Settings),
+  // not per-employee, so the preview has to read the real current numbers instead of
+  // guessing/hardcoding them (and going stale the next time someone edits a rate).
+  const [jntBaseRates, setJntBaseRates] = useState(null)
+  const [packerRates,  setPackerRates]  = useState(null)
+  useEffect(() => {
+    jntSalaryApi.rates().then(d => {
+      const base = (d.components||[]).find(c => c.is_base)
+      if (base) setJntBaseRates(Object.fromEntries(base.rates.map(r => [r.shipment_type, r.value])))
+    }).catch(()=>{})
+    payRatesApi.list().then(d => {
+      setPackerRates(Object.fromEntries((d.rates||[]).map(r => [r.key, r.value])))
+    }).catch(()=>{})
+  }, [])
 
   function set(k,v) { setForm(p=>({...p,[k]:v})) }
 
@@ -159,15 +173,23 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
   const previewSalary = () => {
     const base=Number(form.salary||0), rate=Number(form.hourly_rate||3.85)
     const perf=Number(form.performance_bonus||100), perShip=Number(form.per_shipment_rate||0.5)
-    const nonCodRate=Number(form.per_shipment_rate_non_cod||0)
     if (form.project_type==='cret')   return `AED ${base} + shipments × ${perShip}`
     if (form.project_type==='pulser') return `AED ${base} + hours × ${rate} + ${perf} bonus`
-    if (form.project_type==='jnt_express' || form.project_type==='imile')
-      return `COD shipments × AED${perShip} + Non-COD × AED${nonCodRate} (no base salary)`
-    // Fixed, company-wide rates — not per-employee (see PACKER_HOURLY_RATE in
-    // backend/src/lib/payrollCalc.js) — so there's nothing to enter here.
-    if (form.project_type==='le_chocola') return `Hours worked × AED6.99/hr (no base salary)`
-    if (form.project_type==='creative_packers') return `Hours worked × AED6.64/hr (no base salary)`
+    // JNT's rates are global/admin-editable (Payroll → Rate Settings), not per-employee
+    // — nothing to enter here, the engine always reads the live table.
+    if (form.project_type==='jnt_express') {
+      if (!jntBaseRates) return 'Loading current rates…'
+      return `COD×AED${jntBaseRates.cod} + Non-COD×AED${jntBaseRates.non_cod} + Pickup×AED${jntBaseRates.pickup} + Reverse Pickup×AED${jntBaseRates.reverse_pickup} (no base salary; + optional Fuel Subsidy/Eid Incentive)`
+    }
+    // iMile's rate depends on Project × DA Type × Branch, picked on the salary entry
+    // form each month — not a fixed per-employee value, so there's no single number
+    // to preview here.
+    if (form.project_type==='imile')
+      return `COD/Non-COD × rate — depends on Project/DA Type/Branch, chosen when entering monthly pay (see Rate Settings)`
+    if (form.project_type==='le_chocola')
+      return packerRates ? `Hours worked × AED${packerRates.le_chocola}/hr (no base salary)` : 'Loading current rate…'
+    if (form.project_type==='creative_packers')
+      return packerRates ? `Hours worked × AED${packerRates.creative_packers}/hr (no base salary)` : 'Loading current rate…'
     return `AED ${base} (fixed salary)`
   }
 
@@ -346,10 +368,6 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
                   {form.project_type==='pulser' && inp('Hourly Rate','hourly_rate','number','3.85')}
                   {form.project_type==='cret' && inp('Per Shipment Rate','per_shipment_rate','number','0.5')}
                   {form.project_type==='pulser' && inp('Performance Bonus','performance_bonus','number','100')}
-                  {(form.project_type==='jnt_express'||form.project_type==='imile') && (<>
-                    {inp('COD Rate (AED/shipment)','per_shipment_rate','number',form.project_type==='jnt_express'?'4':'e.g. 2, 4, 4.5, 5, 7')}
-                    {inp('Non-COD Rate (AED/shipment)','per_shipment_rate_non_cod','number',form.project_type==='jnt_express'?'3.5':'e.g. 2, 3, 4, 5, 7')}
-                  </>)}
                 </div>
                 <div style={{ marginTop:10, background:form.project_type==='pulser'?'var(--green-bg)':form.project_type==='cret'?'var(--blue-bg)':'var(--amber-bg)', borderRadius:9, padding:'8px 12px', fontSize:12, color:form.project_type==='pulser'?'var(--green)':form.project_type==='cret'?'var(--blue)':'#92400E', fontWeight:600 }}>
                   Formula: {previewSalary()}
