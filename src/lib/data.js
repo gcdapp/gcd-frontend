@@ -25,7 +25,7 @@ export const NAV = [
 
   // ── HR Management ─────────────────────────────────────────────
   { type:'section', label:'HR Management', roles:['admin','general_manager','hr','accountant'] },
-  { label:'DAs',           href:'/dashboard/hr/employees',  icon:'UserCircle',  roles:['admin','general_manager','hr','accountant'], alertKey:'employees' },
+  { label:'Employees',     href:'/dashboard/hr/employees',  icon:'UserCircle',  roles:['admin','general_manager','hr','accountant'], alertKey:'employees' },
   { label:'Admins',        href:'/dashboard/hr/admins',     icon:'Shield',      roles:['admin','general_manager','hr','accountant'], hideIfScoped:true },
   { label:'Leaves',        href:'/dashboard/hr/leaves',     icon:'CalendarOff', roles:['admin','general_manager','hr','accountant'], alertKey:'leaves' },
   { label:'Documents',     href:'/dashboard/hr/documents',  icon:'FileText',    roles:['admin','hr'] },

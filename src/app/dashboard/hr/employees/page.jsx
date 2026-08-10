@@ -32,7 +32,7 @@ function CompletionRing({ pct, size=52, stroke=3 }) {
   )
 }
 
-/* ── Modal (Add DA only — Edit lives at hr/employees/[id]/edit) ──── */
+/* ── Modal (Add Employee only — Edit lives at hr/employees/[id]/edit) ──── */
 function EmpModal({ emp, onSave, onClose, mode }) {
   return createPortal(
     <div className="modal-overlay" style={{ zIndex:9999 }}>
@@ -56,7 +56,7 @@ function BulkUploadModal({ isProjectScoped, defaultProject, onSave, onClose }) {
     const blob = new Blob([csv], { type:'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
-    a.href = url; a.download = 'das_template.csv'
+    a.href = url; a.download = 'employees_template.csv'
     document.body.appendChild(a); a.click(); document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
@@ -106,8 +106,8 @@ function BulkUploadModal({ isProjectScoped, defaultProject, onSave, onClose }) {
               <UploadCloud size={17} color="white"/>
             </div>
             <div>
-              <div style={{ fontWeight:800, fontSize:15, color:'#1A1612' }}>Bulk Upload DAs</div>
-              <div style={{ fontSize:11, color:'#A89880', marginTop:1 }}>Add many Delivery Associates from a CSV file</div>
+              <div style={{ fontWeight:800, fontSize:15, color:'#1A1612' }}>Bulk Upload Employees</div>
+              <div style={{ fontSize:11, color:'#A89880', marginTop:1 }}>Add many employees (DAs or Packers) from a CSV file</div>
             </div>
           </div>
           <button onClick={onClose} style={{ background:'rgba(184,134,11,0.1)', border:'1px solid #F0D78C', cursor:'pointer', color:'#B8860B', display:'flex', padding:6, borderRadius:'50%' }}><X size={16}/></button>
@@ -398,7 +398,7 @@ export default function EmployeesPage() {
       <style>{CSS}</style>
       <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
-        <PageHero icon={Users} title="DAs" subtitle="Delivery Associates — assignments & profiles"
+        <PageHero icon={Users} title="Employees" subtitle="Delivery Associates & Packers — assignments & profiles"
           actions={<>
             {!isProjectScoped && (
               <div style={{ display:'flex', gap:3, background:'rgba(255,255,255,0.06)', borderRadius:24, padding:3 }}>
@@ -432,7 +432,7 @@ export default function EmployeesPage() {
           </>}>
           <div className="da-hero-kpi">
             {[
-              { label:'Total DAs',  val:loading?'—':categoryEmps.length, color:'#B8860B' },
+              { label:'Total Employees', val:loading?'—':categoryEmps.length, color:'#B8860B' },
               { label:'Active',     val:loading?'—':active,              color:'#4ADE80' },
               { label:'On Leave',   val:loading?'—':onLeave,             color:'#FBBF24' },
               { label:'Alerts',     val:loading?'—':alerts,              color:alerts>0?'#F87171':'#4ADE80' },
@@ -466,7 +466,7 @@ export default function EmployeesPage() {
                 style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background var(--t-fast)' }}
                 onMouseEnter={e=>e.currentTarget.style.background='#9a7209'}
                 onMouseLeave={e=>e.currentTarget.style.background='#B8860B'}>
-                <Plus size={14}/> Add DA
+                <Plus size={14}/> Add Employee
               </button>
             </>
           )}
@@ -493,7 +493,7 @@ export default function EmployeesPage() {
         ) : employees.length===0 ? (
           <div style={{ textAlign:'center', padding:'60px 20px' }}>
             <Users size={40} style={{ margin:'0 auto 12px', display:'block', opacity:0.15 }}/>
-            <div style={{ fontWeight:700, fontSize:15, color:'var(--text-sub)' }}>{search?`No results for "${search}"`:'No DAs found'}</div>
+            <div style={{ fontWeight:700, fontSize:15, color:'var(--text-sub)' }}>{search?`No results for "${search}"`:'No employees found'}</div>
           </div>
         ) : (
           <div className="da-grid">

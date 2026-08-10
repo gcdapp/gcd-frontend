@@ -138,10 +138,10 @@ function EmpModal({ emp, onSave, onClose, mode }) {
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 }}>
             <div>
               <h2 style={{ fontWeight:900, fontSize:18, color:'#1A1612', letterSpacing:'-0.03em' }}>
-                {mode==='add' ? '+ New DA' : 'Edit DA'}
+                {mode==='add' ? '+ New Employee' : 'Edit Employee'}
               </h2>
               <p style={{ fontSize:12, color:'#A89880', marginTop:3 }}>
-                {mode==='add' ? 'Add a new Delivery Associate' : `Editing ${emp?.name}`}
+                {mode==='add' ? 'Add a new employee' : `Editing ${emp?.name}`}
               </p>
             </div>
             <button onClick={onClose} style={{ width:32, height:32, borderRadius:'50%', background:'#F5F4F1', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'background 0.2s' }}>
@@ -214,7 +214,7 @@ function EmpModal({ emp, onSave, onClose, mode }) {
           {tab==='login' && mode==='add' && (
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div style={{ background:'linear-gradient(135deg,#FFFBEB,#FDF6E3)', border:'1px solid #FCD34D', borderRadius:12, padding:'12px 16px', fontSize:13, color:'#92400E' }}>
-                <strong>Optional:</strong> Creates a login account so this DA can access their portal.
+                <strong>Optional:</strong> Creates a login account so this employee can access their portal.
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                 {inp('Login Email', 'login_email', 'email', '', 'da@goldencrescent.ae')}
@@ -233,7 +233,7 @@ function EmpModal({ emp, onSave, onClose, mode }) {
                 <span style={{ width:14, height:14, border:'2px solid rgba(255,255,255,0.3)', borderTopColor:'white', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/>
                 Saving…
               </span>
-            ) : mode==='add' ? '+ Add DA' : 'Save Changes'}
+            ) : mode==='add' ? '+ Add Employee' : 'Save Changes'}
           </button>
         </div>
       </div>
@@ -447,11 +447,11 @@ export default function EmployeesPage() {
         {/* Page header */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
           <div>
-            <h1 style={{ fontWeight:900, fontSize:20, color:'#1A1612', letterSpacing:'-0.03em', lineHeight:1.2 }}>Delivery Associates</h1>
+            <h1 style={{ fontWeight:900, fontSize:20, color:'#1A1612', letterSpacing:'-0.03em', lineHeight:1.2 }}>Employees</h1>
             <p style={{ fontSize:12, color:'#A89880', marginTop:3 }}>{total} employees · {active} active</p>
           </div>
           <button className="btn btn-primary" onClick={()=>setModal({mode:'add',emp:null})} style={{ borderRadius:24, padding:'10px 20px', gap:7 }}>
-            <Plus size={15}/> Add DA
+            <Plus size={15}/> Add Employee
           </button>
         </div>
 
@@ -524,7 +524,7 @@ export default function EmployeesPage() {
           <div style={{ textAlign:'center', padding:'60px 20px', color:'#A89880' }}>
             <div style={{ fontSize:48, marginBottom:12 }}>🔍</div>
             <div style={{ fontWeight:600, fontSize:15, color:'#6B5D4A', marginBottom:6 }}>{search ? `No results for "${search}"` : 'No employees found'}</div>
-            <div style={{ fontSize:13 }}>{search ? 'Try a different search term' : 'Add your first DA using the button above'}</div>
+            <div style={{ fontSize:13 }}>{search ? 'Try a different search term' : 'Add your first employee using the button above'}</div>
           </div>
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>

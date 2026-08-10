@@ -329,7 +329,7 @@ export default function DriverDashboardPage() {
     return (
       <div style={{ padding:40, textAlign:'center' }}>
         <div style={{ fontSize:14, color:'var(--text-muted)', marginBottom:12 }}>Driver not found.</div>
-        <button onClick={()=>router.push('/dashboard/hr/employees')} className="btn btn-secondary">Back to DAs</button>
+        <button onClick={()=>router.push('/dashboard/hr/employees')} className="btn btn-secondary">Back to Employees</button>
       </div>
     )
   }
@@ -417,7 +417,7 @@ export default function DriverDashboardPage() {
     <div style={{ display:'flex', flexDirection:'column', gap:14, fontFamily:'Poppins,sans-serif', animation:'slideUp 0.3s ease' }}>
       <style>{`.snap-tile:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}`}</style>
 
-      <BackLink router={router} href="/dashboard/hr/employees" label="Back to DAs"/>
+      <BackLink router={router} href="/dashboard/hr/employees" label="Back to Employees"/>
 
       <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:18, overflow:'hidden' }}>
 

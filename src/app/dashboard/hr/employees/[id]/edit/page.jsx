@@ -25,7 +25,7 @@ export default function EditDriverPage() {
   if (!emp) return (
     <div style={{ padding:40, textAlign:'center' }}>
       <div style={{ fontSize:14, color:'var(--text-muted)', marginBottom:12 }}>Driver not found.</div>
-      <button onClick={()=>router.push('/dashboard/hr/employees')} className="btn btn-secondary">Back to DAs</button>
+      <button onClick={()=>router.push('/dashboard/hr/employees')} className="btn btn-secondary">Back to Employees</button>
     </div>
   )
 

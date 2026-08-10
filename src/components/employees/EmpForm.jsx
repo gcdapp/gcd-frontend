@@ -29,9 +29,9 @@ function Lbl({ children }) {
 }
 
 /**
- * Driver info form — the "Update Driver Info" / "Add DA" form body.
+ * Employee (DA/Packer) info form — the "Update Driver Info" / "Add Employee" form body.
  * Renders just the card (header + tabs + body + footer), no overlay, so it
- * can be dropped into a modal (Add DA, hr/employees/page.jsx) or a full page
+ * can be dropped into a modal (Add Employee, hr/employees/page.jsx) or a full page
  * (Update Driver Info, hr/employees/[id]/edit/page.jsx).
  */
 export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }) {
@@ -97,6 +97,10 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
   }, [])
 
   function set(k,v) { setForm(p=>({...p,[k]:v})) }
+  // Le Chocola/Creative Packers are warehouse packing roles, not delivery — "DA"
+  // (Delivery Associate) is the wrong word for them, so the form/title language
+  // switches to "Packer" for these two project types.
+  const isPackerType = form.project_type === 'le_chocola' || form.project_type === 'creative_packers'
 
   // Pre-fill a suggested next Employee ID on Add (both the full form and the
   // project-scoped one — the scoped case used to lock the field and generate
@@ -199,8 +203,8 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
       <div style={{ padding:'20px 24px 0', borderBottom:'1px solid var(--border)', flexShrink:0 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
           <div>
-            <h3 style={{ fontWeight:800, fontSize:16, color:'var(--text)', margin:0 }}>{mode==='add'?'Add New DA':'Edit DA'}</h3>
-            <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>{mode==='add'?'Create a new Delivery Associate':emp?.name}</p>
+            <h3 style={{ fontWeight:800, fontSize:16, color:'var(--text)', margin:0 }}>{mode==='add'?`Add New ${isPackerType?'Packer':'DA'}`:`Edit ${isPackerType?'Packer':'DA'}`}</h3>
+            <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>{mode==='add'?`Create a new ${isPackerType?'Packer':'Delivery Associate'}`:emp?.name}</p>
           </div>
           {onCancel && (
             <button onClick={onCancel} style={{ width:30, height:30, borderRadius:'50%', background:'var(--bg-alt)', border:'1px solid var(--border)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -236,7 +240,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
                 placeholder={idTouched ? 'JNT001' : 'Generating…'}
                 onChange={e=>{ setIdTouched(true); set('id', e.target.value) }}/>
               <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:5 }}>
-                {mode==='add' ? 'Auto-generated — edit if you need a different ID.' : 'Editing this renames the DA everywhere it appears.'}
+                {mode==='add' ? 'Auto-generated — edit if you need a different ID.' : `Editing this renames the ${isPackerType?'Packer':'DA'} everywhere it appears.`}
               </div>
             </div>
             {inp('Full Name *','name','text','Mohammed Al Rashid')}
@@ -390,7 +394,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
                 placeholder="https://drive.google.com/file/d/…/view"
                 onChange={e=>set('insurance_url',e.target.value)}/>
               <div style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:5 }}>
-                Paste the Google Drive sharing link. The DA will see their insurance card in the portal.
+                Paste the Google Drive sharing link. The {isPackerType?'Packer':'DA'} will see their insurance card in the portal.
               </div>
             </div>
           </div>
@@ -399,7 +403,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
         {!isProjectScoped && tab==='login' && mode==='add' && (
           <div style={{ display:'flex', flexDirection:'column', gap:13 }}>
             <div style={{ background:'var(--amber-bg)', border:'1px solid var(--amber-border)', borderRadius:10, padding:'12px 14px', fontSize:12.5, color:'#92400E' }}>
-              <strong>Optional:</strong> Creates a driver portal login for this DA.
+              <strong>Optional:</strong> Creates a driver portal login for this {isPackerType?'Packer':'DA'}.
             </div>
             <div className="modal-two-col">
               {inp('Login Email','login_email','email','da@goldencrescent.ae')}
@@ -413,7 +417,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
       <div style={{ padding:'14px 24px 20px', borderTop:'1px solid var(--border)', display:'flex', gap:10, justifyContent:'flex-end', flexShrink:0 }}>
         <button onClick={onCancel} className="btn btn-secondary">Cancel</button>
         <button onClick={handleSave} disabled={saving} className="btn btn-primary" style={{ minWidth:120, justifyContent:'center' }}>
-          {saving ? <><span style={{ width:13,height:13,border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin 0.8s linear infinite',display:'inline-block'}}/> Saving…</> : mode==='add'?'Add DA':'Save Changes'}
+          {saving ? <><span style={{ width:13,height:13,border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin 0.8s linear infinite',display:'inline-block'}}/> Saving…</> : mode==='add'?`Add ${isPackerType?'Packer':'DA'}`:'Save Changes'}
         </button>
       </div>
     </div>

@@ -57,8 +57,13 @@ const ROLE_CFG = {
   accountant:      {l:'Acct',     c:'#2E7D52', bg:'rgba(46,125,82,0.1)'},
   poc:             {l:'POC',      c:'#B8860B', bg:'rgba(184,134,11,0.1)'},
   driver:          {l:'DA',       c:'#64748B', bg:'rgba(100,116,139,0.1)'},
+  packer:          {l:'Packer',   c:'#64748B', bg:'rgba(100,116,139,0.1)'},
 }
-function resolveRole(r) {
+// Le Chocola/Creative Packers are warehouse packing roles, not delivery — "DA" is the
+// wrong badge for them even though their HR `role` field is still 'Driver' (that field
+// just distinguishes "roster of drivers" from staff/admin, same as it always has).
+function resolveRole(r, projectType) {
+  if (projectType === 'le_chocola' || projectType === 'creative_packers') return ROLE_CFG.packer
   if (!r) return ROLE_CFG.driver
   const k = r.toLowerCase().trim().replace(' ','_')
   return ROLE_CFG[k] || ROLE_CFG.driver
@@ -1261,7 +1266,7 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
   const calc   = slip._calc
   const net    = calc.net
   const isPaid = slip.payroll_status === 'paid'
-  const role   = resolveRole(slip.role)
+  const role   = resolveRole(slip.role, slip.project_type)
   const selected = !!(selectMode && selectedIds?.has(slip.id))
 
   return (
