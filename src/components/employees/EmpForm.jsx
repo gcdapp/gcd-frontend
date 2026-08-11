@@ -245,6 +245,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
             </div>
             {inp('Full Name *','name','text','Mohammed Al Rashid')}
             {inp('Phone Number','phone','tel','+971 50 XXX XXXX')}
+            {sel('Status','status',[{v:'active',l:'Active'},{v:'on_leave',l:'On Leave'},{v:'inactive',l:'Inactive'}])}
             <div style={{ gridColumn:'span 2' }}>
               <Lbl>Visa Type</Lbl>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
