@@ -4,7 +4,9 @@
 // server always recomputes and is the source of truth on save.
 
 export const SHIPMENT_TYPES = ['cod', 'non_cod', 'pickup', 'reverse_pickup']
-export const DEDUCTION_FIELDS = ['traffic_fine', 'cash_advance', 'cash_variance', 'sim_charge', 'car_rent', 'carry_forward', 'other']
+// Matches the real accountant sheet — same shape as iMile's deduction set, just the
+// general bucket is "jnt_deduction" instead of "imile_deduction".
+export const DEDUCTION_FIELDS = ['jnt_deduction', 'sim_charge', 'car_rent', 'rta_fine', 'carry_forward', 'cash_advance']
 
 export function round2(n) {
   return Math.round((Number(n || 0) + Number.EPSILON) * 100) / 100

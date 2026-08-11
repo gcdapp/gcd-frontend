@@ -11,7 +11,7 @@ import {
 } from '@/lib/jntSalaryCalc'
 
 const SHIPMENT_LABELS = { cod: 'COD Shipments', non_cod: 'Non-COD Shipments', pickup: 'Pickup Shipments', reverse_pickup: 'Reverse Pickup Shipments' }
-const DEDUCTION_LABELS = { traffic_fine: 'Traffic Fine', cash_advance: 'Cash Advance', cash_variance: 'Cash Variance', sim_charge: 'SIM Charges', car_rent: 'Car Rent', carry_forward: 'Carry Forward', other: 'Other Deduction' }
+const DEDUCTION_LABELS = { jnt_deduction: 'JNT Deductions', sim_charge: 'SIM Charge', car_rent: 'Car Rent', rta_fine: 'RTA Fines', carry_forward: 'Carry Forward', cash_advance: 'Advance Payment' }
 const CALC_METHOD_LABELS = { fixed: 'Fixed Amount', per_shipment: 'Per Shipment', percentage: 'Percentage' }
 
 function Lbl({ children }) { return <label className="input-label">{children}</label> }
@@ -42,6 +42,10 @@ export default function JntSalaryModal({ employees, month, initialEmpId, onSave,
   const [loadingRates, setLoadingRates] = useState(true)
   const [loadingEntry, setLoadingEntry] = useState(false)
   const [shipmentQtys, setShipmentQtys] = useState({ cod: '', non_cod: '', pickup: '', reverse_pickup: '' })
+  // Branch/Days match the real accountant sheet's columns — Branch is just the DA's
+  // station (already on their employee record, shown read-only); Days is reference-only
+  // (days worked this month), doesn't factor into the shipment-based formula.
+  const [workingDays, setWorkingDays] = useState('')
   const [earnings, setEarnings] = useState([])            // this entry's additional-earning rows
   const [deductions, setDeductions] = useState(() => Object.fromEntries(DEDUCTION_FIELDS.map(f => [f, ''])))
   const [showAddPicker, setShowAddPicker] = useState(false)
@@ -74,6 +78,7 @@ export default function JntSalaryModal({ employees, month, initialEmpId, onSave,
             pickup: String(baseRow.shipment_qtys.pickup ?? ''), reverse_pickup: String(baseRow.shipment_qtys.reverse_pickup ?? ''),
           })
         }
+        setWorkingDays(d.entry?.working_days != null ? String(d.entry.working_days) : '')
         setEarnings((d.components || []).filter(c => !c.is_base).map(c => ({
           component_id: c.component_id, name: c.component_name, calc_method: c.calc_method,
           shipment_qtys: c.shipment_qtys ? Object.fromEntries(Object.entries(c.shipment_qtys).map(([k, v]) => [k, String(v)])) : {},
@@ -148,6 +153,7 @@ export default function JntSalaryModal({ employees, month, initialEmpId, onSave,
     try {
       await jntSalaryApi.saveEntry({
         emp_id: empId, month, shipment_qtys: shipmentQtys,
+        working_days: workingDays === '' ? undefined : workingDays,
         components: earnings.map(e => ({
           component_id: e.component_id, shipment_qtys: e.shipment_qtys,
           fixed_amount: e.fixed_amount === '' ? undefined : e.fixed_amount,
@@ -198,7 +204,7 @@ export default function JntSalaryModal({ employees, month, initialEmpId, onSave,
           {/* ── Employee Information ── */}
           <section>
             <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Employee Information</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, marginBottom: 12 }}>
               <div>
                 <Lbl>Employee *</Lbl>
                 {initialEmpId ? (
@@ -215,6 +221,18 @@ export default function JntSalaryModal({ employees, month, initialEmpId, onSave,
               <div>
                 <Lbl>Salary Month</Lbl>
                 <div className="input" style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-alt)', color: 'var(--text-muted)', fontWeight: 600 }}>{month}</div>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <Lbl>Branch</Lbl>
+                <div className="input" style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-alt)', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  {selectedEmployee?.station_code || '—'}
+                </div>
+              </div>
+              <div>
+                <Lbl>Days (reference only)</Lbl>
+                <NumInput value={workingDays} onChange={setWorkingDays} />
               </div>
             </div>
           </section>

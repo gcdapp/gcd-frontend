@@ -914,14 +914,32 @@ function BulkUnitsModal({month, projectType, employees, onSave, onClose}) {
     if (isStaff) cols = ['emp_id','name','amount','deductions_done']
     else if (isCret) cols = ['emp_id','name','units','working_days','cret_rate','deductions_done']
     else if (isTradelink) cols = ['emp_id','name','working_days','deductions_done']
-    else if (isJnt) { cols = ['emp_id','name','cod_shipments','non_cod_shipments','pickup_shipments','reverse_pickup_shipments','traffic_fine','cash_advance','cash_variance','sim_charge','car_rent','carry_forward','other_deduction']; extraCols = [] }
+    else if (isJnt) {
+      // Matches the real accountant sheet's column layout/order exactly, including its
+      // computed columns (total_shipments, *_payment, total_salary, salary_to_be_paid)
+      // so an existing sheet can be pasted straight in — only the raw inputs are read
+      // on upload, the computed ones are ignored.
+      cols = ['emp_id','name','branch','days','total_shipments','cod_shipments','cod_payment','non_cod_shipments','non_cod_payment',
+        'pickup_shipments','pickup_payment','reverse_pickup_shipments','reverse_payment','total_salary',
+        'jnt_deduction','sim_charge','car_rent','rta_fines','carry_forward','advance_payment','salary_to_be_paid']
+      extraCols = []
+    }
     else if (isImile) { cols = ['emp_id','name','project','da_type','branch','cod_shipments','non_cod_shipments','imile_deduction','sim_charge','car_rent','rta_fine','carry_forward','cash_advance']; extraCols = [] }
     else if (isPackerDaily || isPackerHourly) cols = ['emp_id','name','hours_worked','deductions_done']
     else cols = ['emp_id','name','units','working_days','deductions_done'] // pulser
 
     const allCols = [...cols, ...extraCols]
+    // "branch" is only ever a pre-fillable reference column for JNT (the DA's known
+    // station) — for iMile it's a real per-entry input (DXB DS/AQS DS/AJM DS, not the
+    // employee's station_code), so it must stay blank there for the accountant to pick.
+    const colValue = (c, e) => {
+      if (c === 'emp_id') return e.id
+      if (c === 'name') return `"${(e.name||'').replace(/"/g,'""')}"`
+      if (c === 'branch' && isJnt) return e.station_code || ''
+      return ''
+    }
     const blankRow = id => allCols.map(c => c==='emp_id' ? id : '').join(',')
-    const rosterLines = roster.map(e => [e.id, `"${(e.name||'').replace(/"/g,'""')}"`, ...allCols.slice(2).map(()=>'')].join(','))
+    const rosterLines = roster.map(e => allCols.map(c => colValue(c, e)).join(','))
     const lines = rosterLines.length ? rosterLines : [blankRow('E001')]
     const csv = `${allCols.join(',')}\n${lines.join('\n')}\n`
     const blob = new Blob([csv], { type:'text/csv' })
@@ -960,14 +978,17 @@ function BulkUnitsModal({month, projectType, employees, onSave, onClose}) {
           if (isCret && r.cret_rate && isNaN(parseFloat(r.cret_rate))) errors.push('cret_rate must be a number')
 
           if (isJnt) {
+            // branch/total_shipments/*_payment/total_salary/salary_to_be_paid are
+            // present as columns (matching the real sheet, so it pastes in directly)
+            // but are reference/computed-only — not read here.
             return {
               row: i+2, emp_id, name,
               cod: numField(r,'cod_shipments',errors), non_cod: numField(r,'non_cod_shipments',errors),
               pickup: numField(r,'pickup_shipments',errors), reverse_pickup: numField(r,'reverse_pickup_shipments',errors),
-              traffic_fine: numField(r,'traffic_fine',errors), cash_advance: numField(r,'cash_advance',errors),
-              cash_variance: numField(r,'cash_variance',errors), sim_charge: numField(r,'sim_charge',errors),
-              car_rent: numField(r,'car_rent',errors), carry_forward: numField(r,'carry_forward',errors),
-              other: numField(r,'other_deduction',errors),
+              working_days: r.days !== undefined && r.days !== '' ? numField(r,'days',errors) : undefined,
+              jnt_deduction: numField(r,'jnt_deduction',errors), sim_charge: numField(r,'sim_charge',errors),
+              car_rent: numField(r,'car_rent',errors), rta_fine: numField(r,'rta_fines',errors),
+              carry_forward: numField(r,'carry_forward',errors), cash_advance: numField(r,'advance_payment',errors),
               get units() { return this.cod }, errors,
             }
           }
@@ -1049,7 +1070,7 @@ function BulkUnitsModal({month, projectType, employees, onSave, onClose}) {
           )}
           {(isJnt) && !result && (
             <div style={{fontSize:11.5,color:'var(--text-muted)',background:'var(--bg-alt)',borderRadius:9,padding:'8px 12px'}}>
-              Bulk upload covers Base Shipment Pay + the 7 deductions only — Fuel Subsidy, Eid Incentive and other "Additional Earnings" still need the single JNT DA Salary form.
+              Bulk upload covers Base Shipment Pay + the 6 deductions only — Fuel Subsidy, Eid Incentive and other "Additional Earnings" still need the single JNT DA Salary form. Branch/Total Shipments/*Payment/Total Salary/Salary To Be Paid columns match the real sheet for easy copy-paste but are reference only — not read on upload.
             </div>
           )}
 
