@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { empApi, API, jntSalaryApi, payRatesApi } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
+import { isClientProject } from '@/lib/employees'
 import { X, AlertCircle } from 'lucide-react'
 
 const EMPTY = {
@@ -134,6 +135,9 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
         license_expiry:     safeDate(form.license_expiry),
         iloe_expiry:        safeDate(form.iloe_expiry),
         annual_leave_start: safeDate(form.annual_leave_start),
+        // DDB1/DXE6 are Amazon-only stations — never save one on a client-project DA,
+        // even if it's still sitting in form state from an earlier project selection.
+        station_code:       isClientProject(form.project_type) ? null : form.station_code,
       }
       // Update always targets the record's ORIGINAL id in the URL — form.id may
       // have just been edited to a new value, which is exactly what we're renaming to.
@@ -337,7 +341,10 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
           <div className="modal-two-col">
             {sel('Role *','role',['Driver','HR Manager','Finance Mgr','Accountant','Dispatcher','General Manager','Admin','POC','Other'])}
             {sel('Department *','dept',['Operations','HR','Finance','Admin','Other'])}
-            {sel('Station','station_code',['DDB1','DXE6'])}
+            {/* DDB1/DXE6 are Amazon warehouse stations (Pulser/CRET) — meaningless for
+                client-project DAs, so the field doesn't even show for those, rather
+                than risk a stale/default station code getting saved on their record. */}
+            {!isClientProject(form.project_type) && sel('Station','station_code',['DDB1','DXE6'])}
             {sel('Status','status',[{v:'active',l:'Active'},{v:'on_leave',l:'On Leave'},{v:'inactive',l:'Inactive'}])}
             <div style={{ gridColumn:'span 2' }}>
               <div style={{ background:'var(--purple-bg)', border:'1px solid var(--purple-border)', borderRadius:12, padding:'14px 16px' }}>

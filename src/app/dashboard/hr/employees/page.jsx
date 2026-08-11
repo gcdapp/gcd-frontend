@@ -51,8 +51,12 @@ function BulkUploadModal({ isProjectScoped, defaultProject, onSave, onClose }) {
   const [result,    setResult]    = useState(null)
 
   function downloadTemplate() {
+    // DDB1/DXE6 are Amazon-only stations — meaningless (and never saved, see
+    // routes/employees.js normalizeStationCode) for client-project DAs, so the
+    // example row leaves station_code blank for those instead of suggesting one.
+    const exampleStation = isClientProject(defaultProject) ? '' : 'DDB1'
     const csv = 'name,phone,visa_type,project_type,station_code\n'
-      + `Mohammed Al Rashid,+971 50 XXX XXXX,${isProjectScoped ? 'own' : 'company'},${defaultProject},DDB1\n`
+      + `Mohammed Al Rashid,+971 50 XXX XXXX,${isProjectScoped ? 'own' : 'company'},${defaultProject},${exampleStation}\n`
     const blob = new Blob([csv], { type:'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
