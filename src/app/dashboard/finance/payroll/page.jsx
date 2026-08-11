@@ -915,11 +915,13 @@ function BulkUnitsModal({month, projectType, employees, onSave, onClose}) {
     else if (isCret) cols = ['emp_id','name','units','working_days','cret_rate','deductions_done']
     else if (isTradelink) cols = ['emp_id','name','working_days','deductions_done']
     else if (isJnt) {
-      // Matches the real accountant sheet's column layout/order exactly, including its
-      // computed columns (total_shipments, *_payment, total_salary, salary_to_be_paid)
-      // so an existing sheet can be pasted straight in — only the raw inputs are read
-      // on upload, the computed ones are ignored.
-      cols = ['emp_id','name','branch','days','total_shipments','cod_shipments','cod_payment','non_cod_shipments','non_cod_payment',
+      // Matches the real accountant sheet's column layout/order exactly — no emp_id
+      // column (the real sheet doesn't have one), so rows are matched to a DA by Name
+      // on upload instead (see handleFile below). Includes the sheet's computed
+      // columns too (total_shipments, *_payment, total_salary, salary_to_be_paid) so
+      // an existing sheet can be pasted straight in — only the raw inputs are read on
+      // upload, the computed ones are ignored.
+      cols = ['name','branch','days','total_shipments','cod_shipments','cod_payment','non_cod_shipments','non_cod_payment',
         'pickup_shipments','pickup_payment','reverse_pickup_shipments','reverse_payment','total_salary',
         'jnt_deduction','sim_charge','car_rent','rta_fines','carry_forward','advance_payment','salary_to_be_paid']
       extraCols = []
@@ -969,15 +971,25 @@ function BulkUnitsModal({month, projectType, employees, onSave, onClose}) {
       complete: (res) => {
         const unitsCol = isStaff ? 'amount' : (isJnt || isImile) ? 'cod_shipments' : (isPackerDaily || isPackerHourly) ? 'hours_worked' : 'units'
         const parsed = res.data.map((r,i) => {
-          const emp_id = (r.emp_id||'').trim()
+          let emp_id = (r.emp_id||'').trim()
           const name   = (r.name||'').trim()
           const errors = []
           if (isStaff && !emp_id) errors.push('emp_id required')
           if (isExternal && !emp_id && !name) errors.push('name required (or emp_id for an existing driver)')
-          if (!isStaff && !isExternal && !emp_id) errors.push('emp_id required')
+          if (!isStaff && !isExternal && !isJnt && !emp_id) errors.push('emp_id required')
           if (isCret && r.cret_rate && isNaN(parseFloat(r.cret_rate))) errors.push('cret_rate must be a number')
 
           if (isJnt) {
+            // The real sheet has no ID column, only Name — so rows are matched to a
+            // roster DA by name instead. Exact match required; ambiguous (2+ DAs
+            // sharing a name) or unmatched names fail that row rather than guessing.
+            if (!name) errors.push('name required')
+            else {
+              const matches = roster.filter(r2 => (r2.name||'').trim().toLowerCase() === name.toLowerCase())
+              if (matches.length === 0) errors.push(`No JNT DA found named "${name}"`)
+              else if (matches.length > 1) errors.push(`Multiple JNT DAs named "${name}" — rename one to be unique before uploading`)
+              else emp_id = matches[0].id
+            }
             // branch/total_shipments/*_payment/total_salary/salary_to_be_paid are
             // present as columns (matching the real sheet, so it pastes in directly)
             // but are reference/computed-only — not read here.
