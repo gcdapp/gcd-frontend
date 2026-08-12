@@ -8,7 +8,8 @@ import { useAuth } from '@/lib/auth'
 import { useSocket } from '@/lib/socket'
 import {
   Plus, X, Download, Check, Search, Wallet, FileText,
-  AlertCircle, Users, ChevronDown, Undo2, UploadCloud, Pencil, Trash2, Settings2
+  AlertCircle, Users, ChevronDown, Undo2, UploadCloud, Pencil, Trash2, Settings2,
+  Clock, CheckCircle2, TrendingDown, ChevronLeft, ChevronRight
 } from 'lucide-react'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import JntSalaryModal from '@/components/payroll/JntSalaryModal'
@@ -82,6 +83,16 @@ const GlassTip = ({active,payload,label}) => {
         </div>
       ))}
     </div>
+  )
+}
+
+// Purely decorative — no real historical trend data source without extra per-month
+// API calls (out of scope), just a visual cue matching the KPI card design.
+function KpiSpark({color}) {
+  return (
+    <svg width="30" height="14" viewBox="0 0 30 14" fill="none" style={{color,flexShrink:0}}>
+      <path d="M1 11 L7 6 L12 9 L18 3 L24 7 L29 2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" opacity="0.55"/>
+    </svg>
   )
 }
 
@@ -1159,21 +1170,22 @@ const PAY_CSS = `
   @keyframes pySpin  { to{transform:rotate(360deg)} }
   @keyframes pySk    { 0%,100%{opacity:.4} 50%{opacity:.8} }
 
-  /* Hero */
-  .py-hero { background:linear-gradient(135deg,#0f1623 0%,#1a2535 55%,#1e3a5f 100%); border-radius:16px; padding:22px 24px; position:relative; overflow:hidden; margin-bottom:2px; }
-  .py-hero::before { content:''; position:absolute; right:-40px; top:-40px; width:200px; height:200px; border-radius:50%; background:radial-gradient(circle,rgba(212,160,23,0.14) 0%,transparent 70%); pointer-events:none; }
-  .py-hero-top { display:flex; align-items:center; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
-  .py-hero-icon { width:44px; height:44px; border-radius:12px; background:rgba(184,134,11,0.15); border:1px solid rgba(184,134,11,0.3); display:flex; align-items:center; justify-content:center; color:#B8860B; flex-shrink:0; }
-  .py-hero-title { font-size:20px; font-weight:800; color:white; margin:0; }
-  .py-hero-sub   { font-size:11.5px; color:rgba(255,255,255,0.42); margin-top:3px; }
-  .py-month-sel  { margin-left:auto; padding:8px 14px; border-radius:20px; border:1.5px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.1); color:white; font-size:13px; font-weight:600; cursor:pointer; outline:none; font-family:Poppins,sans-serif; }
-  .py-month-sel option { background:#1a2535; color:white; }
-  .py-net-label  { font-size:9.5px; color:rgba(255,255,255,0.32); font-weight:700; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:4px; }
-  .py-net-value  { font-weight:900; font-size:32px; letter-spacing:-0.04em; color:#D4A017; margin-bottom:16px; }
-  .py-kpi-grid   { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
-  .py-kpi        { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:10px 8px; text-align:center; }
-  .py-kpi-val    { font-size:17px; font-weight:800; letter-spacing:-0.02em; line-height:1.15; }
-  .py-kpi-label  { font-size:8.5px; color:rgba(255,255,255,0.32); font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-top:4px; }
+  /* Header */
+  .py-header      { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .py-header-icon { width:44px; height:44px; border-radius:12px; background:var(--gold-pale); border:1px solid var(--gold-border); display:flex; align-items:center; justify-content:center; color:var(--gold); flex-shrink:0; }
+  .py-header-title { font-size:20px; font-weight:800; color:var(--text); margin:0; }
+  .py-header-sub   { font-size:11.5px; color:var(--text-muted); margin-top:3px; }
+  .py-month-sel  { margin-left:auto; padding:8px 14px; border-radius:20px; border:1.5px solid var(--border-med); background:var(--card); color:var(--text); font-size:13px; font-weight:600; cursor:pointer; outline:none; font-family:Poppins,sans-serif; }
+
+  /* KPI cards */
+  .py-kpi-cards    { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .py-kpi-card     { background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); padding:16px 18px; transition:box-shadow var(--t-base),transform var(--t-base); }
+  .py-kpi-card:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); }
+  .py-kpi-card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .py-kpi-badge    { width:34px; height:34px; border-radius:50%; border:1px solid transparent; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .py-kpi-card-val { font-size:23px; font-weight:900; letter-spacing:-0.02em; color:var(--text); line-height:1.15; }
+  .py-kpi-card-label { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-muted); margin-top:4px; }
+  .py-kpi-card-sub { font-size:11px; color:var(--text-muted); margin-top:2px; font-weight:600; }
 
   /* Charts */
   .py-charts { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
@@ -1185,6 +1197,7 @@ const PAY_CSS = `
   .py-search { width:100%; padding:8px 12px 8px 34px; border-radius:20px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-size:12.5px; font-family:Poppins,sans-serif; outline:none; box-sizing:border-box; }
   .py-tbtn { display:flex; align-items:center; gap:5px; padding:8px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; font-family:Poppins,sans-serif; white-space:nowrap; transition:opacity 0.15s,transform 0.1s; }
   .py-tbtn:hover { opacity:0.82; transform:translateY(-1px); }
+  .py-tbtn:active { opacity:0.7; transform:translateY(0) scale(0.96); }
   .py-tbtn-csv   { background:var(--card); border:1.5px solid var(--border); color:var(--text-muted); }
   .py-tbtn-slip  { background:rgba(29,111,164,0.1); border:1.5px solid rgba(29,111,164,0.3); color:#1D6FA4; }
   .py-tbtn-bonus { background:rgba(16,185,129,0.1); border:1.5px solid rgba(16,185,129,0.3); color:#10B981; }
@@ -1206,30 +1219,35 @@ const PAY_CSS = `
   .py-row-paid  .py-row-top { background:linear-gradient(90deg,#34D399,#10B981); }
   .py-row-pend  .py-row-top { background:linear-gradient(90deg,#B8860B,#D4A017); }
   .py-row-inner { display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer; user-select:none; }
-  .py-avatar { width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,rgba(184,134,11,0.12),rgba(212,160,23,0.05)); border:1.5px solid rgba(184,134,11,0.18); display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:900; color:#B8860B; flex-shrink:0; }
+  .py-avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,rgba(184,134,11,0.12),rgba(212,160,23,0.05)); border:1.5px solid rgba(184,134,11,0.18); display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:900; color:#B8860B; flex-shrink:0; }
   .py-info { flex:1; min-width:0; }
   .py-name-row { display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-bottom:3px; }
   .py-name { font-weight:700; font-size:13.5px; color:var(--text); }
   .py-empid { font-size:10px; color:var(--text-muted); font-family:monospace; letter-spacing:0.02em; }
-  .py-right { text-align:right; flex-shrink:0; min-width:120px; }
-  .py-net { font-weight:900; font-size:16px; color:#B8860B; letter-spacing:-0.03em; }
-  .py-net-paid { color:#10B981; }
-  .py-sr { display:flex; align-items:center; gap:5px; justify-content:flex-end; margin-top:5px; flex-wrap:wrap; }
+
+  /* Inline columns */
+  .py-cols { display:flex; align-items:center; gap:22px; flex-shrink:0; }
+  .py-col { text-align:right; min-width:78px; }
+  .py-col-lbl { font-size:9px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); margin-bottom:2px; }
+  .py-col-val { font-weight:700; font-size:13px; color:var(--text); letter-spacing:-0.02em; }
+  .py-col-val-ded { color:#EF4444; }
+  .py-col-net .py-col-val { font-weight:900; font-size:16px; color:#B8860B; }
+  .py-col-net .py-col-val.py-net-paid { color:#10B981; }
 
   /* Badges */
   .py-badge { font-size:9.5px; font-weight:700; border-radius:20px; padding:2px 8px; border:1px solid transparent; white-space:nowrap; }
   .py-badge-sta { color:#B8860B; background:rgba(184,134,11,0.1); }
   .py-badge-prj { color:#7C3AED; background:rgba(124,58,237,0.08); }
-  .py-chip { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; }
-  .py-chip-bon { color:#10B981; background:rgba(16,185,129,0.1); }
-  .py-chip-ded { color:#EF4444; background:rgba(239,68,68,0.08); }
   .py-status { font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:20px; white-space:nowrap; }
   .py-status-paid { color:#10B981; background:rgba(16,185,129,0.1); }
   .py-status-pend { color:#F59E0B; background:rgba(245,158,11,0.1); }
   .py-chevron { color:var(--text-muted); transition:transform 0.2s; flex-shrink:0; }
   .py-chevron-open { transform:rotate(180deg); }
 
-  /* Expanded */
+  /* Expand/collapse */
+  .py-expand-wrap { display:grid; grid-template-rows:0fr; transition:grid-template-rows var(--t-slow); }
+  .py-expand-open { grid-template-rows:1fr; }
+  .py-expand-inner { overflow:hidden; min-height:0; }
   .py-expanded { border-top:1px solid var(--border); }
   .py-actions { display:flex; align-items:center; gap:6px; padding:9px 14px; background:var(--bg-alt); flex-wrap:wrap; }
   .py-act { display:flex; align-items:center; gap:4px; padding:5px 11px; border-radius:8px; background:var(--card); border:1px solid var(--border); color:var(--text); font-size:11.5px; font-weight:600; cursor:pointer; font-family:Poppins,sans-serif; transition:opacity 0.15s; white-space:nowrap; }
@@ -1269,25 +1287,35 @@ const PAY_CSS = `
   .py-driver-tabs { display:flex; align-items:center; gap:4px; padding:4px; background:var(--bg-alt); border:1px solid var(--border); border-radius:12px; margin-bottom:10px; flex-wrap:wrap; }
   .py-driver-tab { display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:9px; border:none; background:transparent; color:var(--text-muted); font-weight:700; font-size:12.5px; cursor:pointer; font-family:Poppins,sans-serif; transition:all 0.15s; }
   .py-driver-tab:hover:not(.active) { color:var(--text); }
+  .py-driver-tab:active { transform:scale(0.96); }
   .py-driver-tab.active { background:var(--card); color:#B8860B; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
   .py-driver-tab-count { font-size:10px; font-weight:700; background:rgba(0,0,0,0.06); color:inherit; border-radius:20px; padding:1px 7px; }
   .py-driver-tab.active .py-driver-tab-count { background:rgba(184,134,11,0.15); }
   .py-driver-tab-actions { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
 
   /* Pagination */
-  .py-pagination { display:flex; align-items:center; justify-content:space-between; padding:10px 4px 4px; margin-top:2px; }
-  .py-page-btn { padding:7px 14px; border-radius:20px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-weight:600; font-size:12px; cursor:pointer; font-family:Poppins,sans-serif; transition:opacity 0.15s; }
-  .py-page-btn:disabled { opacity:0.4; cursor:not-allowed; }
-  .py-page-btn:not(:disabled):hover { opacity:0.8; }
-  .py-page-label { font-size:11.5px; color:var(--text-muted); font-weight:600; }
+  .py-pagination { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 4px 4px; margin-top:2px; flex-wrap:wrap; }
+  .py-page-info { font-size:11.5px; color:var(--text-muted); font-weight:600; }
+  .py-page-nums { display:flex; align-items:center; gap:4px; }
+  .py-page-arrow { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; border:1.5px solid var(--border); background:var(--card); color:var(--text); cursor:pointer; transition:opacity var(--t-fast),transform var(--t-fast); }
+  .py-page-arrow:disabled { opacity:0.35; cursor:not-allowed; }
+  .py-page-arrow:not(:disabled):hover { opacity:0.75; }
+  .py-page-arrow:not(:disabled):active { transform:scale(0.92); }
+  .py-page-num { min-width:28px; height:28px; padding:0 6px; border-radius:8px; border:1.5px solid transparent; background:transparent; color:var(--text-muted); font-weight:700; font-size:12px; cursor:pointer; font-family:Poppins,sans-serif; transition:all var(--t-fast); }
+  .py-page-num:hover { background:var(--bg-alt); color:var(--text); }
+  .py-page-num:active { transform:scale(0.92); }
+  .py-page-num.active { background:linear-gradient(135deg,#B8860B,#D4A017); border-color:transparent; color:white; }
+  .py-page-dots { color:var(--text-muted); font-size:12px; padding:0 2px; }
+  .py-page-size { padding:6px 10px; border-radius:8px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-weight:600; font-size:11.5px; cursor:pointer; font-family:Poppins,sans-serif; outline:none; }
 
   /* Responsive */
   @media(max-width:640px) {
-    .py-kpi-grid  { grid-template-columns:repeat(2,1fr); }
+    .py-kpi-cards { grid-template-columns:repeat(2,1fr); }
     .py-charts    { grid-template-columns:1fr; }
     .py-toolbar   { flex-direction:column; align-items:stretch; }
     .py-search-wrap { flex:none; }
-    .py-right { min-width:90px; }
+    .py-cols { gap:0; }
+    .py-col:not(.py-col-net) { display:none; }
   }
 `
 
@@ -1319,18 +1347,26 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
           </div>
           <div className="py-empid">{slip.id}</div>
         </div>
-        <div className="py-right">
-          <div className={`py-net${isPaid?' py-net-paid':''}`}>AED {fmt(net)}</div>
-          <div className="py-sr">
-            {Number(slip.bonus_total)>0 && <span className="py-chip py-chip-bon">+{fmt(slip.bonus_total)}</span>}
-            {Number(slip.deduction_total)>0 && <span className="py-chip py-chip-ded">-{fmt(slip.deduction_total)}</span>}
-            <span className={`py-status ${isPaid?'py-status-paid':'py-status-pend'}`}>{isPaid?'✓ Paid':'Pending'}</span>
-            <ChevronDown size={12} className={`py-chevron${open?' py-chevron-open':''}`}/>
+        <div className="py-cols">
+          <div className="py-col">
+            <div className="py-col-lbl">Gross Pay</div>
+            <div className="py-col-val">AED {fmt(calc.totalAdd)}</div>
           </div>
+          <div className="py-col">
+            <div className="py-col-lbl">Deductions</div>
+            <div className="py-col-val py-col-val-ded">{calc.totalDed>0 ? `-AED ${fmt(calc.totalDed)}` : '—'}</div>
+          </div>
+          <div className="py-col py-col-net">
+            <div className="py-col-lbl">Net Pay</div>
+            <div className={`py-col-val${isPaid?' py-net-paid':''}`}>AED {fmt(net)}</div>
+          </div>
+          <span className={`py-status ${isPaid?'py-status-paid':'py-status-pend'}`}>{isPaid?'✓ Paid':'Pending'}</span>
+          <ChevronDown size={12} className={`py-chevron${open?' py-chevron-open':''}`}/>
         </div>
       </div>
 
-      {open && (
+      <div className={`py-expand-wrap${open?' py-expand-open':''}`}>
+        <div className="py-expand-inner">
         <div className="py-expanded">
           <div className="py-actions">
             {!calc.isExternal && !calc.isDaSplit && !calc.isPackerDaily && !calc.isPackerHourly && (
@@ -1440,22 +1476,45 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
             </div>
           )}
         </div>
-      )}
+        </div>
+      </div>
     </div>
   )
 })
 
 /* ── Section ── */
-const SECTION_PAGE_SIZE = 20
+const PAGE_SIZE_OPTIONS = [10,25,50,100]
+
+// Numbered page list with ellipsis markers for truncation, e.g. [1,2,'e2',9] → "1 2 … 9"
+function buildPageList(current, total, boundary=1, siblings=1) {
+  if (total <= boundary*2 + siblings*2 + 1) return Array.from({length:total},(_,i)=>i+1)
+  const pages = new Set()
+  for (let i=1; i<=boundary; i++) pages.add(i)
+  for (let i=total-boundary+1; i<=total; i++) pages.add(i)
+  for (let i=Math.max(1,current-siblings); i<=Math.min(total,current+siblings); i++) pages.add(i)
+  const sorted = [...pages].sort((a,b)=>a-b)
+  const out = []
+  let prev = null
+  for (const p of sorted) {
+    if (prev !== null && p - prev > 1) out.push(`e${p}`)
+    out.push(p)
+    prev = p
+  }
+  return out
+}
 
 function Section({title, slips, onMarkAllPaid, selectMode, selectedIds, onToggleSelect, onEnterSelect, onExitSelect, onSelectAll, onClear, onBulkDelete, bulkDeleting, ...cardProps}) {
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   useEffect(() => { setPage(1) }, [slips])
 
   const unpaidCount   = slips.filter(s=>s.payroll_status!=='paid').length
-  const totalPages    = Math.max(1, Math.ceil(slips.length / SECTION_PAGE_SIZE))
-  const pageSlips      = slips.slice((page-1)*SECTION_PAGE_SIZE, page*SECTION_PAGE_SIZE)
+  const totalPages    = Math.max(1, Math.ceil(slips.length / pageSize))
+  const pageSlips      = slips.slice((page-1)*pageSize, page*pageSize)
   const selectedCount = selectedIds ? selectedIds.size : 0
+  const rangeStart    = slips.length===0 ? 0 : (page-1)*pageSize+1
+  const rangeEnd      = Math.min(page*pageSize, slips.length)
+  const pageList      = buildPageList(page, totalPages)
 
   return (
     <>
@@ -1501,11 +1560,19 @@ function Section({title, slips, onMarkAllPaid, selectMode, selectedIds, onToggle
             selectMode={selectMode} selectedIds={selectedIds} onToggleSelect={onToggleSelect} {...cardProps}/>
         ))}
       </div>
-      {totalPages > 1 && (
+      {slips.length > 0 && (
         <div className="py-pagination">
-          <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1} className="py-page-btn">← Prev</button>
-          <span className="py-page-label">Page {page} of {totalPages}</span>
-          <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page>=totalPages} className="py-page-btn">Next →</button>
+          <span className="py-page-info">Showing {rangeStart} to {rangeEnd} of {slips.length} entries</span>
+          <div className="py-page-nums">
+            <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1} className="py-page-arrow" aria-label="Previous page"><ChevronLeft size={14}/></button>
+            {pageList.map(p => typeof p==='number'
+              ? <button key={p} onClick={()=>setPage(p)} className={`py-page-num${p===page?' active':''}`}>{p}</button>
+              : <span key={p} className="py-page-dots">…</span>)}
+            <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page>=totalPages} className="py-page-arrow" aria-label="Next page"><ChevronRight size={14}/></button>
+          </div>
+          <select value={pageSize} onChange={e=>{setPageSize(Number(e.target.value)); setPage(1)}} className="py-page-size">
+            {PAGE_SIZE_OPTIONS.map(n=><option key={n} value={n}>{n} / page</option>)}
+          </select>
         </div>
       )}
     </>
@@ -1715,6 +1782,15 @@ export default function PayrollPage() {
   const totalDed    = payrollCalc.reduce((s,p)=>s+p._calc.totalDed,0)
   const totalNet    = payrollCalc.reduce((s,p)=>s+p._calc.net,0)
   const paidCount   = payroll.filter(p=>p.payroll_status==='paid').length
+  const paidNet     = payrollCalc.filter(p=>p.payroll_status==='paid').reduce((s,p)=>s+p._calc.net,0)
+  const pendingNet    = totalNet - paidNet
+  const pendingCount  = payroll.length - paidCount
+  const KPI_DEFS = [
+    {key:'total',   label:'Total Payroll',     value:fmt(totalNet),    sub:null,                        Icon:Wallet,        color:'var(--gold)',  bg:'var(--gold-pale)',  border:'var(--gold-border)'},
+    {key:'paid',    label:'Total Paid',        value:fmt(paidNet),     sub:`${paidCount} employees`,     Icon:CheckCircle2,  color:'var(--green)', bg:'var(--green-bg)',   border:'var(--green-border)'},
+    {key:'pending', label:'Pending',           value:fmt(pendingNet),  sub:`${pendingCount} employees`,  Icon:Clock,         color:'var(--amber)', bg:'var(--amber-bg)',   border:'var(--amber-border)'},
+    {key:'ded',     label:'Total Deductions',  value:fmt(totalDed),    sub:'This Month',                 Icon:TrendingDown,  color:'var(--red)',   bg:'var(--red-bg)',     border:'var(--red-border)'},
+  ]
 
   // Amazon (Pulser+CRET) vs External (the merged External tab) payroll split — reuses
   // the tab-level filters already memoized above instead of re-scanning all 180 rows,
@@ -1746,26 +1822,33 @@ export default function PayrollPage() {
       <style>{PAY_CSS}</style>
       <div style={{display:'flex',flexDirection:'column',gap:16}}>
 
-        {/* Hero */}
-        <div className="py-hero">
-          <div className="py-hero-top">
-            <div className="py-hero-icon"><Wallet size={20}/></div>
-            <div>
-              <div className="py-hero-title">Payroll</div>
-              <div className="py-hero-sub">{payroll.length} employees · {paidCount} paid · v{APP_VERSION}</div>
+        {/* Header */}
+        <div className="py-header">
+          <div className="py-header-icon"><Wallet size={20}/></div>
+          <div>
+            <div className="py-header-title">Payroll</div>
+            <div className="py-header-sub">{payroll.length} employees · {paidCount} paid · v{APP_VERSION}</div>
+          </div>
+          <select value={month} onChange={e=>setMonth(e.target.value)} className="py-month-sel">
+            {MONTHS.map(m=><option key={m}>{m}</option>)}
+          </select>
+        </div>
+
+        {/* KPI cards */}
+        <div className="py-kpi-cards">
+          {KPI_DEFS.map((k,i)=>(
+            <div key={k.key} className={i<3?`py-kpi-card fade-up-${i+1}`:'py-kpi-card fade-up'} style={i===3?{animationDelay:'0.16s'}:undefined}>
+              <div className="py-kpi-card-top">
+                <div className="py-kpi-badge" style={{color:k.color,background:k.bg,borderColor:k.border}}><k.Icon size={16}/></div>
+                <KpiSpark color={k.color}/>
+              </div>
+              {loading
+                ? <div className="sk" style={{height:23,width:'55%',borderRadius:6,marginBottom:2}}/>
+                : <div key={k.value} className="py-kpi-card-val kpi-val">AED {k.value}</div>}
+              <div className="py-kpi-card-label">{k.label}</div>
+              {k.sub && <div className="py-kpi-card-sub">{k.sub}</div>}
             </div>
-            <select value={month} onChange={e=>setMonth(e.target.value)} className="py-month-sel">
-              {MONTHS.map(m=><option key={m}>{m}</option>)}
-            </select>
-          </div>
-          <div className="py-net-label">NET PAYROLL — {month}</div>
-          <div className="py-net-value">AED {fmt(totalNet)}</div>
-          <div className="py-kpi-grid">
-            <div className="py-kpi"><div className="py-kpi-val" style={{color:'rgba(255,255,255,0.9)'}}>{fmt(totalEarned)}</div><div className="py-kpi-label">Earned</div></div>
-            <div className="py-kpi"><div className="py-kpi-val" style={{color:'#34D399'}}>+{fmt(totalBonus)}</div><div className="py-kpi-label">Bonuses</div></div>
-            <div className="py-kpi"><div className="py-kpi-val" style={{color:'#F87171'}}>-{fmt(totalDed)}</div><div className="py-kpi-label">Deductions</div></div>
-            <div className="py-kpi"><div className="py-kpi-val" style={{color:'#FCD34D'}}>{paidCount}/{payroll.length}</div><div className="py-kpi-label">Paid</div></div>
-          </div>
+          ))}
         </div>
 
         {/* Charts — only after data loads */}
@@ -1854,7 +1937,7 @@ export default function PayrollPage() {
         {/* Employee lists */}
         {loading ? (
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {Array(5).fill(0).map((_,i)=><div key={i} className="py-sk" style={{height:72,opacity:1-i*0.12}}/>)}
+            {Array(5).fill(0).map((_,i)=><div key={i} className="py-sk" style={{height:78,opacity:1-i*0.12}}/>)}
           </div>
         ) : (
           <div>
