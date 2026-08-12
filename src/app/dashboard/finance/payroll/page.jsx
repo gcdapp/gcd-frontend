@@ -15,8 +15,7 @@ import JntSalaryModal from '@/components/payroll/JntSalaryModal'
 import PackerPayModal from '@/components/payroll/PackerPayModal'
 import ImileSalaryModal from '@/components/payroll/ImileSalaryModal'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell
+  Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts'
 import { API } from '@/lib/api'
 
@@ -1717,11 +1716,24 @@ export default function PayrollPage() {
   const totalNet    = payrollCalc.reduce((s,p)=>s+p._calc.net,0)
   const paidCount   = payroll.filter(p=>p.payroll_status==='paid').length
 
-  const chartData = useMemo(() => filtered.slice(0,30).map(s=>({
-    name:s.name?.split(' ')[0],
-    Earned:s._calc.base+s._calc.hoursEarnings,
-    Bonus:s._calc.totalAdd-s._calc.base-s._calc.hoursEarnings,
-  })), [filtered])
+  // Amazon (Pulser+CRET) vs External (the merged External tab) payroll split — reuses
+  // the tab-level filters already memoized above instead of re-scanning all 180 rows,
+  // and reduces each group in one pass over just its own (much smaller) slice.
+  const amazonExternal = useMemo(() => {
+    const agg = slips => slips.reduce((a,s) => {
+      a.earned += s._calc.base+s._calc.hoursEarnings
+      a.bonus  += s._calc.totalAdd-s._calc.base-s._calc.hoursEarnings
+      a.ded    += s._calc.totalDed
+      a.net    += s._calc.net
+      a.paid   += s.payroll_status==='paid' ? 1 : 0
+      a.count++
+      return a
+    }, {earned:0,bonus:0,ded:0,net:0,paid:0,count:0})
+    const amazon = agg([...pulserSlips, ...cretSlips])
+    const external = agg(externalSlips)
+    const totalAbsNet = Math.abs(amazon.net)+Math.abs(external.net)
+    return {amazon, external, amazonPct: totalAbsNet ? Math.round(Math.abs(amazon.net)/totalAbsNet*100) : 50}
+  }, [pulserSlips, cretSlips, externalSlips])
   const pieData = [{name:'Earned',value:totalEarned,color:'#B8860B'},{name:'Bonus',value:totalBonus,color:'#10B981'},{name:'Deductions',value:totalDed,color:'#EF4444'}].filter(d=>d.value>0)
 
   const cardProps = {month, onMarkPaid:markPaidSlip, onMarkUnpaid:markUnpaidSlip, onEditSalary:s=>setModal({type:'salary',emp:s}), onRemoveDed:removeDed, onRemoveBonus:removeBonus, onEditEntry:editEntry, onDeleteEntry:deleteEntry, canPay}
@@ -1760,17 +1772,33 @@ export default function PayrollPage() {
         {!loading && payroll.length > 0 && (
           <div className="py-charts">
             <div className="card" style={{padding:'16px'}}>
-              <div style={{fontWeight:700,fontSize:13,color:'var(--text)',marginBottom:12}}>Salary Breakdown</div>
-              <ResponsiveContainer width="99%" height={148}>
-                <BarChart data={chartData} barSize={7}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false}/>
-                  <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false}/>
-                  <YAxis stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false}/>
-                  <Tooltip content={<GlassTip/>} cursor={{fill:'rgba(0,0,0,0.03)'}}/>
-                  <Bar dataKey="Earned" name="Earned" fill="#B8860B" radius={[3,3,0,0]}/>
-                  <Bar dataKey="Bonus" name="Bonus" fill="#10B981" radius={[3,3,0,0]}/>
-                </BarChart>
-              </ResponsiveContainer>
+              <div style={{fontWeight:700,fontSize:13,color:'var(--text)',marginBottom:12}}>Amazon vs External</div>
+              <div style={{display:'flex',height:9,borderRadius:6,overflow:'hidden',marginBottom:16,background:'var(--bg-alt)'}}>
+                <div style={{width:`${amazonExternal.amazonPct}%`,background:'#3B82F6',transition:'width 0.3s ease'}}/>
+                <div style={{width:`${100-amazonExternal.amazonPct}%`,background:'#7C3AED',transition:'width 0.3s ease'}}/>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+                {[
+                  {label:'Amazon', sub:'Pulser + CRET', color:'#3B82F6', d:amazonExternal.amazon},
+                  {label:'External', sub:'JNT / iMile / Packers / IG RAK', color:'#7C3AED', d:amazonExternal.external},
+                ].map(g=>(
+                  <div key={g.label}>
+                    <div style={{display:'flex',alignItems:'center',gap:6}}>
+                      <span style={{width:8,height:8,borderRadius:2,background:g.color,flexShrink:0}}/>
+                      <span style={{fontSize:11.5,fontWeight:700,color:'var(--text)'}}>{g.label}</span>
+                      <span style={{fontSize:10,color:'var(--text-muted)'}}>({g.d.count})</span>
+                    </div>
+                    <div style={{fontSize:18,fontWeight:800,color:'var(--text)',marginTop:4,letterSpacing:'-0.02em'}}>AED {fmt(g.d.net)}</div>
+                    <div style={{fontSize:10.5,color:'var(--text-muted)',marginTop:2}}>Net · {g.d.paid}/{g.d.count} paid</div>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:8,marginTop:8,fontSize:10.5}}>
+                      <span style={{color:'var(--text-muted)'}}>{fmt(g.d.earned)} earned</span>
+                      <span style={{color:'#10B981'}}>+{fmt(g.d.bonus)}</span>
+                      <span style={{color:'#EF4444'}}>-{fmt(g.d.ded)}</span>
+                    </div>
+                    <div style={{fontSize:9.5,color:'var(--text-muted)',marginTop:6,opacity:0.7}}>{g.sub}</div>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="card" style={{padding:'16px'}}>
               <div style={{fontWeight:700,fontSize:13,color:'var(--text)',marginBottom:12}}>Payroll Distribution</div>
