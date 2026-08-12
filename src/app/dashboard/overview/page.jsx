@@ -18,6 +18,14 @@ function Skel({ w='100%', h=16, r=8 }) {
   return <span className="ov-sk" style={{ display:'block', width:w, height:h, borderRadius:r }}/>
 }
 
+function KpiSpark({color}) {
+  return (
+    <svg width="30" height="14" viewBox="0 0 30 14" fill="none" style={{color,flexShrink:0}}>
+      <path d="M1 11 L7 6 L12 9 L18 3 L24 7 L29 2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" opacity="0.55"/>
+    </svg>
+  )
+}
+
 const ECATS = [
   {v:'Parking',c:'#F59E0B'},{v:'Advances',c:'#10B981'},{v:'Air Tickets',c:'#3B82F6'},
   {v:'ENOC',c:'#EF4444'},{v:'Health Insurance',c:'#8B5CF6'},{v:'Idfy',c:'#EC4899'},
@@ -178,45 +186,51 @@ export default function OverviewPage() {
   return (
     <>
       <style>{`
-        @keyframes ov-sk-pulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
-        .ov-sk { background:rgba(255,255,255,0.12); animation:ov-sk-pulse 1.4s ease infinite; }
-        .ov-sk-dark { background:var(--border); animation:ov-sk-pulse 1.4s ease infinite; }
+        .ov-sk, .ov-sk-dark {
+          background: linear-gradient(90deg, var(--bg-alt) 25%, var(--border) 50%, var(--bg-alt) 75%);
+          background-size: 300% 100%;
+          animation: shimmer 1.2s ease-in-out infinite;
+        }
 
         .ov-page { display:flex; flex-direction:column; gap:18px; animation:slideUp 0.3s ease; }
 
-        /* ── Hero ── */
-        .ov-hero {
-          background: linear-gradient(135deg, #1a1200 0%, #3a2600 45%, #5c3d00 75%, #B8860B 100%);
-          border-radius: 20px; padding: 28px 32px; position: relative; overflow: hidden;
-        }
-        .ov-hero-decor1 { position:absolute; top:-60px; right:-60px; width:260px; height:260px; border-radius:50%; background:rgba(255,255,255,0.03); pointer-events:none; }
-        .ov-hero-decor2 { position:absolute; bottom:-40px; right:100px; width:160px; height:160px; border-radius:50%; background:rgba(184,134,11,0.08); pointer-events:none; }
-        .ov-hero-decor3 { position:absolute; top:30px; left:50%; width:1px; height:calc(100% - 60px); background:rgba(255,255,255,0.04); pointer-events:none; }
-
-        .ov-hero-top { display:flex; align-items:flex-start; gap:14px; margin-bottom:24px; }
-        .ov-hero-icon { width:46px; height:46px; border-radius:14px; background:rgba(255,255,255,0.12); border:1.5px solid rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
-        .ov-hero-title { font-weight:900; font-size:22px; color:#fff; margin:0; letter-spacing:-0.03em; line-height:1.1; }
-        .ov-hero-sub   { font-size:12px; color:rgba(255,255,255,0.5); margin:4px 0 0; }
-        .ov-hero-actions { margin-left:auto; display:flex; align-items:center; gap:8px; }
+        /* ── Header ── */
+        .ov-header { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+        .ov-header-icon { width:46px; height:46px; border-radius:14px; background:var(--gold-pale); border:1px solid var(--gold-border); color:var(--gold); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .ov-header-title { font-weight:900; font-size:22px; color:var(--text); margin:0; letter-spacing:-0.02em; line-height:1.1; }
+        .ov-header-sub   { font-size:12px; color:var(--text-muted); margin:4px 0 0; }
+        .ov-header-actions { margin-left:auto; display:flex; align-items:center; gap:8px; }
         .ov-refresh-btn {
-          display:flex; align-items:center; gap:5px; padding:7px 13px; border-radius:10px;
-          border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.08);
-          color:rgba(255,255,255,0.7); font-size:12px; font-weight:600; cursor:pointer;
-          font-family:inherit; transition:all 0.15s;
+          display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:20px;
+          border:1.5px solid var(--border-med); background:var(--card); color:var(--text-muted);
+          font-size:12px; font-weight:600; cursor:pointer; font-family:inherit;
+          transition:background var(--t-fast), color var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
         }
-        .ov-refresh-btn:hover { background:rgba(255,255,255,0.14); color:white; }
+        .ov-refresh-btn:hover:not(:disabled)  { background:var(--bg-alt); color:var(--text); border-color:var(--border-strong); }
+        .ov-refresh-btn:active:not(:disabled) { transform:scale(0.94); }
+        .ov-refresh-btn:disabled { opacity:0.5; cursor:not-allowed; }
 
-        /* ── KPI strip ── */
-        .ov-kpi-strip { display:grid; grid-template-columns:repeat(${isProjectScoped ? 3 : 4},1fr); gap:1px; background:rgba(255,255,255,0.10); border-radius:16px; overflow:hidden; }
-        .ov-kpi       { background:rgba(0,0,0,0.20); padding:18px 22px; transition:background 0.15s; cursor:default; }
-        .ov-kpi:hover { background:rgba(255,255,255,0.06); }
-        .ov-kpi-val   { font-size:27px; font-weight:900; letter-spacing:-0.05em; line-height:1; transition:color 0.3s; }
-        .ov-kpi-lbl   { font-size:11px; color:rgba(255,255,255,0.55); font-weight:600; margin-top:5px; }
-        .ov-kpi-hint  { font-size:10px; color:rgba(255,255,255,0.30); margin-top:2px; }
+        /* ── KPI cards ── */
+        .ov-kpi-cards       { display:grid; grid-template-columns:repeat(${isProjectScoped ? 3 : 4},1fr); gap:12px; }
+        .ov-kpi-card        { background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); padding:16px 18px; transition:box-shadow var(--t-base),transform var(--t-base); }
+        .ov-kpi-card:hover  { box-shadow:var(--shadow-md); transform:translateY(-2px); }
+        .ov-kpi-card-top    { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+        .ov-kpi-badge       { width:34px; height:34px; border-radius:50%; border:1px solid transparent; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .ov-kpi-card-val    { font-size:23px; font-weight:900; letter-spacing:-0.02em; color:var(--text); line-height:1.15; }
+        .ov-kpi-card-val-sm { font-size:18px; }
+        .ov-kpi-card-label  { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-muted); margin-top:4px; }
+        .ov-kpi-card-sub    { font-size:11px; color:var(--text-muted); margin-top:2px; font-weight:600; }
 
         /* ── Alert banner ── */
-        .ov-alert { display:flex; align-items:center; gap:14px; padding:15px 20px; border-radius:14px; border:2px solid #FDE68A; background:linear-gradient(135deg,#FFFBEB,#FEF3C7); text-decoration:none; transition:box-shadow 0.2s,transform 0.2s; cursor:pointer; }
-        .ov-alert:hover { box-shadow:0 6px 24px rgba(180,130,0,0.2); transform:translateY(-1px); }
+        .ov-alert { display:flex; align-items:center; gap:14px; padding:15px 20px; border-radius:14px; border:2px solid #FDE68A; background:linear-gradient(135deg,#FFFBEB,#FEF3C7); text-decoration:none; transition:box-shadow var(--t-base),transform var(--t-base); cursor:pointer; }
+        .ov-alert:hover  { box-shadow:0 6px 24px rgba(180,130,0,0.2); transform:translateY(-1px); }
+        .ov-alert:active { transform:translateY(0) scale(0.995); transition-duration:var(--t-fast); }
+
+        /* ── Pill tabs (Combined/Amazon/Other Projects switchers) ── */
+        .ov-pill-tabs { display:flex; gap:3px; background:var(--bg-alt); border:1px solid var(--border); border-radius:24px; padding:3px; flex-shrink:0; }
+        .ov-pill-tab  { padding:6px 14px; border-radius:20px; border:none; cursor:pointer; font-family:inherit; font-weight:700; font-size:11.5px; white-space:nowrap; color:var(--text-muted); background:transparent; transition:background var(--t-fast),color var(--t-fast),transform var(--t-fast); }
+        .ov-pill-tab:hover:not(.active) { color:var(--text); }
+        .ov-pill-tab:active { transform:scale(0.94); }
 
         /* ── Section card ── */
         .ov-card { background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; animation:slideUp 0.35s ease both; transition:box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease; }
@@ -258,31 +272,30 @@ export default function OverviewPage() {
 
         /* ── Quick actions ── */
         .ov-qa-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; padding:16px 20px 20px; }
-        .ov-qa-item { display:flex; flex-direction:column; align-items:center; gap:9px; padding:16px 8px; border-radius:14px; text-decoration:none; transition:all 0.18s; }
+        .ov-qa-item {
+          display:flex; flex-direction:column; align-items:center; gap:9px; padding:16px 8px; border-radius:14px;
+          text-decoration:none; background:var(--qa-bg); border:1px solid var(--qa-border);
+          transition:background var(--t-base), transform var(--t-base), box-shadow var(--t-base);
+        }
+        .ov-qa-item:hover  { background:var(--qa-bg-h); transform:translateY(-3px); box-shadow:0 8px 24px var(--qa-shadow); }
+        .ov-qa-item:active { transform:translateY(-1px) scale(0.96); transition-duration:var(--t-fast); }
 
         /* ── Chart ── */
         .ov-chart { padding:4px 20px 20px; }
 
         /* ── Responsive ── */
         @media (max-width:1024px) {
-          .ov-kpi-strip { grid-template-columns:repeat(2,1fr); }
+          .ov-kpi-cards { grid-template-columns:repeat(2,1fr); }
           .ov-qa-grid   { grid-template-columns:repeat(4,1fr); }
         }
         @media (max-width:768px) {
-          .ov-hero    { padding:20px 18px; border-radius:16px; }
-          .ov-hero-top { flex-wrap:wrap; }
-          .ov-hero-actions { margin-left:0; width:100%; justify-content:flex-end; }
-          .ov-two     { grid-template-columns:1fr; }
-          .ov-kpi-strip { grid-template-columns:repeat(2,1fr); }
-          .ov-kpi-val   { font-size:22px; }
-          .ov-kpi       { padding:14px 18px; }
+          .ov-header-actions { margin-left:0; width:100%; justify-content:flex-end; }
+          .ov-two       { grid-template-columns:1fr; }
           .ov-qa-grid   { grid-template-columns:repeat(3,1fr); }
         }
         @media (max-width:480px) {
-          .ov-hero      { padding:18px 14px; }
-          .ov-hero-title { font-size:18px; }
-          .ov-kpi-val   { font-size:20px; }
-          .ov-kpi       { padding:12px 14px; }
+          .ov-header-title { font-size:18px; }
+          .ov-kpi-cards { grid-template-columns:repeat(1,1fr); }
           .ov-stats     { gap:7px; padding:12px 14px; }
           .ov-strip     { margin:0 14px 14px; }
           .ov-cat       { padding:0 14px 14px; }
@@ -297,74 +310,71 @@ export default function OverviewPage() {
 
       <div className="ov-page">
 
-        {/* ══ HERO ══════════════════════════════════════════════════ */}
-        <div className="ov-hero">
-          <div className="ov-hero-decor1"/>
-          <div className="ov-hero-decor2"/>
-          <div className="ov-hero-decor3"/>
-          <div style={{ position:'relative' }}>
-
-            {/* Top row */}
-            <div className="ov-hero-top">
-              <div className="ov-hero-icon">
-                <Activity size={22} color="#FFD700"/>
-              </div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <h1 className="ov-hero-title">{greeting}{firstName ? `, ${firstName}` : ''}</h1>
-                <p className="ov-hero-sub">{dateStr} · Operations Overview</p>
-              </div>
-              <div className="ov-hero-actions">
-                <button onClick={() => load(true)} className="ov-refresh-btn" disabled={loadingHero || refreshing}>
-                  <RefreshCw size={12} style={{ animation: refreshing ? 'spin 0.8s linear infinite' : 'none' }}/>
-                  Refresh
-                </button>
-              </div>
-            </div>
-
-            {/* KPI strip */}
-            <div className="ov-kpi-strip">
-              {[
-                {
-                  val:   loadingHero ? null : activeEmp,
-                  lbl:   'Active DAs',
-                  hint:  loadingHero ? '' : `of ${totalEmp} total`,
-                  color: '#34D399',
-                },
-                ...(isProjectScoped ? [] : [{
-                  val:   loadingHero ? null : (fleetStats?.active ?? 0),
-                  lbl:   'Vehicles on Road',
-                  hint:  loadingHero ? '' : `of ${fleetStats?.total ?? 0} fleet`,
-                  color: '#38BDF8',
-                }]),
-                {
-                  val:   loadingExp  ? null : fmtAED(totalExp),
-                  lbl:   'Expenses This Month',
-                  hint:  loadingExp  ? '' : `${pendingExp} pending approval`,
-                  color: '#FCD34D',
-                  small: true,
-                },
-                {
-                  val:   pendingLetters.length,
-                  lbl:   'Letters Pending',
-                  hint:  'awaiting signature',
-                  color: pendingLetters.length > 0 ? '#FCA5A5' : '#6EE7B7',
-                },
-              ].map(({ val, lbl, hint, color, small }) => (
-                <div key={lbl} className="ov-kpi">
-                  {val === null
-                    ? <Skel w={60} h={27}/>
-                    : <div className="ov-kpi-val kpi-val" style={{ color, fontSize: small ? 18 : undefined }}>{val}</div>}
-                  <div className="ov-kpi-lbl">{lbl}</div>
-                  {hint ? <div className="ov-kpi-hint">{hint}</div> : <div style={{ height:14 }}/>}
-                </div>
-              ))}
-            </div>
+        {/* ══ HEADER ════════════════════════════════════════════════ */}
+        <div className="ov-header">
+          <div className="ov-header-icon">
+            <Activity size={22}/>
           </div>
+          <div style={{ flex:1, minWidth:0 }}>
+            <h1 className="ov-header-title">{greeting}{firstName ? `, ${firstName}` : ''}</h1>
+            <p className="ov-header-sub">{dateStr} · Operations Overview</p>
+          </div>
+          <div className="ov-header-actions">
+            <button onClick={() => load(true)} className="ov-refresh-btn" disabled={loadingHero || refreshing}>
+              <RefreshCw size={12} style={{ animation: refreshing ? 'spin 0.8s linear infinite' : 'none' }}/>
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        {/* ══ KPI CARDS ═════════════════════════════════════════════ */}
+        <div className="ov-kpi-cards">
+          {[
+            {
+              val:   loadingHero ? null : activeEmp,
+              lbl:   'Active DAs',
+              hint:  loadingHero ? '' : `of ${totalEmp} total`,
+              Icon:  Users, color:'var(--green)', bg:'var(--green-bg)', border:'var(--green-border)',
+            },
+            ...(isProjectScoped ? [] : [{
+              val:   loadingHero ? null : (fleetStats?.active ?? 0),
+              lbl:   'Vehicles on Road',
+              hint:  loadingHero ? '' : `of ${fleetStats?.total ?? 0} fleet`,
+              Icon:  Car, color:'#38BDF8', bg:'#38BDF818', border:'#38BDF830',
+            }]),
+            {
+              val:   loadingExp  ? null : fmtAED(totalExp),
+              lbl:   'Expenses This Month',
+              hint:  loadingExp  ? '' : `${pendingExp} pending approval`,
+              Icon:  Wallet, color:'var(--gold)', bg:'var(--gold-pale)', border:'var(--gold-border)', small:true,
+            },
+            {
+              val:   pendingLetters.length,
+              lbl:   'Letters Pending',
+              hint:  'awaiting signature',
+              Icon:  ScrollText,
+              ...(pendingLetters.length > 0
+                ? { color:'var(--red)',   bg:'var(--red-bg)',   border:'var(--red-border)' }
+                : { color:'var(--green)', bg:'var(--green-bg)', border:'var(--green-border)' }),
+            },
+          ].map(({ val, lbl, hint, Icon, color, bg, border, small }, i) => (
+            <div key={lbl} className={i<3?`ov-kpi-card fade-up-${i+1}`:'ov-kpi-card fade-up'} style={i===3?{animationDelay:'0.16s'}:undefined}>
+              <div className="ov-kpi-card-top">
+                <div className="ov-kpi-badge" style={{color,background:bg,borderColor:border}}><Icon size={16}/></div>
+                <KpiSpark color={color}/>
+              </div>
+              {val === null
+                ? <div className="sk" style={{height:23,width:'55%',borderRadius:6,marginBottom:2}}/>
+                : <div key={val} className={`ov-kpi-card-val kpi-val${small?' ov-kpi-card-val-sm':''}`}>{val}</div>}
+              <div className="ov-kpi-card-label">{lbl}</div>
+              {hint && <div className="ov-kpi-card-sub">{hint}</div>}
+            </div>
+          ))}
         </div>
 
         {/* ══ PENDING LETTERS ALERT ══════════════════════════════════ */}
         {pendingLetters.length > 0 && (
-          <Link href="/dashboard/office/letters" className="ov-alert">
+          <Link href="/dashboard/office/letters" className="ov-alert fade-up">
             <div style={{ width:44, height:44, borderRadius:12, background:'#FDE68A', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
               <ScrollText size={20} color="#92400E"/>
             </div>
@@ -396,17 +406,14 @@ export default function OverviewPage() {
                 {expView==='combined' ? 'Spend vs. amount received, stacked by month' : expView==='amazon' ? 'Amazon-side spend vs. amount received' : 'Other Projects spend vs. amount received'}
               </div>
             </div>
-            <div style={{ display:'flex', gap:3, background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:24, padding:3, flexShrink:0 }}>
+            <div className="ov-pill-tabs">
               {[
                 { id:'combined', label:'Combined',        c:'#B8860B' },
                 { id:'amazon',   label:'Amazon',           c:'#3B82F6' },
                 { id:'client',   label:'Other Projects',  c:'#7C3AED' },
               ].map(v => (
-                <button key={v.id} onClick={()=>setExpView(v.id)}
-                  style={{ padding:'6px 14px', borderRadius:20, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:11.5, whiteSpace:'nowrap',
-                    background: expView===v.id ? v.c : 'transparent',
-                    color: expView===v.id ? 'white' : 'var(--text-muted)',
-                  }}>
+                <button key={v.id} onClick={()=>setExpView(v.id)} className={`ov-pill-tab${expView===v.id?' active':''}`}
+                  style={{ background: expView===v.id ? v.c : undefined, color: expView===v.id ? 'white' : undefined }}>
                   {v.label}
                 </button>
               ))}
@@ -583,17 +590,14 @@ export default function OverviewPage() {
                 of only ever showing them blended together. Meaningless for a
                 project-scoped manager (their data is already just their own). */}
             {!isProjectScoped && (
-              <div style={{ margin:'12px 20px 0', display:'flex', gap:3, background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:20, padding:3, width:'fit-content' }}>
+              <div className="ov-pill-tabs" style={{ margin:'12px 20px 0', width:'fit-content' }}>
                 {[
                   { id:'combined', label:'Combined',        c:'#F59E0B' },
                   { id:'amazon',   label:'Amazon',           c:'#3B82F6' },
                   { id:'client',   label:'Other Projects',  c:'#7C3AED' },
                 ].map(v => (
-                  <button key={v.id} onClick={()=>setDaView(v.id)}
-                    style={{ padding:'5px 11px', borderRadius:16, border:'none', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:10.5, whiteSpace:'nowrap',
-                      background: daView===v.id ? v.c : 'transparent',
-                      color: daView===v.id ? 'white' : 'var(--text-muted)',
-                    }}>
+                  <button key={v.id} onClick={()=>setDaView(v.id)} className={`ov-pill-tab${daView===v.id?' active':''}`}
+                    style={{ background: daView===v.id ? v.c : undefined, color: daView===v.id ? 'white' : undefined }}>
                     {v.label}
                   </button>
                 ))}
@@ -601,9 +605,9 @@ export default function OverviewPage() {
             )}
             <div className="ov-stats">
               {[
-                { label:'Active',   value:daStats.active,  color:'#059669', bg:'#ECFDF5', border:'#A7F3D0' },
-                { label:'On Leave', value:daStats.onLeave, color:'#D97706', bg:'#FFFBEB', border:'#FCD34D' },
-                { label:'Inactive', value:daInactive,      color:'#DC2626', bg:'#FEF2F2', border:'#FCA5A5' },
+                { label:'Active',   value:daStats.active,  color:'var(--green)', bg:'var(--green-bg)', border:'var(--green-border)' },
+                { label:'On Leave', value:daStats.onLeave, color:'var(--amber)', bg:'var(--amber-bg)', border:'var(--amber-border)' },
+                { label:'Inactive', value:daInactive,      color:'var(--red)',   bg:'var(--red-bg)',   border:'var(--red-border)' },
                 { label:'Total',    value:daStats.total,   color:'#7C3AED', bg:'#F5F3FF', border:'#DDD6FE' },
               ].map(({ label, value, color, bg, border }) => (
                 <div key={label} className="ov-stat" style={{ background:bg, borderColor:border }}>
@@ -652,9 +656,9 @@ export default function OverviewPage() {
             </div>
             <div className="ov-stats">
               {[
-                { label:'Active',      value:fleetStats?.active      ?? null, color:'#059669', bg:'#ECFDF5', border:'#A7F3D0' },
-                { label:'Grounded',    value:fleetStats?.grounded    ?? null, color:'#DC2626', bg:'#FEF2F2', border:'#FCA5A5' },
-                { label:'Maintenance', value:fleetStats?.maintenance ?? null, color:'#D97706', bg:'#FFFBEB', border:'#FCD34D' },
+                { label:'Active',      value:fleetStats?.active      ?? null, color:'var(--green)', bg:'var(--green-bg)', border:'var(--green-border)' },
+                { label:'Grounded',    value:fleetStats?.grounded    ?? null, color:'var(--red)',   bg:'var(--red-bg)',   border:'var(--red-border)' },
+                { label:'Maintenance', value:fleetStats?.maintenance ?? null, color:'var(--amber)', bg:'var(--amber-bg)', border:'var(--amber-border)' },
                 { label:'Total',       value:fleetStats?.total       ?? null, color:'#7C3AED', bg:'#F5F3FF', border:'#DDD6FE' },
               ].map(({ label, value, color, bg, border }) => (
                 <div key={label} className="ov-stat" style={{ background:bg, borderColor:border }}>
@@ -706,10 +710,10 @@ export default function OverviewPage() {
             </div>
             <div className="ov-stats">
               {[
-                { label:'Total',    value:fmtAED(totalExp),    color:'var(--text)', bg:'var(--bg-alt)', border:'var(--border)', sm:true },
-                { label:'Approved', value:fmtAED(approvedExp), color:'#059669',     bg:'#ECFDF5',       border:'#A7F3D0',       sm:true },
-                { label:'Pending',  value:pendingExp,           color:'#D97706',     bg:'#FFFBEB',       border:'#FCD34D' },
-                { label:'Rejected', value:rejectedExp,          color:'#DC2626',     bg:'#FEF2F2',       border:'#FCA5A5' },
+                { label:'Total',    value:fmtAED(totalExp),    color:'var(--text)',  bg:'var(--bg-alt)',   border:'var(--border)', sm:true },
+                { label:'Approved', value:fmtAED(approvedExp), color:'var(--green)', bg:'var(--green-bg)', border:'var(--green-border)', sm:true },
+                { label:'Pending',  value:pendingExp,           color:'var(--amber)', bg:'var(--amber-bg)', border:'var(--amber-border)' },
+                { label:'Rejected', value:rejectedExp,          color:'var(--red)',   bg:'var(--red-bg)',   border:'var(--red-border)' },
               ].map(({ label, value, color, bg, border, sm }) => (
                 <div key={label} className="ov-stat" style={{ background:bg, borderColor:border }}>
                   {loadingExp ? <Skel w={sm?80:40} h={22} r={6}/> : <div className="ov-stat-val kpi-val" style={{ color, fontSize:sm?14:undefined }}>{value}</div>}
@@ -763,8 +767,8 @@ export default function OverviewPage() {
             <div className="ov-stats">
               {[
                 { label:'Total SIMs',   value:simStats?.total     ?? null, color:'#7C3AED', bg:'#F5F3FF', border:'#DDD6FE' },
-                { label:'Assigned',     value:simStats?.assigned  ?? null, color:'#D97706', bg:'#FFFBEB', border:'#FCD34D' },
-                { label:'Available',    value:simStats?.available ?? null, color:'#059669', bg:'#ECFDF5', border:'#A7F3D0' },
+                { label:'Assigned',     value:simStats?.assigned  ?? null, color:'var(--amber)', bg:'var(--amber-bg)', border:'var(--amber-border)' },
+                { label:'Available',    value:simStats?.available ?? null, color:'var(--green)', bg:'var(--green-bg)', border:'var(--green-border)' },
                 { label:'Monthly Cost', value:fmtAED(simStats?.monthly_cost||0), color:'#2563EB', bg:'#EFF6FF', border:'#BFDBFE', sm:true },
               ].map(({ label, value, color, bg, border, sm }) => (
                 <div key={label} className="ov-stat" style={{ background:bg, borderColor:border }}>
@@ -837,9 +841,7 @@ export default function OverviewPage() {
               { l:'Leaves',    href:'/dashboard/hr/leaves',       c:'#F97316', icon:ScrollText },
             ].map(({ l, href, c, icon:Icon }) => (
               <Link key={l} href={href} className="ov-qa-item"
-                style={{ background:`${c}10`, border:`1px solid ${c}22` }}
-                onMouseEnter={e => { e.currentTarget.style.background=`${c}1E`; e.currentTarget.style.transform='translateY(-3px)'; e.currentTarget.style.boxShadow=`0 8px 24px ${c}30` }}
-                onMouseLeave={e => { e.currentTarget.style.background=`${c}10`; e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='' }}>
+                style={{ '--qa-bg':`${c}10`, '--qa-bg-h':`${c}1E`, '--qa-border':`${c}22`, '--qa-shadow':`${c}30` }}>
                 <div style={{ width:46, height:46, borderRadius:14, background:`${c}18`, border:`1px solid ${c}30`, display:'flex', alignItems:'center', justifyContent:'center' }}>
                   <Icon size={20} color={c}/>
                 </div>
