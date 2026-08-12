@@ -8,7 +8,7 @@ import { X, AlertCircle } from 'lucide-react'
 const EMPTY = {
   id:'', name:'', role:'Driver', dept:'Operations', status:'active',
   salary:'', joined:'', phone:'', work_number:'', nationality:'', zone:'',
-  visa_expiry:'', license_expiry:'', avatar:'',
+  visa_issue_date:'', visa_expiry:'', license_expiry:'', avatar:'',
   station_code:'DDB1', hourly_rate:'3.85',
   iloe_expiry:'', annual_leave_start:'',
   amazon_id:'', emirates_id:'', annual_leave_balance:30,
@@ -49,6 +49,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
     hourly_rate:          emp.hourly_rate||'3.85',
     annual_leave_balance: emp.annual_leave_balance||30,
     joined:               emp.joined?.slice(0,10)||'',
+    visa_issue_date:      emp.visa_issue_date?.slice(0,10)||'',
     visa_expiry:          emp.visa_expiry?.slice(0,10)||'',
     license_expiry:       emp.license_expiry?.slice(0,10)||'',
     iloe_expiry:          emp.iloe_expiry?.slice(0,10)||'',
@@ -131,6 +132,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
         annual_leave_balance: Number(form.annual_leave_balance)||30,
         dob:                safeDate(form.dob),
         joined:             safeDate(form.joined),
+        visa_issue_date:    safeDate(form.visa_issue_date),
         visa_expiry:        safeDate(form.visa_expiry),
         license_expiry:     safeDate(form.license_expiry),
         iloe_expiry:        safeDate(form.iloe_expiry),
@@ -392,6 +394,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
         {!isProjectScoped && tab==='docs' && (
           <div style={{ display:'flex', flexDirection:'column', gap:13 }}>
             <div className="modal-two-col">
+              {inp('Visa Issue Date','visa_issue_date','date')}
               {inp('Visa Expiry','visa_expiry','date')}
               {inp('License Expiry','license_expiry','date')}
               {inp('ILOE Expiry','iloe_expiry','date')}
