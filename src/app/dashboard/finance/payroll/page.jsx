@@ -96,6 +96,26 @@ function KpiSpark({color}) {
   )
 }
 
+// Deterministic per-employee avatar color (same employee → same color every time,
+// unlike random) — gives each row visual identity instead of one flat gold circle
+// repeated 84 times. Palette stays within the app's existing token colors.
+const AVATAR_PALETTE = [
+  {c:'#B8860B', bg:'rgba(184,134,11,0.12)', bd:'rgba(184,134,11,0.28)'},
+  {c:'#10B981', bg:'rgba(16,185,129,0.12)', bd:'rgba(16,185,129,0.28)'},
+  {c:'#3B82F6', bg:'rgba(59,130,246,0.12)', bd:'rgba(59,130,246,0.28)'},
+  {c:'#7C3AED', bg:'rgba(124,58,237,0.12)', bd:'rgba(124,58,237,0.28)'},
+  {c:'#F59E0B', bg:'rgba(245,158,11,0.12)', bd:'rgba(245,158,11,0.28)'},
+  {c:'#EF4444', bg:'rgba(239,68,68,0.12)', bd:'rgba(239,68,68,0.28)'},
+  {c:'#06B6D4', bg:'rgba(6,182,212,0.12)', bd:'rgba(6,182,212,0.28)'},
+  {c:'#EC4899', bg:'rgba(236,72,153,0.12)', bd:'rgba(236,72,153,0.28)'},
+]
+function avatarStyle(seed) {
+  let hash = 0
+  const s = String(seed||'')
+  for (let i=0;i<s.length;i++) hash = (hash*31 + s.charCodeAt(i)) >>> 0
+  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length]
+}
+
 function daysInMonth(month) {
   const [y, m] = String(month||'').split('-').map(Number)
   if (!y || !m) return 30
@@ -1178,14 +1198,15 @@ const PAY_CSS = `
   .py-month-sel  { margin-left:auto; padding:8px 14px; border-radius:20px; border:1.5px solid var(--border-med); background:var(--card); color:var(--text); font-size:13px; font-weight:600; cursor:pointer; outline:none; font-family:Poppins,sans-serif; }
 
   /* KPI cards */
-  .py-kpi-cards    { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
-  .py-kpi-card     { background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); padding:16px 18px; transition:box-shadow var(--t-base),transform var(--t-base); }
-  .py-kpi-card:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); }
-  .py-kpi-card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-  .py-kpi-badge    { width:34px; height:34px; border-radius:50%; border:1px solid transparent; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .py-kpi-card-val { font-size:23px; font-weight:900; letter-spacing:-0.02em; color:var(--text); line-height:1.15; }
-  .py-kpi-card-label { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-muted); margin-top:4px; }
-  .py-kpi-card-sub { font-size:11px; color:var(--text-muted); margin-top:2px; font-weight:600; }
+  .py-kpi-cards    { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .py-kpi-card     { position:relative; overflow:hidden; background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:18px 20px; transition:box-shadow var(--t-base),transform var(--t-base),border-color var(--t-base); }
+  .py-kpi-card:hover { box-shadow:var(--shadow-md); transform:translateY(-3px); border-color:var(--border-strong); }
+  .py-kpi-card::before { content:''; position:absolute; top:-40%; right:-30%; width:120px; height:120px; border-radius:50%; background:var(--kpi-glow,transparent); opacity:0.5; pointer-events:none; }
+  .py-kpi-card-top { position:relative; display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .py-kpi-badge    { width:38px; height:38px; border-radius:50%; border:1px solid transparent; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .py-kpi-card-val { position:relative; font-size:24px; font-weight:900; letter-spacing:-0.02em; color:var(--text); line-height:1.15; }
+  .py-kpi-card-label { position:relative; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-top:5px; }
+  .py-kpi-card-sub { position:relative; font-size:11px; color:var(--text-muted); margin-top:2px; font-weight:600; }
 
   /* Charts */
   .py-charts { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
@@ -1194,7 +1215,8 @@ const PAY_CSS = `
   .py-toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .py-search-wrap { flex:1 1 180px; position:relative; }
   .py-search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); pointer-events:none; }
-  .py-search { width:100%; padding:8px 12px 8px 34px; border-radius:20px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-size:12.5px; font-family:Poppins,sans-serif; outline:none; box-sizing:border-box; }
+  .py-search { width:100%; padding:8px 12px 8px 34px; border-radius:20px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-size:12.5px; font-family:Poppins,sans-serif; outline:none; box-sizing:border-box; transition:border-color var(--t-fast),box-shadow var(--t-fast); }
+  .py-search:focus { border-color:var(--gold-border); box-shadow:0 0 0 3px var(--gold-pale); }
   .py-tbtn { display:flex; align-items:center; gap:5px; padding:8px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; font-family:Poppins,sans-serif; white-space:nowrap; transition:opacity 0.15s,transform 0.1s; }
   .py-tbtn:hover { opacity:0.82; transform:translateY(-1px); }
   .py-tbtn:active { opacity:0.7; transform:translateY(0) scale(0.96); }
@@ -1202,7 +1224,8 @@ const PAY_CSS = `
   .py-tbtn-slip  { background:rgba(29,111,164,0.1); border:1.5px solid rgba(29,111,164,0.3); color:#1D6FA4; }
   .py-tbtn-bonus { background:rgba(16,185,129,0.1); border:1.5px solid rgba(16,185,129,0.3); color:#10B981; }
   .py-tbtn-ded   { background:rgba(239,68,68,0.08); border:1.5px solid rgba(239,68,68,0.25); color:#EF4444; }
-  .py-tbtn-all   { background:linear-gradient(135deg,#B8860B,#D4A017); border:none; color:white; }
+  .py-tbtn-all   { background:linear-gradient(135deg,#B8860B,#D4A017); border:none; color:white; box-shadow:var(--shadow-gold); }
+  .py-tbtn-all:hover { box-shadow:var(--shadow-gold-lg); }
 
   /* Section header */
   .py-sec-hdr { display:flex; align-items:center; justify-content:space-between; padding:12px 0 8px; border-bottom:1.5px solid var(--border); margin-top:4px; }
@@ -1212,35 +1235,36 @@ const PAY_CSS = `
   .py-sec-mark:hover { opacity:0.8; }
 
   /* Employee row */
-  .py-row { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:box-shadow 0.15s,transform 0.15s; animation:pySlide 0.35s ease both; }
-  .py-row:hover { box-shadow:0 4px 20px rgba(0,0,0,0.08); transform:translateY(-1px); }
-  .py-row-paid  { border-color:rgba(52,211,153,0.22); }
+  .py-row { background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:var(--shadow); transition:box-shadow var(--t-base),transform var(--t-base),border-color var(--t-base); animation:pySlide 0.35s ease both; }
+  .py-row:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); border-color:var(--border-strong); }
+  .py-row-paid  { border-color:rgba(52,211,153,0.25); }
   .py-row-top   { height:3px; flex-shrink:0; }
   .py-row-paid  .py-row-top { background:linear-gradient(90deg,#34D399,#10B981); }
   .py-row-pend  .py-row-top { background:linear-gradient(90deg,#B8860B,#D4A017); }
-  .py-row-inner { display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer; user-select:none; }
-  .py-avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,rgba(184,134,11,0.12),rgba(212,160,23,0.05)); border:1.5px solid rgba(184,134,11,0.18); display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:900; color:#B8860B; flex-shrink:0; }
+  .py-row-inner { display:flex; align-items:center; gap:14px; padding:14px 18px; cursor:pointer; user-select:none; }
+  .py-avatar { width:42px; height:42px; border-radius:50%; border:1.5px solid; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:900; flex-shrink:0; transition:transform var(--t-base); }
+  .py-row:hover .py-avatar { transform:scale(1.06); }
   .py-info { flex:1; min-width:0; }
-  .py-name-row { display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-bottom:3px; }
-  .py-name { font-weight:700; font-size:13.5px; color:var(--text); }
-  .py-empid { font-size:10px; color:var(--text-muted); font-family:monospace; letter-spacing:0.02em; }
+  .py-name-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:4px; }
+  .py-name { font-weight:700; font-size:13.5px; color:var(--text); letter-spacing:-0.01em; }
+  .py-empid { font-size:10px; color:var(--text-muted); font-family:monospace; letter-spacing:0.03em; }
 
   /* Inline columns */
-  .py-cols { display:flex; align-items:center; gap:22px; flex-shrink:0; }
+  .py-cols { display:flex; align-items:center; gap:26px; flex-shrink:0; }
   .py-col { text-align:right; min-width:78px; }
-  .py-col-lbl { font-size:9px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); margin-bottom:2px; }
-  .py-col-val { font-weight:700; font-size:13px; color:var(--text); letter-spacing:-0.02em; }
+  .py-col-lbl { font-size:9.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-muted); margin-bottom:3px; opacity:0.8; }
+  .py-col-val { font-weight:700; font-size:13.5px; color:var(--text); letter-spacing:-0.02em; }
   .py-col-val-ded { color:#EF4444; }
-  .py-col-net .py-col-val { font-weight:900; font-size:16px; color:#B8860B; }
+  .py-col-net .py-col-val { font-weight:900; font-size:17px; color:#B8860B; letter-spacing:-0.03em; }
   .py-col-net .py-col-val.py-net-paid { color:#10B981; }
 
   /* Badges */
-  .py-badge { font-size:9.5px; font-weight:700; border-radius:20px; padding:2px 8px; border:1px solid transparent; white-space:nowrap; }
-  .py-badge-sta { color:#B8860B; background:rgba(184,134,11,0.1); }
-  .py-badge-prj { color:#7C3AED; background:rgba(124,58,237,0.08); }
-  .py-status { font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:20px; white-space:nowrap; }
-  .py-status-paid { color:#10B981; background:rgba(16,185,129,0.1); }
-  .py-status-pend { color:#F59E0B; background:rgba(245,158,11,0.1); }
+  .py-badge { font-size:9.5px; font-weight:700; border-radius:20px; padding:3px 9px; border:1px solid transparent; white-space:nowrap; letter-spacing:0.02em; }
+  .py-badge-sta { color:#B8860B; background:rgba(184,134,11,0.1); border-color:rgba(184,134,11,0.18); }
+  .py-badge-prj { color:#7C3AED; background:rgba(124,58,237,0.08); border-color:rgba(124,58,237,0.16); }
+  .py-status { font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap; border:1px solid transparent; }
+  .py-status-paid { color:#10B981; background:rgba(16,185,129,0.1); border-color:rgba(16,185,129,0.2); }
+  .py-status-pend { color:#F59E0B; background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.2); }
   .py-chevron { color:var(--text-muted); transition:transform 0.2s; flex-shrink:0; }
   .py-chevron-open { transform:rotate(180deg); }
 
@@ -1304,7 +1328,7 @@ const PAY_CSS = `
   .py-page-num { min-width:28px; height:28px; padding:0 6px; border-radius:8px; border:1.5px solid transparent; background:transparent; color:var(--text-muted); font-weight:700; font-size:12px; cursor:pointer; font-family:Poppins,sans-serif; transition:all var(--t-fast); }
   .py-page-num:hover { background:var(--bg-alt); color:var(--text); }
   .py-page-num:active { transform:scale(0.92); }
-  .py-page-num.active { background:linear-gradient(135deg,#B8860B,#D4A017); border-color:transparent; color:white; }
+  .py-page-num.active { background:linear-gradient(135deg,#B8860B,#D4A017); border-color:transparent; color:white; box-shadow:var(--shadow-gold); }
   .py-page-dots { color:var(--text-muted); font-size:12px; padding:0 2px; }
   .py-page-size { padding:6px 10px; border-radius:8px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-weight:600; font-size:11.5px; cursor:pointer; font-family:Poppins,sans-serif; outline:none; }
 
@@ -1328,6 +1352,7 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
   const isPaid = slip.payroll_status === 'paid'
   const role   = resolveRole(slip.role, slip.project_type)
   const selected = !!(selectMode && selectedIds?.has(slip.id))
+  const av = avatarStyle(slip.id||slip.name)
 
   return (
     <div className={`py-row ${isPaid ? 'py-row-paid' : 'py-row-pend'}`} style={{animationDelay:`${Math.min(index*0.03,0.4)}s`, background: selected ? 'rgba(220,38,38,0.05)' : undefined}}>
@@ -1337,7 +1362,7 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
           <input type="checkbox" checked={selected} onChange={()=>onToggleSelect(slip.id)} onClick={e=>e.stopPropagation()}
             style={{width:16,height:16,flexShrink:0,cursor:'pointer',accentColor:'#DC2626'}}/>
         )}
-        <div className="py-avatar">{slip.name?.slice(0,2).toUpperCase()}</div>
+        <div className="py-avatar" style={{background:av.bg,borderColor:av.bd,color:av.c}}>{slip.name?.slice(0,2).toUpperCase()}</div>
         <div className="py-info">
           <div className="py-name-row">
             <span className="py-name">{slip.name}</span>
@@ -1837,7 +1862,7 @@ export default function PayrollPage() {
         {/* KPI cards */}
         <div className="py-kpi-cards">
           {KPI_DEFS.map((k,i)=>(
-            <div key={k.key} className={i<3?`py-kpi-card fade-up-${i+1}`:'py-kpi-card fade-up'} style={i===3?{animationDelay:'0.16s'}:undefined}>
+            <div key={k.key} className={i<3?`py-kpi-card fade-up-${i+1}`:'py-kpi-card fade-up'} style={{'--kpi-glow':k.bg, ...(i===3?{animationDelay:'0.16s'}:{})}}>
               <div className="py-kpi-card-top">
                 <div className="py-kpi-badge" style={{color:k.color,background:k.bg,borderColor:k.border}}><k.Icon size={16}/></div>
                 <KpiSpark color={k.color}/>
