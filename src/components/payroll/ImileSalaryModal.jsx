@@ -7,9 +7,11 @@
 // same as JNT.
 import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { X, AlertCircle } from 'lucide-react'
+import { X, AlertCircle, Plus, Trash2 } from 'lucide-react'
 import { imileSalaryApi } from '@/lib/api'
-import { DEDUCTION_FIELDS, calcGross, calcDeductions, calcNet, fmtAED } from '@/lib/imileSalaryCalc'
+import { DEDUCTION_FIELDS, calcGross, sumSegments, calcDeductions, calcNet, fmtAED } from '@/lib/imileSalaryCalc'
+
+const BLANK_SEGMENT = { project: '', daType: '', branch: '', cod: '', nonCod: '' }
 
 const DA_TYPE_LABELS = { internal: 'Internal', external: 'External' }
 const DEDUCTION_LABELS = {
@@ -41,11 +43,9 @@ export default function ImileSalaryModal({ employees, month, initialEmpId, onSav
   const [rates, setRates] = useState([])
   const [loadingRates, setLoadingRates] = useState(true)
   const [loadingEntry, setLoadingEntry] = useState(false)
-  const [project, setProject] = useState('')
-  const [daType, setDaType] = useState('')
-  const [branch, setBranch] = useState('')
-  const [cod, setCod] = useState('')
-  const [nonCod, setNonCod] = useState('')
+  // A driver can split their month across more than one Project/DA Type/Branch
+  // combo — one entry per project block, always at least one.
+  const [segments, setSegments] = useState([{ ...BLANK_SEGMENT }])
   const [deductions, setDeductions] = useState(() => Object.fromEntries(DEDUCTION_FIELDS.map(f => [f, ''])))
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(null)
@@ -60,23 +60,32 @@ export default function ImileSalaryModal({ employees, month, initialEmpId, onSav
 
   // Cascading options — only combos that actually have a configured rate are
   // selectable, since this isn't a full cartesian product (e.g. no NDD+Internal+AJM DS).
+  // Plain (non-memoized) helpers since they're cheap over a ~9-row rate matrix and
+  // need to run once per segment, not once per component.
   const projects = useMemo(() => [...new Set(rates.map(r => r.project))].sort(), [rates])
-  const daTypes = useMemo(() => [...new Set(rates.filter(r => r.project === project).map(r => r.da_type))].sort(), [rates, project])
-  const branches = useMemo(() => [...new Set(rates.filter(r => r.project === project && r.da_type === daType).map(r => r.branch))].sort(), [rates, project, daType])
-  const selectedRate = useMemo(() => rates.find(r => r.project === project && r.da_type === daType && r.branch === branch), [rates, project, daType, branch])
-  const isGatePass = project === 'JAFZA' && daType === 'external'
+  const daTypesFor = (proj) => [...new Set(rates.filter(r => r.project === proj).map(r => r.da_type))].sort()
+  const branchesFor = (proj, dt) => [...new Set(rates.filter(r => r.project === proj && r.da_type === dt).map(r => r.branch))].sort()
+  const rateFor = (proj, dt, br) => rates.find(r => r.project === proj && r.da_type === dt && r.branch === br)
+  const isGatePass = segments.some(s => s.project === 'JAFZA' && s.daType === 'external')
+
+  function updateSegment(i, patch) {
+    setSegments(prev => prev.map((s, idx) => idx !== i ? s : { ...s, ...patch }))
+  }
+  function addSegment() { setSegments(prev => [...prev, { ...BLANK_SEGMENT }]) }
+  function removeSegment(i) { setSegments(prev => prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev) }
 
   async function pickEmp(id) {
-    setEmpId(id); setProject(''); setDaType(''); setBranch(''); setCod(''); setNonCod('')
+    setEmpId(id); setSegments([{ ...BLANK_SEGMENT }])
     setDeductions(Object.fromEntries(DEDUCTION_FIELDS.map(f => [f, ''])))
     if (!id) return
     setLoadingEntry(true)
     try {
       const d = await imileSalaryApi.getEntry(id, month)
-      const entry = d.entry
-      if (entry) {
-        setProject(entry.project || ''); setDaType(entry.da_type || ''); setBranch(entry.branch || '')
-        setCod(entry.cod != null ? String(entry.cod) : ''); setNonCod(entry.non_cod != null ? String(entry.non_cod) : '')
+      if (d.segments?.length) {
+        setSegments(d.segments.map(s => ({
+          project: s.project || '', daType: s.da_type || '', branch: s.branch || '',
+          cod: s.cod != null ? String(s.cod) : '', nonCod: s.non_cod != null ? String(s.non_cod) : '',
+        })))
       }
       setDeductions(Object.fromEntries(DEDUCTION_FIELDS.map(f => [f, d.deductions?.[f] != null ? String(d.deductions[f]) : ''])))
     } catch (e) { /* non-fatal — prefill is a convenience, not required */ }
@@ -87,26 +96,34 @@ export default function ImileSalaryModal({ employees, month, initialEmpId, onSav
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [])
 
-  const { codPayment, nonCodPayment, grossSalary } = useMemo(
-    () => calcGross(cod, selectedRate?.cod_rate, nonCod, selectedRate?.non_cod_rate),
-    [cod, nonCod, selectedRate]
-  )
+  const { segments: segResults, grossSalary } = useMemo(() => sumSegments(segments.map(s => {
+    const rate = rateFor(s.project, s.daType, s.branch)
+    return { cod: s.cod, nonCod: s.nonCod, codRate: rate?.cod_rate, nonCodRate: rate?.non_cod_rate }
+  })), [segments, rates])
   const totalDeductions = useMemo(() => calcDeductions(deductions), [deductions])
   const netSalary = useMemo(() => calcNet(grossSalary, totalDeductions), [grossSalary, totalDeductions])
 
   async function handleSave() {
     if (!empId) return setErr('Select an employee')
-    if (!project || !daType || !branch) return setErr('Select Project, DA Type and Branch')
-    if (!selectedRate) return setErr('No rate configured for this Project / DA Type / Branch')
-    const c = parseFloat(cod), nc = parseFloat(nonCod)
-    if (isNaN(c) || c < 0) return setErr('Enter a valid COD Shipments value')
-    if (isNaN(nc) || nc < 0) return setErr('Enter a valid Non-COD Shipments value')
+    const seen = new Set()
+    for (const s of segments) {
+      if (!s.project || !s.daType || !s.branch) return setErr('Select Project, DA Type and Branch for every project')
+      const key = `${s.project}|${s.daType}|${s.branch}`
+      if (seen.has(key)) return setErr(`${s.project} / ${DA_TYPE_LABELS[s.daType] || s.daType} / ${s.branch} was added more than once`)
+      seen.add(key)
+      if (!rateFor(s.project, s.daType, s.branch)) return setErr(`No rate configured for ${s.project} / ${s.daType} / ${s.branch}`)
+      const c = parseFloat(s.cod), nc = parseFloat(s.nonCod)
+      if (isNaN(c) || c < 0) return setErr('Enter a valid COD Shipments value for every project')
+      if (isNaN(nc) || nc < 0) return setErr('Enter a valid Non-COD Shipments value for every project')
+    }
     setSaving(true); setErr(null)
     try {
       const dedPayload = {}
       for (const f of DEDUCTION_FIELDS) dedPayload[f] = deductions[f] === '' ? 0 : parseFloat(deductions[f]) || 0
       await imileSalaryApi.saveEntry({
-        emp_id: empId, month, project, da_type: daType, branch, cod: c, non_cod: nc, deductions: dedPayload,
+        emp_id: empId, month,
+        segments: segments.map(s => ({ project: s.project, da_type: s.daType, branch: s.branch, cod: parseFloat(s.cod) || 0, non_cod: parseFloat(s.nonCod) || 0 })),
+        deductions: dedPayload,
       })
       onSave()
     } catch (e) { setErr(e.message) } finally { setSaving(false) }
@@ -166,55 +183,77 @@ export default function ImileSalaryModal({ employees, month, initialEmpId, onSav
             {loadingEntry && <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 8 }}>Loading existing entry…</div>}
           </section>
 
-          {/* ── Classification ── */}
+          {/* ── Projects (Classification + Shipment Details per project) ── */}
           <section>
-            <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Classification</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-              <div>
-                <Lbl>Project *</Lbl>
-                <select className="input" value={project} disabled={loadingRates}
-                  onChange={e => { setProject(e.target.value); setDaType(''); setBranch('') }}>
-                  <option value="">Select…</option>
-                  {projects.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-              <div>
-                <Lbl>DA Type *</Lbl>
-                <select className="input" value={daType} disabled={!project}
-                  onChange={e => { setDaType(e.target.value); setBranch('') }}>
-                  <option value="">Select…</option>
-                  {daTypes.map(t => <option key={t} value={t}>{DA_TYPE_LABELS[t] || t}</option>)}
-                </select>
-              </div>
-              <div>
-                <Lbl>Branch *</Lbl>
-                <select className="input" value={branch} disabled={!daType}
-                  onChange={e => setBranch(e.target.value)}>
-                  <option value="">Select…</option>
-                  {branches.map(b => <option key={b} value={b}>{b}</option>)}
-                </select>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Projects</div>
+              <button type="button" onClick={addSegment}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 100, border: '1px solid var(--gold-border)', background: 'var(--gold-pale)', color: 'var(--gold)', fontWeight: 700, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <Plus size={12} /> Add Project
+              </button>
             </div>
-            {selectedRate && (
-              <div style={{ marginTop: 10, background: 'var(--bg-alt)', borderRadius: 10, padding: '9px 13px', display: 'flex', gap: 18 }}>
-                <div><span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>COD Rate</span><div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>{fmtAED(selectedRate.cod_rate)}</div></div>
-                <div><span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Non-COD Rate</span><div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>{fmtAED(selectedRate.non_cod_rate)}</div></div>
-              </div>
-            )}
-          </section>
-
-          {/* ── Shipment Details ── */}
-          <section>
-            <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Shipment Details</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div><Lbl>COD Shipments *</Lbl><NumInput value={cod} onChange={setCod} /></div>
-              <div><Lbl>Non-COD Shipments *</Lbl><NumInput value={nonCod} onChange={setNonCod} /></div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {segments.map((s, i) => {
+                const daTypes = daTypesFor(s.project)
+                const branches = branchesFor(s.project, s.daType)
+                const rate = rateFor(s.project, s.daType, s.branch)
+                const seg = segResults[i]
+                return (
+                  <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                      <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--text)' }}>Project {i + 1}</div>
+                      {segments.length > 1 && (
+                        <button type="button" onClick={() => removeSegment(i)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', display: 'flex', padding: 4 }}>
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                      <div>
+                        <Lbl>Project *</Lbl>
+                        <select className="input" value={s.project} disabled={loadingRates}
+                          onChange={e => updateSegment(i, { project: e.target.value, daType: '', branch: '' })}>
+                          <option value="">Select…</option>
+                          {projects.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <Lbl>DA Type *</Lbl>
+                        <select className="input" value={s.daType} disabled={!s.project}
+                          onChange={e => updateSegment(i, { daType: e.target.value, branch: '' })}>
+                          <option value="">Select…</option>
+                          {daTypes.map(t => <option key={t} value={t}>{DA_TYPE_LABELS[t] || t}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <Lbl>Branch *</Lbl>
+                        <select className="input" value={s.branch} disabled={!s.daType}
+                          onChange={e => updateSegment(i, { branch: e.target.value })}>
+                          <option value="">Select…</option>
+                          {branches.map(b => <option key={b} value={b}>{b}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    {rate && (
+                      <div style={{ marginTop: 10, background: 'var(--bg-alt)', borderRadius: 10, padding: '9px 13px', display: 'flex', gap: 18 }}>
+                        <div><span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>COD Rate</span><div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>{fmtAED(rate.cod_rate)}</div></div>
+                        <div><span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Non-COD Rate</span><div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>{fmtAED(rate.non_cod_rate)}</div></div>
+                      </div>
+                    )}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 10 }}>
+                      <div><Lbl>COD Shipments *</Lbl><NumInput value={s.cod} onChange={v => updateSegment(i, { cod: v })} /></div>
+                      <div><Lbl>Non-COD Shipments *</Lbl><NumInput value={s.nonCod} onChange={v => updateSegment(i, { nonCod: v })} /></div>
+                    </div>
+                    {rate && (s.cod !== '' || s.nonCod !== '') && (
+                      <div style={{ marginTop: 8, fontSize: 11.5, color: 'var(--text-muted)' }}>
+                        COD Payment {fmtAED(seg.codPayment)} · Non-COD Payment {fmtAED(seg.nonCodPayment)}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
-            {selectedRate && (cod !== '' || nonCod !== '') && (
-              <div style={{ marginTop: 8, fontSize: 11.5, color: 'var(--text-muted)' }}>
-                COD Payment {fmtAED(codPayment)} · Non-COD Payment {fmtAED(nonCodPayment)}
-              </div>
-            )}
           </section>
 
           {/* ── Deductions ── */}

@@ -15,6 +15,16 @@ export function calcGross(cod, codRate, nonCod, nonCodRate) {
   return { codPayment, nonCodPayment, grossSalary: round2(codPayment + nonCodPayment) }
 }
 
+// A driver can split their month across more than one (Project, DA Type, Branch)
+// combo — sums calcGross() across every segment into one Gross Salary, mirroring
+// backend/src/routes/imile-salary.js's saveImileEntry(). Each segment is
+// { cod, codRate, nonCod, nonCodRate }; codRate/nonCodRate may be undefined
+// (rate not yet resolved) and are treated as 0, same as calcGross does.
+export function sumSegments(segments = []) {
+  const resolved = segments.map(s => ({ ...s, ...calcGross(s.cod, s.codRate, s.nonCod, s.nonCodRate) }))
+  return { segments: resolved, grossSalary: round2(resolved.reduce((sum, s) => sum + s.grossSalary, 0)) }
+}
+
 export function calcDeductions(deductions = {}) {
   let total = 0
   for (const f of DEDUCTION_FIELDS) total += Number(deductions[f] || 0)
