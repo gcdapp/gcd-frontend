@@ -21,6 +21,17 @@ const MONTHS  = Array.from({ length: 6 }, (_, i) => {
   return `${Math.floor(total / 12)}-${String(total % 12 + 1).padStart(2, '0')}`
 })
 const EMP_COLORS = ['#FBBF24','#818CF8','#34D399','#F87171','#38BDF8','#A78BFA','#FB923C','#4ADE80']
+// Client-project columns for the Costwise Summary table — these 5 project_types
+// don't carry an Amazon station_code (see normalizeStationCode/CLIENT_PROJECTS in
+// the employees route), so their expenses need their own grouping dimension instead
+// of falling into Unassigned. Short labels to match DDB1/DXE6's compact column width.
+const CLIENT_PROJECT_COLS = [
+  ['jnt_express',       'JNT'],
+  ['imile',             'iMile'],
+  ['creative_packers',  'Creative Packers'],
+  ['le_chocola',        'Le Chocola'],
+  ['ig_rak',            'IG RAK'],
+]
 // Each sort field has a "natural" default direction (newest/highest/A-Z first) —
 // applied whenever the field changes, so switching fields doesn't feel backwards.
 const SORT_DEFAULT_DIR = { date: 'desc', amount: 'desc', emp: 'asc', cat: 'asc', creator: 'asc' }
@@ -213,30 +224,43 @@ function ExpensesPageInner() {
 
   useEffect(() => { setPage(1) }, [search, catFilter, empFilter, creatorFilter, statusFilter, sortBy, sortDir, month])
 
-  // Costwise Summary (category × station breakdown) — was an unmemoized IIFE sitting
-  // directly in the render body doing a nested filter() per category×station, so it
-  // recomputed from scratch on every keystroke in search, every sort/filter change,
-  // even every page click. Now a single O(expenses) pass, memoized on expenses alone.
+  // Costwise Summary (category × station/project breakdown) — was an unmemoized IIFE
+  // sitting directly in the render body doing a nested filter() per category×station,
+  // so it recomputed from scratch on every keystroke in search, every sort/filter
+  // change, even every page click. Now a single O(expenses) pass, memoized on
+  // expenses alone. Columns are two kinds, both discovered dynamically (only shown
+  // if something actually falls in them this month): Amazon station codes
+  // (DDB1/DXE6, from emp_station) for Pulser/CRET drivers, and client projects (from
+  // emp_project_type) for the 5 types that don't carry a station — see
+  // normalizeStationCode()/CLIENT_PROJECTS in the employees route, which is exactly
+  // why these were falling into Unassigned before emp_project_type was added to the
+  // GET /api/expenses response.
   const costwise = useMemo(() => {
-    const stations = [...new Set(expenses.map(e => e.emp_station).filter(Boolean))].sort()
-    const stationIndex = Object.fromEntries(stations.map((s, i) => [s, i]))
+    const stationCols = [...new Set(expenses.map(e => e.emp_station).filter(Boolean))].sort()
+      .map(s => ({ key: s, label: s }))
+    const projectCols = CLIENT_PROJECT_COLS.filter(([v]) =>
+      expenses.some(e => !e.emp_station && e.emp_project_type === v)
+    ).map(([v, label]) => ({ key: v, label }))
+    const columns = [...stationCols, ...projectCols]
+    const colIndex = Object.fromEntries(columns.map((c, i) => [c.key, i]))
     const catMap = new Map()
-    const colTotals = stations.map(() => 0)
+    const colTotals = columns.map(() => 0)
     let unassignedTotal = 0, grandTotal = 0
 
     for (const e of expenses) {
       const amt = Number(e.amount || 0)
       grandTotal += amt
       let entry = catMap.get(e.category)
-      if (!entry) { entry = { sts: stations.map(() => 0), unassigned: 0, row: 0 }; catMap.set(e.category, entry) }
+      if (!entry) { entry = { cols: columns.map(() => 0), unassigned: 0, row: 0 }; catMap.set(e.category, entry) }
       entry.row += amt
-      const idx = e.emp_station != null ? stationIndex[e.emp_station] : undefined
-      if (idx !== undefined) { entry.sts[idx] += amt; colTotals[idx] += amt }
+      const key = e.emp_station || e.emp_project_type
+      const idx = key != null ? colIndex[key] : undefined
+      if (idx !== undefined) { entry.cols[idx] += amt; colTotals[idx] += amt }
       else { entry.unassigned += amt; unassignedTotal += amt }
     }
 
     const catRows = CATEGORIES.filter(cat => catMap.has(cat.v)).map(cat => ({ cat, ...catMap.get(cat.v) }))
-    return { stations, hasUnassigned: unassignedTotal > 0, catRows, colTotals, unassignedTotal, grandTotal }
+    return { columns, hasUnassigned: unassignedTotal > 0, catRows, colTotals, unassignedTotal, grandTotal }
   }, [expenses])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
@@ -261,11 +285,11 @@ function ExpensesPageInner() {
 
   function exportCSV() {
     // Reuses the memoized costwise breakdown instead of recomputing it from scratch.
-    const { stations, catRows, colTotals, unassignedTotal, grandTotal } = costwise
-    const cols = [...stations, 'Unassigned']
-    const rows = [['Expense Type', ...cols, 'Total']]
-    for (const { cat, sts, unassigned, row } of catRows) {
-      rows.push([cat.v, ...sts.map(v => v || ''), unassigned || '', row])
+    const { columns, catRows, colTotals, unassignedTotal, grandTotal } = costwise
+    const headers = [...columns.map(c => c.label), 'Unassigned']
+    const rows = [['Expense Type', ...headers, 'Total']]
+    for (const { cat, cols, unassigned, row } of catRows) {
+      rows.push([cat.v, ...cols.map(v => v || ''), unassigned || '', row])
     }
     rows.push(['Total', ...colTotals.map(v => v || ''), unassignedTotal || '', grandTotal])
     const csv = rows.map(r => r.join(',')).join('\n')
@@ -438,7 +462,7 @@ function ExpensesPageInner() {
 
         {/* ── Costwise Summary Table ── */}
         {!loading && costwise.catRows.length > 0 && (() => {
-          const { stations, hasUnassigned, catRows, colTotals, unassignedTotal, grandTotal } = costwise
+          const { columns, hasUnassigned, catRows, colTotals, unassignedTotal, grandTotal } = costwise
           const unassignedPct = grandTotal > 0 ? Math.round(unassignedTotal / grandTotal * 100) : 0
           const TH = { padding: '11px 14px', fontSize: 10.5, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', background: 'var(--bg-alt)', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap', textAlign: 'right' }
           const TD = { padding: '10px 14px', fontSize: 12.5, color: 'var(--text)', borderBottom: '1px solid var(--border)', textAlign: 'right', whiteSpace: 'nowrap' }
@@ -451,7 +475,7 @@ function ExpensesPageInner() {
                   </div>
                   <div>
                     <div style={{ fontWeight: 800, fontSize: 13.5, color: 'var(--text)' }}>Costwise Summary</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>By category × station</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>By category × station/project</div>
                   </div>
                 </div>
                 <button onClick={exportCSV}
@@ -465,9 +489,9 @@ function ExpensesPageInner() {
                   <thead>
                     <tr>
                       <th style={{ ...TH, textAlign: 'left', position: 'sticky', left: 0, zIndex: 1, minWidth: 170 }}>Expense Type</th>
-                      {stations.map(st => <th key={st} style={TH}>{st}</th>)}
+                      {columns.map(c => <th key={c.key} style={TH}>{c.label}</th>)}
                       {hasUnassigned && (
-                        <th style={{ ...TH, color: '#D97706', borderLeft: '1px dashed var(--border)' }} title="No linked employee, or their station isn't set">
+                        <th style={{ ...TH, color: '#D97706', borderLeft: '1px dashed var(--border)' }} title="No linked employee, or their station/project isn't set">
                           Unassigned
                         </th>
                       )}
@@ -475,7 +499,7 @@ function ExpensesPageInner() {
                     </tr>
                   </thead>
                   <tbody>
-                    {catRows.map(({ cat, sts, unassigned, row }, i) => (
+                    {catRows.map(({ cat, cols, unassigned, row }, i) => (
                       <tr key={cat.v}
                         style={{ background: i % 2 ? 'transparent' : 'color-mix(in srgb, var(--bg-alt) 40%, transparent)' }}
                         onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-alt)'}
@@ -486,8 +510,8 @@ function ExpensesPageInner() {
                             <span style={{ color: cat.c }}>{cat.v}</span>
                           </div>
                         </td>
-                        {sts.map((v, si) => (
-                          <td key={stations[si]} style={{ ...TD, color: v > 0 ? 'var(--text)' : 'var(--text-muted)', opacity: v > 0 ? 1 : 0.35 }}>
+                        {cols.map((v, ci) => (
+                          <td key={columns[ci].key} style={{ ...TD, color: v > 0 ? 'var(--text)' : 'var(--text-muted)', opacity: v > 0 ? 1 : 0.35 }}>
                             {v > 0 ? fmt(v) : '—'}
                           </td>
                         ))}
@@ -502,14 +526,14 @@ function ExpensesPageInner() {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan={1 + stations.length + (hasUnassigned ? 1 : 0) + 1} style={{ padding: 0 }}>
+                      <td colSpan={1 + columns.length + (hasUnassigned ? 1 : 0) + 1} style={{ padding: 0 }}>
                         <div style={{ height: 2, background: 'linear-gradient(90deg,#D97706,#FBBF24)' }}/>
                       </td>
                     </tr>
                     <tr>
                       <td style={{ ...TD, textAlign: 'left', position: 'sticky', left: 0, background: 'var(--bg-alt)', fontWeight: 800, color: 'var(--text)', borderBottom: 'none' }}>Total</td>
                       {colTotals.map((v, i) => (
-                        <td key={stations[i]} style={{ ...TD, background: 'var(--bg-alt)', fontWeight: 700, color: 'var(--text)', borderBottom: 'none' }}>{v > 0 ? fmt(v) : '—'}</td>
+                        <td key={columns[i].key} style={{ ...TD, background: 'var(--bg-alt)', fontWeight: 700, color: 'var(--text)', borderBottom: 'none' }}>{v > 0 ? fmt(v) : '—'}</td>
                       ))}
                       {hasUnassigned && (
                         <td style={{ ...TD, background: 'var(--bg-alt)', fontWeight: 700, color: '#D97706', borderLeft: '1px dashed var(--border)', borderBottom: 'none' }}>
