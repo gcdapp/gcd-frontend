@@ -1786,12 +1786,15 @@ export default function PayrollPage() {
     ? ALL_PAY_TABS.filter(([v]) => user.assigned_projects.includes(v)
         || (v === 'external' && user.assigned_projects.some(p => EXTERNAL_MERGED_TYPES.includes(p))))
     : ALL_PAY_TABS
-  const TAB_SLIPS = { staff:staffSlips, pulser:pulserSlips, cret:cretSlips, tradelink:tradelinkSlips, external:externalSlips }
+  const TAB_SLIPS = { staff:staffSlips, pulser:pulserSlips, cret:cretSlips, tradelink:tradelinkSlips, external:externalSlipsFiltered }
   const activeTabSlips = TAB_SLIPS[payTab] || staffSlips
   // payTab can briefly point at a tab PAY_TABS just filtered out (e.g. a scoped
   // manager's first render, before the effect below corrects it) — .find() would
   // then return undefined and crash on [1] wherever the label is read.
   const currentTabLabel = PAY_TABS.find(([v])=>v===payTab)?.[1] || PROJECT_TYPE_LABELS[payTab] || payTab
+  const currentSectionLabel = payTab==='external' && extProjectFilter!=='all'
+    ? (EXTERNAL_PROJECT_TYPES.find(([t])=>t===extProjectFilter)?.[1] || currentTabLabel)
+    : currentTabLabel
 
   // Land a scoped manager on one of her own tabs instead of the default "Staff &
   // Admins" (which she'd never have anyone in, or may not even be allowed to open).
@@ -1841,6 +1844,10 @@ export default function PayrollPage() {
 
   // Selection is scoped to whichever tab/month is on screen — switching either clears it.
   useEffect(() => { exitEntrySelectMode() }, [payTab, month])
+  // The project pill-filter only applies within the External tab — leaving it set
+  // while on another tab (or a different month, where the mix of projects present
+  // may differ) would silently hide rows the next time External is revisited.
+  useEffect(() => { setExtProjectFilter('all') }, [payTab, month])
 
   return (
     <>
@@ -1991,8 +1998,20 @@ export default function PayrollPage() {
                 </div>
               )}
             </div>
+            {payTab==='external' && EXTERNAL_PROJECT_TYPES.filter(([t])=>externalProjectCounts[t]>0).length > 1 && (
+              <div className="py-driver-tabs" style={{marginTop:-4}}>
+                <button onClick={()=>setExtProjectFilter('all')} className={`py-driver-tab${extProjectFilter==='all'?' active':''}`}>
+                  All <span className="py-driver-tab-count">{externalSlips.length}</span>
+                </button>
+                {EXTERNAL_PROJECT_TYPES.filter(([t])=>externalProjectCounts[t]>0).map(([t,l])=>(
+                  <button key={t} onClick={()=>setExtProjectFilter(t)} className={`py-driver-tab${extProjectFilter===t?' active':''}`}>
+                    {l} <span className="py-driver-tab-count">{externalProjectCounts[t]}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             {activeTabSlips.length > 0 ? (
-              <Section title={currentTabLabel}
+              <Section title={currentSectionLabel}
                 slips={activeTabSlips} onMarkAllPaid={markAllPaidInGroup} {...cardProps}
                 markingPaid={(id)=>markingPaid.has(id)}
                 selectMode={entrySelectMode} selectedIds={selectedEntryIds} onToggleSelect={toggleEntrySelect}
