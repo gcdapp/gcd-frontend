@@ -359,30 +359,24 @@ function ExpensesPageInner() {
 
                   {/* Donut — by category */}
                   {byCat.length > 0 && (
-                    <div style={{ background: 'var(--bg-alt)', borderRadius: 14, padding: 18 }}>
-                      <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--text)', marginBottom: 14 }}>By Category</div>
-                      <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                        <PieChart width={160} height={160}>
-                          <Pie data={byCat} cx={80} cy={80} innerRadius={52} outerRadius={76} paddingAngle={3} dataKey="value" strokeWidth={0}>
-                            {byCat.map(c => <Cell key={c.name} fill={c.color}/>)}
-                          </Pie>
-                          <Tooltip content={<Tip/>}/>
-                        </PieChart>
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                          <div style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total</div>
-                          <div style={{ fontSize: 15, fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.02em', marginTop: 2 }}>AED {Number(total).toLocaleString('en-AE', { maximumFractionDigits: 0 })}</div>
+                    <div style={{ background: 'var(--bg-alt)', borderRadius: 14, padding: 18, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--text)', alignSelf: 'flex-start', marginBottom: 14 }}>By Category</div>
+                      <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                        {/* Total sits behind the chart (zIndex 1) so a slice's hover tooltip
+                            (rendered inside the PieChart's own stacking context, zIndex 2)
+                            always shows in front of it instead of being covered. */}
+                        <div style={{ position: 'absolute', inset: 0, zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total</div>
+                          <div style={{ fontSize: 19, fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.02em', marginTop: 2 }}>AED {Number(total).toLocaleString('en-AE', { maximumFractionDigits: 0 })}</div>
                         </div>
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 16px', justifyContent: 'center' }}>
-                        {byCat.slice(0, 6).map(c => (
-                          <div key={c.name} style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 74 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                              <div style={{ width: 7, height: 7, borderRadius: '50%', background: c.color, flexShrink: 0 }}/>
-                              <span style={{ fontSize: 10, color: 'var(--text-muted)', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-                            </div>
-                            <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)' }}>AED {fmt(c.value)}</span>
-                          </div>
-                        ))}
+                        <div style={{ position: 'relative', zIndex: 2 }}>
+                          <PieChart width={220} height={220}>
+                            <Pie data={byCat} cx={110} cy={110} innerRadius={72} outerRadius={106} paddingAngle={3} dataKey="value" strokeWidth={0}>
+                              {byCat.map(c => <Cell key={c.name} fill={c.color}/>)}
+                            </Pie>
+                            <Tooltip content={<Tip/>}/>
+                          </PieChart>
+                        </div>
                       </div>
                     </div>
                   )}
