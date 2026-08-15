@@ -1769,6 +1769,22 @@ export default function PayrollPage() {
     return t==='external' || EXTERNAL_MERGED_TYPES.includes(t)
   }), [driverSlips])
   const tradelinkSlips = useMemo(() => driverSlips.filter(s=>(s.project_type||'').toLowerCase()==='tradelink'), [driverSlips])
+  // The External tab merges 5 real project_types into one list (90+ people) with no
+  // way to isolate just one — this pill row lets it be sorted/filtered down to a
+  // single project. 'external' here is the literal project_type IG RAK employees
+  // carry (they don't have a dedicated salary engine, unlike the other 4).
+  const EXTERNAL_PROJECT_TYPES = [
+    ['jnt_express','JNT'],['imile','iMile'],['creative_packers','Packers'],['le_chocola','Le Chocola'],['external','IG RAK'],
+  ]
+  const externalProjectCounts = useMemo(() => {
+    const m = {}
+    for (const s of externalSlips) { const t=(s.project_type||'').toLowerCase(); m[t]=(m[t]||0)+1 }
+    return m
+  }, [externalSlips])
+  const [extProjectFilter, setExtProjectFilter] = useState('all')
+  const externalSlipsFiltered = useMemo(() =>
+    extProjectFilter==='all' ? externalSlips : externalSlips.filter(s=>(s.project_type||'').toLowerCase()===extProjectFilter),
+    [externalSlips, extProjectFilter])
   const [payTab, setPayTab] = useState('staff')
   const ALL_PAY_TABS = [
     ['staff','Staff & Admins',staffSlips.length],['pulser','Pulser',pulserSlips.length],['cret','CRET',cretSlips.length],
