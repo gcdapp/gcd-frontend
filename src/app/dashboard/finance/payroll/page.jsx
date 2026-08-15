@@ -1219,8 +1219,9 @@ const PAY_CSS = `
   .py-search { width:100%; padding:8px 12px 8px 34px; border-radius:20px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-size:12.5px; font-family:Poppins,sans-serif; outline:none; box-sizing:border-box; transition:border-color var(--t-fast),box-shadow var(--t-fast); }
   .py-search:focus { border-color:var(--gold-border); box-shadow:0 0 0 3px var(--gold-pale); }
   .py-tbtn { display:flex; align-items:center; gap:5px; padding:8px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; font-family:Poppins,sans-serif; white-space:nowrap; transition:opacity 0.15s,transform 0.1s; }
-  .py-tbtn:hover { opacity:0.82; transform:translateY(-1px); }
-  .py-tbtn:active { opacity:0.7; transform:translateY(0) scale(0.96); }
+  .py-tbtn:hover:not(:disabled) { opacity:0.82; transform:translateY(-1px); }
+  .py-tbtn:active:not(:disabled) { opacity:0.7; transform:translateY(0) scale(0.96); }
+  .py-tbtn:disabled { opacity:0.45; cursor:not-allowed; }
   .py-tbtn-csv   { background:var(--card); border:1.5px solid var(--border); color:var(--text-muted); }
   .py-tbtn-slip  { background:rgba(29,111,164,0.1); border:1.5px solid rgba(29,111,164,0.3); color:#1D6FA4; }
   .py-tbtn-bonus { background:rgba(16,185,129,0.1); border:1.5px solid rgba(16,185,129,0.3); color:#10B981; }
@@ -1346,7 +1347,7 @@ const PAY_CSS = `
 `
 
 /* ── Payroll Card ── */
-const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, markingPaid, onEditSalary, onRemoveDed, onRemoveBonus, onEditEntry, onDeleteEntry, month, index, canPay, selectMode, selectedIds, onToggleSelect}) {
+const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, markingPaid, onEditSalary, onRemoveDed, onRemoveBonus, onEditEntry, onDeleteEntry, month, index, canEditEntries, canMarkPaid, selectMode, selectedIds, onToggleSelect}) {
   const [open,      setOpen]      = useState(false)
   const [payMethod, setPayMethod] = useState('bank')
   const calc   = slip._calc
@@ -1355,6 +1356,9 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
   const role   = resolveRole(slip.role, slip.project_type)
   const selected = !!(selectMode && selectedIds?.has(slip.id))
   const av = avatarStyle(slip.id||slip.name)
+  // Non-admins can only generate a payslip once the payment is actually marked paid —
+  // admins can always generate one (e.g. to preview before marking paid).
+  const canGeneratePayslip = canMarkPaid || isPaid
 
   return (
     <div className={`py-row ${isPaid ? 'py-row-paid' : 'py-row-pend'}`} style={{animationDelay:`${Math.min(index*0.03,0.4)}s`, background: selected ? 'rgba(220,38,38,0.05)' : undefined}}>
@@ -1418,16 +1422,19 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
                 Pending Ded: AED {fmt(calc.pendingDeduction)}
               </span>
             )}
-            {/* Payment method selector + generate payslip */}
-            <div style={{display:'flex',alignItems:'center',gap:0,border:'1px solid rgba(29,111,164,0.3)',borderRadius:8,overflow:'hidden',background:'rgba(29,111,164,0.05)'}}>
-              <select value={payMethod} onChange={e=>setPayMethod(e.target.value)}
-                style={{padding:'5px 6px',border:'none',background:'transparent',color:'#1D6FA4',fontWeight:700,fontSize:10.5,fontFamily:'Poppins,sans-serif',cursor:'pointer',outline:'none',appearance:'none',WebkitAppearance:'none'}}>
+            {/* Payment method selector + generate payslip — locked for non-admins until
+                the payment is actually marked paid (an admin-only action, see canMarkPaid) */}
+            <div style={canGeneratePayslip?{display:'flex',alignItems:'center',gap:0,border:'1px solid rgba(29,111,164,0.3)',borderRadius:8,overflow:'hidden',background:'rgba(29,111,164,0.05)'}
+              :{display:'flex',alignItems:'center',gap:0,border:'1px solid var(--border)',borderRadius:8,overflow:'hidden',background:'var(--bg-alt)',opacity:0.55}}>
+              <select value={payMethod} onChange={e=>setPayMethod(e.target.value)} disabled={!canGeneratePayslip}
+                style={{padding:'5px 6px',border:'none',background:'transparent',color:canGeneratePayslip?'#1D6FA4':'var(--text-muted)',fontWeight:700,fontSize:10.5,fontFamily:'Poppins,sans-serif',cursor:canGeneratePayslip?'pointer':'not-allowed',outline:'none',appearance:'none',WebkitAppearance:'none'}}>
                 <option value="bank">Bank</option>
                 <option value="cash">Cash</option>
               </select>
-              <div style={{width:1,height:20,background:'rgba(29,111,164,0.25)'}}/>
-              <button onClick={()=>generatePayslip({...slip},month,payMethod)} className="py-act py-act-blue"
-                style={{border:'none',borderRadius:0,background:'transparent'}}>
+              <div style={{width:1,height:20,background:canGeneratePayslip?'rgba(29,111,164,0.25)':'var(--border)'}}/>
+              <button onClick={()=>canGeneratePayslip&&generatePayslip({...slip},month,payMethod)} disabled={!canGeneratePayslip} className="py-act py-act-blue"
+                style={{border:'none',borderRadius:0,background:'transparent',color:canGeneratePayslip?undefined:'var(--text-muted)',cursor:canGeneratePayslip?'pointer':'not-allowed'}}
+                title={canGeneratePayslip?undefined:'Available once an admin marks this payment as paid'}>
                 <FileText size={11}/> Payslip
               </button>
             </div>
@@ -1435,26 +1442,26 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
               <Download size={11}/> CSV
             </button>
             <div className="py-spacer"/>
-            {canPay && (
+            {canEditEntries && (
               <button onClick={()=>!isPaid&&onEditEntry(slip)} disabled={isPaid} className="py-act py-act-blue"
                 style={isPaid?{opacity:0.55,cursor:'not-allowed'}:undefined}
                 title={isPaid?'Mark unpaid first to edit':undefined}>
                 <Pencil size={11}/> Edit
               </button>
             )}
-            {canPay && (
+            {canEditEntries && (
               <button onClick={()=>!isPaid&&onDeleteEntry(slip)} disabled={isPaid} className="py-act"
                 style={{color:isPaid?'var(--text-muted)':'#EF4444', borderColor:isPaid?'var(--border)':'rgba(239,68,68,0.3)', opacity:isPaid?0.55:1, cursor:isPaid?'not-allowed':'pointer'}}
                 title={isPaid?'Mark unpaid first to delete':'Remove from this month\'s payroll'}>
                 <Trash2 size={11}/> Delete
               </button>
             )}
-            {canPay && !isPaid && (
+            {canMarkPaid && !isPaid && (
               <button onClick={()=>!markingPaid&&onMarkPaid(slip)} disabled={markingPaid} className="py-pay-btn">
                 {markingPaid ? <><span className="py-spin"/> Saving…</> : <><Check size={11}/> Mark Paid</>}
               </button>
             )}
-            {canPay && isPaid && (
+            {canMarkPaid && isPaid && (
               <button onClick={()=>onMarkUnpaid(slip)} className="py-unpay-btn">
                 <Undo2 size={11}/> Mark Unpaid
               </button>
@@ -1552,14 +1559,14 @@ function Section({title, slips, onMarkAllPaid, selectMode, selectedIds, onToggle
           <span className="py-sec-count">{slips.length}</span>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          {cardProps.canPay && slips.length > 0 && (
+          {cardProps.canEditEntries && slips.length > 0 && (
             <button className="py-sec-mark"
               style={selectMode ? {color:'var(--text-muted)',background:'transparent',borderColor:'var(--border)'} : undefined}
               onClick={()=> selectMode ? onExitSelect() : onEnterSelect()}>
               {selectMode ? 'Cancel' : 'Select'}
             </button>
           )}
-          {cardProps.canPay && unpaidCount > 0 && !selectMode && (
+          {cardProps.canMarkPaid && unpaidCount > 0 && !selectMode && (
             <button className="py-sec-mark" onClick={()=>onMarkAllPaid(slips)}>
               <Check size={11}/> Mark All Paid ({unpaidCount})
             </button>
@@ -1609,7 +1616,11 @@ function Section({title, slips, onMarkAllPaid, selectMode, selectedIds, onToggle
 /* ── Main Page ── */
 export default function PayrollPage() {
   const {user}    = useAuth()
-  const canPay    = ['admin','accountant'].includes(user?.role)
+  // Edit/Delete Entry stays available to Accountant (unrelated to the paid-approval
+  // gate below) — only Mark Paid/Unpaid narrows to Admin, since marking a month paid
+  // is what unlocks payslip generation for everyone else.
+  const canEditEntries = ['admin','accountant'].includes(user?.role)
+  const canMarkPaid = user?.role === 'admin'
   const canAddMod = ['admin','manager','general_manager','accountant'].includes(user?.role)
 
   const [payroll,     setPayroll]     = useState([])
@@ -1858,7 +1869,7 @@ export default function PayrollPage() {
   }, [pulserSlips, cretSlips, externalSlips])
   const pieData = [{name:'Earned',value:totalEarned,color:'#B8860B'},{name:'Bonus',value:totalBonus,color:'#10B981'},{name:'Deductions',value:totalDed,color:'#EF4444'}].filter(d=>d.value>0)
 
-  const cardProps = {month, onMarkPaid:markPaidSlip, onMarkUnpaid:markUnpaidSlip, onEditSalary:s=>setModal({type:'salary',emp:s}), onRemoveDed:removeDed, onRemoveBonus:removeBonus, onEditEntry:editEntry, onDeleteEntry:deleteEntry, canPay}
+  const cardProps = {month, onMarkPaid:markPaidSlip, onMarkUnpaid:markUnpaidSlip, onEditSalary:s=>setModal({type:'salary',emp:s}), onRemoveDed:removeDed, onRemoveBonus:removeBonus, onEditEntry:editEntry, onDeleteEntry:deleteEntry, canEditEntries, canMarkPaid}
 
   // Selection is scoped to whichever tab/month is on screen — switching either clears it.
   useEffect(() => { exitEntrySelectMode() }, [payTab, month])
@@ -1975,13 +1986,16 @@ export default function PayrollPage() {
               <option value="bank">Bank</option>
               <option value="cash">Cash</option>
             </select>
-            <button onClick={()=>generateAllPayslips(filtered,month,bulkMethod)} className="py-tbtn py-tbtn-slip" style={{borderRadius:0,border:'none'}}><FileText size={13}/> All Payslips</button>
+            <button onClick={()=>generateAllPayslips(canMarkPaid?filtered:filtered.filter(s=>s.payroll_status==='paid'),month,bulkMethod)}
+              disabled={!canMarkPaid && !filtered.some(s=>s.payroll_status==='paid')}
+              title={canMarkPaid?undefined:'Only already-paid employees are included — full export available to admins'}
+              className="py-tbtn py-tbtn-slip" style={{borderRadius:0,border:'none'}}><FileText size={13}/> All Payslips</button>
           </div>
           {canAddMod && <>
             <button onClick={()=>setModal('bonus')} className="py-tbtn py-tbtn-bonus"><Plus size={13}/> Bonus</button>
             <button onClick={()=>setModal('deduction')} className="py-tbtn py-tbtn-ded"><Plus size={13}/> Deduction</button>
           </>}
-          {canPay && <button onClick={()=>markAllPaidInGroup(filtered)} className="py-tbtn py-tbtn-all"><Check size={13}/> Mark All Paid</button>}
+          {canMarkPaid && <button onClick={()=>markAllPaidInGroup(filtered)} className="py-tbtn py-tbtn-all"><Check size={13}/> Mark All Paid</button>}
         </div>
 
         {/* Employee lists */}
