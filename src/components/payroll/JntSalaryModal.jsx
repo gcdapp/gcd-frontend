@@ -3,8 +3,7 @@
 // components, live-calculating summary. Pairs with backend/src/routes/jnt-salary.js
 // and backend/src/lib/jntSalaryEngine.js; frontend calc mirror in lib/jntSalaryCalc.js.
 import { useState, useEffect, useMemo } from 'react'
-import { createPortal } from 'react-dom'
-import { X, Plus, Trash2, AlertCircle, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, AlertCircle, ChevronDown } from 'lucide-react'
 import { jntSalaryApi } from '@/lib/api'
 import {
   SHIPMENT_TYPES, DEDUCTION_FIELDS, calcComponentAmount, calcSalary, calcDeductions, calcNetSalary, fmtAED,
@@ -34,7 +33,7 @@ function NumInput({ value, onChange, placeholder = '0', small }) {
   )
 }
 
-export default function JntSalaryModal({ employees, month, initialEmpId, onSave, onClose, onChangeType }) {
+export default function JntSalaryModal({ employees, month, initialEmpId, onSave, onClose }) {
   const jntEmployees = useMemo(() => (employees || []).filter(e => (e.project_type || '').toLowerCase() === 'jnt_express'), [employees])
 
   const [empId, setEmpId] = useState(initialEmpId || '')
@@ -168,32 +167,8 @@ export default function JntSalaryModal({ employees, month, initialEmpId, onSave,
 
   const selectedEmployee = jntEmployees.find(e => e.id === empId)
 
-  return createPortal(
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth: 620, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '92vh' }}
-        onClick={e => e.stopPropagation()}>
-        <div style={{ padding: '18px 22px', borderBottom: '1px solid var(--border)', background: 'linear-gradient(135deg,rgba(184,134,11,0.12),transparent)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <div>
-            <h3 style={{ fontWeight: 900, fontSize: 16, color: 'var(--text)', margin: 0 }}>{initialEmpId ? 'Edit' : 'Add'} JNT DA Salary</h3>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{month}</p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {onChangeType && (
-              <select
-                className="input" value="jnt_express" title="Change pay type"
-                onChange={e => onChangeType(e.target.value)}
-                style={{ padding: '6px 9px', fontSize: 11.5, width: 'auto' }}
-              >
-                <option value="jnt_express">JNT DAs</option>
-                <option value="imile">iMile DAs</option>
-                <option value="le_chocola">Le Chocola Packers</option>
-                <option value="creative_packers">Creative Packers</option>
-              </select>
-            )}
-            <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--bg-alt)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><X size={15} /></button>
-          </div>
-        </div>
-
+  return (
+    <>
         <div style={{ padding: '18px 22px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
           {err && (
             <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 10, padding: '9px 13px', fontSize: 12.5, color: '#DC2626', display: 'flex', gap: 7, alignItems: 'center' }}>
@@ -400,8 +375,6 @@ export default function JntSalaryModal({ employees, month, initialEmpId, onSave,
             </button>
           </div>
         </div>
-      </div>
-    </div>,
-    document.body
+    </>
   )
 }

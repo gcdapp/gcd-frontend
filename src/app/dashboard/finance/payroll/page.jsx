@@ -15,6 +15,7 @@ import ConfirmDialog from '@/components/ConfirmDialog'
 import JntSalaryModal from '@/components/payroll/JntSalaryModal'
 import PackerPayModal from '@/components/payroll/PackerPayModal'
 import ImileSalaryModal from '@/components/payroll/ImileSalaryModal'
+import PayEntryModalShell from '@/components/payroll/PayEntryModalShell'
 import {
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts'
@@ -391,7 +392,7 @@ function SalaryModal({emp, onSave, onClose}) {
     } catch(e){setErr(e.message)}finally{setSaving(false)}
   }
   return createPortal(
-    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal-overlay">
       <div className="modal" style={{maxWidth:360,padding:0,overflow:'hidden'}}>
         <div style={{padding:'22px 24px 18px',background:'linear-gradient(135deg,rgba(184,134,11,0.1),transparent)'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
@@ -438,7 +439,7 @@ function BonusModal({employees, month, onSave, onClose}) {
     } catch(e){setErr(e.message)}finally{setSaving(false)}
   }
   return createPortal(
-    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal-overlay">
       <div className="modal" style={{maxWidth:440,padding:0,overflow:'hidden'}}>
         <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(16,185,129,0.1),transparent)'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
@@ -497,7 +498,7 @@ function DeductionModal({employees, month, onSave, onClose}) {
     catch(e){setErr(e.message)}finally{setSaving(false)}
   }
   return createPortal(
-    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal-overlay">
       <div className="modal" style={{maxWidth:440,padding:0,overflow:'hidden'}}>
         <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(239,68,68,0.08),transparent)'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
@@ -576,42 +577,42 @@ const EXTERNAL_MERGED_TYPES = ['jnt_express', 'imile', 'le_chocola', 'creative_p
 // early-return partway through that component) because JNT/non-JNT need different hook
 // sets, and React requires the same hooks in the same order on every render of one
 // component instance — splitting into sibling components sidesteps that entirely.
+const SHELL_TITLES = { jnt_express:'JNT DA Salary', imile:'iMile DA Salary', creative_packers:'Creative Packers Pay', le_chocola:'Le Chocola Packers Pay' }
+const SHELL_WIDTHS = { jnt_express:620, imile:600, creative_packers:560, le_chocola:560 }
+
 function AddUnitsModal({employees, month, projectType, initialEmpId, onSave, onClose}) {
   // Opened from the merged "External" tab (projectType==='external'), the actual formula
   // is ambiguous until the accountant says which one applies — JNT/iMile/Le Chocola/
   // Creative Packers are calculated completely differently from a flat-rate external
   // driver. Editing an existing entry always passes that employee's real type directly
-  // (see editEntry below), so this selector only matters for a brand-new entry.
-  const [subType, setSubType] = useState(projectType === 'external' ? 'jnt_express' : projectType)
+  // (see editEntry below) — including the literal 'external' project_type IG RAK
+  // employees carry, which must NOT be overridden by the "default to JNT" fallback,
+  // or editing an IG RAK employee opens the wrong (JNT) form and fails its type guard.
+  // The fallback only makes sense for a brand-new entry, where there's no real
+  // employee's type to anchor on yet.
+  const [subType, setSubType] = useState(projectType === 'external' && !initialEmpId ? 'jnt_express' : projectType)
   const effType = projectType === 'external' ? subType : projectType
+  const showTypeSwitch = projectType === 'external' && EXTERNAL_MERGED_TYPES.includes(effType)
 
-  if (effType === 'jnt_express') {
+  // These 4 share one persistent modal shell (PayEntryModalShell) so switching the
+  // pay-type dropdown swaps only the body, instead of unmounting one modal (own
+  // portal/overlay) and mounting a different one — see PayEntryModalShell.jsx.
+  if (EXTERNAL_MERGED_TYPES.includes(effType)) {
     return (
-      <JntSalaryModal
-        employees={employees} month={month} initialEmpId={initialEmpId}
-        onSave={onSave} onClose={onClose}
-        onChangeType={projectType === 'external' ? setSubType : undefined}
-      />
-    )
-  }
-
-  if (effType === 'creative_packers' || effType === 'le_chocola') {
-    return (
-      <PackerPayModal
-        employees={employees} month={month} projectType={effType} initialEmpId={initialEmpId}
-        onSave={onSave} onClose={onClose}
-        onChangeType={projectType === 'external' ? setSubType : undefined}
-      />
-    )
-  }
-
-  if (effType === 'imile') {
-    return (
-      <ImileSalaryModal
-        employees={employees} month={month} initialEmpId={initialEmpId}
-        onSave={onSave} onClose={onClose}
-        onChangeType={projectType === 'external' ? setSubType : undefined}
-      />
+      <PayEntryModalShell
+        title={`${initialEmpId ? 'Edit' : 'Add'} ${SHELL_TITLES[effType]}`} month={month} maxWidth={SHELL_WIDTHS[effType]}
+        onClose={onClose} typeValue={showTypeSwitch ? effType : undefined} onTypeChange={showTypeSwitch ? setSubType : undefined}
+      >
+        {effType === 'jnt_express' && (
+          <JntSalaryModal employees={employees} month={month} initialEmpId={initialEmpId} onSave={onSave} onClose={onClose}/>
+        )}
+        {(effType === 'creative_packers' || effType === 'le_chocola') && (
+          <PackerPayModal employees={employees} month={month} projectType={effType} initialEmpId={initialEmpId} onSave={onSave} onClose={onClose}/>
+        )}
+        {effType === 'imile' && (
+          <ImileSalaryModal employees={employees} month={month} initialEmpId={initialEmpId} onSave={onSave} onClose={onClose}/>
+        )}
+      </PayEntryModalShell>
     )
   }
 
@@ -751,7 +752,7 @@ function GenericUnitsModal({employees, month, projectType, initialEmpId, subType
   const newDedTotal = SHEET_DEDUCTION_FIELDS.reduce((s,{k})=>s+(parseFloat(sheet[k])||0),0)
 
   return createPortal(
-    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal-overlay">
       <div className="modal" style={{maxWidth:480,maxHeight:'85vh',padding:0,overflow:'hidden',display:'flex',flexDirection:'column'}}>
         <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(184,134,11,0.1),transparent)',flexShrink:0}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -1089,7 +1090,7 @@ function BulkUnitsModal({month, projectType, employees, onSave, onClose}) {
   }
 
   return createPortal(
-    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal-overlay">
       <div className="modal" style={{maxWidth:600,maxHeight:'85vh',padding:0,overflow:'hidden',display:'flex',flexDirection:'column'}}>
         <div style={{padding:'20px 22px 16px',background:'linear-gradient(135deg,rgba(184,134,11,0.1),transparent)',flexShrink:0}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
