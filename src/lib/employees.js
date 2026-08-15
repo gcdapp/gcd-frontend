@@ -22,6 +22,17 @@ export function projectLabel(v) { return PROJECT_LABELS[v] || (v ? v.charAt(0).t
 export const CLIENT_PROJECTS = ['creative_packers', 'ig_rak', 'imile', 'jnt_express', 'le_chocola']
 export function isClientProject(v) { return CLIENT_PROJECTS.includes(v) }
 
+// A manager scoped to ONLY these two (e.g. via User Accounts > assigned_projects)
+// is "Amazon-only scoped" — unlike a client-project-scoped manager (e.g. Asma),
+// they still get to see the company Expense Trend chart on Overview, just locked
+// to the Amazon view (no Payroll access either — see Sidebar.jsx). Backend mirrors
+// this exact list in routes/analytics.js's AMAZON_ONLY_PROJECTS.
+export const AMAZON_PROJECTS = ['pulser', 'cret']
+export function isAmazonOnlyScoped(assignedProjects) {
+  return Array.isArray(assignedProjects) && assignedProjects.length > 0
+    && assignedProjects.every(p => AMAZON_PROJECTS.includes(p))
+}
+
 export const STATUS = {
   active:   { l:'Active',   c:'#10B981', bg:'#F0FDF4', bc:'#A7F3D0', dot:'#10B981' },
   on_leave: { l:'On Leave', c:'#F59E0B', bg:'#FFFBEB', bc:'#FDE68A', dot:'#F59E0B' },

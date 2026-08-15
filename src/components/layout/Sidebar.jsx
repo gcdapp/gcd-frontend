@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { useAlerts } from '@/lib/AlertsContext'
+import { isAmazonOnlyScoped } from '@/lib/employees'
 import { NAV } from '@/lib/data'
 import { useState } from 'react'
 import {
@@ -56,11 +57,17 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
   // has no use for Amazon-operations screens like Fleet/Deliveries/Expenses — those are
   // marked hideIfScoped so they only show for unrestricted accounts.
   const isProjectScoped = Array.isArray(user?.assigned_projects) && user.assigned_projects.length > 0
+  // A manager scoped to ONLY pulser/cret (Amazon-side — e.g. Iftikhar) isn't doing
+  // salary entry for any project, so Payroll (which stays visible for a normal
+  // client-project-scoped manager like Asma, who needs it for her own projects)
+  // is hidden for this narrower case specifically — see hideIfAmazonOnly in data.js.
+  const amazonOnlyScoped = isAmazonOnlyScoped(user?.assigned_projects)
 
   // Filter out manager role from nav visibility — admin handles everything manager did
   const nav = NAV.filter(item =>
     (!item.roles || item.roles.includes(user?.role)) &&
-    !(item.hideIfScoped && isProjectScoped)
+    !(item.hideIfScoped && isProjectScoped) &&
+    !(item.hideIfAmazonOnly && amazonOnlyScoped)
   )
 
   // Active: exact match, OR prefix match only when no sibling nav item is a closer match

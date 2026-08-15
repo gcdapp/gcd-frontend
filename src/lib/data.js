@@ -34,7 +34,7 @@ export const NAV = [
 
   // ── Finance ───────────────────────────────────────────────────
   { type:'section', label:'Finance', roles:['admin','accountant','manager','general_manager','hr','poc'] },
-  { label:'Payroll',          href:'/dashboard/finance/payroll',    icon:'Wallet',     roles:['admin','accountant','manager','general_manager'] },
+  { label:'Payroll',          href:'/dashboard/finance/payroll',    icon:'Wallet',     roles:['admin','accountant','manager','general_manager'], hideIfAmazonOnly:true },
   { label:'Expenses',         href:'/dashboard/finance/expenses',   icon:'Receipt',    roles:['admin','accountant','manager','general_manager'], hideIfScoped:true },
   { label:'Petty Cash',       href:'/dashboard/finance/petty-cash', icon:'Banknote',   roles:['admin','accountant','general_manager','hr','poc'] },
   { label:'Staff Attendance', href:'/dashboard/finance/attendance', icon:'Clock',      roles:['admin','accountant'] },

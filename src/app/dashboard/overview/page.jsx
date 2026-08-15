@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
+import { isAmazonOnlyScoped } from '@/lib/employees'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts'
 import {
   Users, Car, Wallet, ChevronRight, Smartphone,
@@ -42,11 +43,17 @@ export default function OverviewPage() {
   // their own, and Fleet is already hidden from their sidebar nav. Overview must
   // match that instead of independently leaking the whole company's fleet count.
   const isProjectScoped = Array.isArray(user?.assigned_projects) && user.assigned_projects.length > 0
+  // A manager scoped to ONLY pulser/cret (Amazon-side — e.g. Iftikhar) is treated
+  // differently from a client-project-scoped manager (e.g. Asma): they still see
+  // the Expense Trend chart below, just locked to the Amazon view — see amazonLocked.
+  const amazonLocked = isAmazonOnlyScoped(user?.assigned_projects)
   // Company-wide Expense Trend chart — open to every back-office role (Reports was
   // removed, Overview now covers that same audience: admin/general_manager/hr/
   // accountant) except a project-scoped manager, who must never see whole-company
-  // numbers. Backend enforces this too — see GET /api/analytics/expenses-chart.
-  const canSeeCompanyChart = !isProjectScoped && ['admin','general_manager','hr','accountant'].includes(user?.role)
+  // numbers — unless they're Amazon-only scoped, who get the Amazon-locked slice of
+  // it. Backend enforces this too, including the Amazon-only carve-out — see
+  // GET /api/analytics/expenses-chart.
+  const canSeeCompanyChart = (!isProjectScoped || amazonLocked) && ['admin','general_manager','hr','accountant'].includes(user?.role)
 
   useEffect(() => {
     if (user && user.role === 'poc') router?.replace('/dashboard/poc')
@@ -57,6 +64,10 @@ export default function OverviewPage() {
   // Combined = stacked Amazon + Other Projects (+ unattributed company spend);
   // the other two views isolate a single category's bars.
   const [expView,        setExpView]        = useState('combined')
+  // user loads asynchronously (useAuth) — amazonLocked is false on first render
+  // regardless of the real account, so this has to force the view once it resolves
+  // rather than just seeding useState's initial value.
+  useEffect(() => { if (amazonLocked) setExpView('amazon') }, [amazonLocked])
   // Same idea for the Delivery Agents card — Active/On Leave/Inactive/Total
   // broken down by Amazon vs Other Projects instead of always blended together.
   const [daView,         setDaView]         = useState('combined')
@@ -413,21 +424,25 @@ export default function OverviewPage() {
             <div>
               <div className="ov-card-title">Expense Trend — Last 12 Months</div>
               <div className="ov-card-sub">
-                {expView==='combined' ? 'Spend vs. amount received, stacked by month' : expView==='amazon' ? 'Amazon-side spend vs. amount received' : 'Other Projects spend vs. amount received'}
+                {amazonLocked ? 'Amazon-side spend vs. amount received' : expView==='combined' ? 'Spend vs. amount received, stacked by month' : expView==='amazon' ? 'Amazon-side spend vs. amount received' : 'Other Projects spend vs. amount received'}
               </div>
             </div>
-            <div className="ov-pill-tabs">
-              {[
-                { id:'combined', label:'Combined',        c:'#B8860B' },
-                { id:'amazon',   label:'Amazon',           c:'#3B82F6' },
-                { id:'client',   label:'Other Projects',  c:'#7C3AED' },
-              ].map(v => (
-                <button key={v.id} onClick={()=>setExpView(v.id)} className={`ov-pill-tab${expView===v.id?' active':''}`}
-                  style={{ background: expView===v.id ? v.c : undefined, color: expView===v.id ? 'white' : undefined }}>
-                  {v.label}
-                </button>
-              ))}
-            </div>
+            {/* Amazon-only-scoped accounts (Iftikhar) get locked to the Amazon view
+                (forced above) with no switcher — there's nothing else for them to see. */}
+            {!amazonLocked && (
+              <div className="ov-pill-tabs">
+                {[
+                  { id:'combined', label:'Combined',        c:'#B8860B' },
+                  { id:'amazon',   label:'Amazon',           c:'#3B82F6' },
+                  { id:'client',   label:'Other Projects',  c:'#7C3AED' },
+                ].map(v => (
+                  <button key={v.id} onClick={()=>setExpView(v.id)} className={`ov-pill-tab${expView===v.id?' active':''}`}
+                    style={{ background: expView===v.id ? v.c : undefined, color: expView===v.id ? 'white' : undefined }}>
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div style={{ padding:'16px 12px 8px' }}>
