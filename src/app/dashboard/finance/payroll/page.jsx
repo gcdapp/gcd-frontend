@@ -1239,6 +1239,7 @@ const PAY_CSS = `
   .py-row { background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:var(--shadow); transition:box-shadow var(--t-base),transform var(--t-base),border-color var(--t-base); animation:pySlide 0.35s ease both; }
   .py-row:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); border-color:var(--border-strong); }
   .py-row-paid  { border-color:rgba(52,211,153,0.25); }
+  .py-row-pend  { border-color:rgba(184,134,11,0.28); }
   .py-row-top   { height:3px; flex-shrink:0; }
   .py-row-paid  .py-row-top { background:linear-gradient(90deg,#34D399,#10B981); }
   .py-row-pend  .py-row-top { background:linear-gradient(90deg,#B8860B,#D4A017); }
