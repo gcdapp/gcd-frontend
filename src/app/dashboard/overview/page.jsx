@@ -18,9 +18,9 @@ function Skel({ w='100%', h=16, r=8 }) {
   return <span className="ov-sk" style={{ display:'block', width:w, height:h, borderRadius:r }}/>
 }
 
-function KpiSpark({color}) {
+function KpiSpark() {
   return (
-    <svg width="30" height="14" viewBox="0 0 30 14" fill="none" style={{color,flexShrink:0}}>
+    <svg width="30" height="14" viewBox="0 0 30 14" fill="none" className="ov-kpi-spark" style={{flexShrink:0}}>
       <path d="M1 11 L7 6 L12 9 L18 3 L24 7 L29 2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" opacity="0.55"/>
     </svg>
   )
@@ -192,11 +192,15 @@ export default function OverviewPage() {
           animation: shimmer 1.2s ease-in-out infinite;
         }
 
-        .ov-page { display:flex; flex-direction:column; gap:18px; animation:slideUp 0.3s ease; }
+        .ov-page {
+          display:flex; flex-direction:column; gap:20px; animation:slideUp 0.3s ease;
+          --ov-sky:#38BDF8; --ov-sky-bg:#EFF8FF; --ov-sky-border:#BAE6FD;
+        }
+        [data-theme="dark"] .ov-page { --ov-sky-bg:#08283F; --ov-sky-border:#0E4467; }
 
         /* ── Header ── */
         .ov-header { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
-        .ov-header-icon { width:46px; height:46px; border-radius:14px; background:var(--gold-pale); border:1px solid var(--gold-border); color:var(--gold); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .ov-header-icon { width:46px; height:46px; border-radius:16px; background:var(--gold-pale); border:1px solid var(--gold-border); color:var(--gold); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
         .ov-header-title { font-weight:900; font-size:22px; color:var(--text); margin:0; letter-spacing:-0.02em; line-height:1.1; }
         .ov-header-sub   { font-size:12px; color:var(--text-muted); margin:4px 0 0; }
         .ov-header-actions { margin-left:auto; display:flex; align-items:center; gap:8px; }
@@ -211,18 +215,22 @@ export default function OverviewPage() {
         .ov-refresh-btn:disabled { opacity:0.5; cursor:not-allowed; }
 
         /* ── KPI cards ── */
-        .ov-kpi-cards       { display:grid; grid-template-columns:repeat(${isProjectScoped ? 3 : 4},1fr); gap:12px; }
-        .ov-kpi-card        { background:var(--card); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); padding:16px 18px; transition:box-shadow var(--t-base),transform var(--t-base); }
+        .ov-kpi-cards       { display:grid; grid-template-columns:repeat(${isProjectScoped ? 3 : 4},1fr); gap:14px; }
+        .ov-kpi-card        { background:linear-gradient(135deg,var(--ov-kpi-grad-a) 0%,var(--ov-kpi-grad-b) 100%); border:1px solid var(--ov-kpi-grad-b); border-radius:18px; box-shadow:var(--shadow); padding:18px 20px; transition:box-shadow var(--t-base),transform var(--t-base); }
         .ov-kpi-card:hover  { box-shadow:var(--shadow-md); transform:translateY(-2px); }
         .ov-kpi-card-top    { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-        .ov-kpi-badge       { width:34px; height:34px; border-radius:50%; border:1px solid transparent; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .ov-kpi-badge       { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+                               background:rgba(255,255,255,0.55); border:1px solid rgba(255,255,255,0.75); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); box-shadow:0 2px 6px rgba(15,10,3,0.06); }
+        [data-theme="dark"] .ov-kpi-badge { background:rgba(0,0,0,0.28); border-color:rgba(255,255,255,0.10); box-shadow:0 2px 6px rgba(0,0,0,0.35); }
+        .ov-kpi-spark       { color:rgba(255,255,255,0.6); }
+        [data-theme="dark"] .ov-kpi-spark { color:rgba(255,255,255,0.32); }
         .ov-kpi-card-val    { font-size:23px; font-weight:900; letter-spacing:-0.02em; color:var(--text); line-height:1.15; }
         .ov-kpi-card-val-sm { font-size:18px; }
-        .ov-kpi-card-label  { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-muted); margin-top:4px; }
-        .ov-kpi-card-sub    { font-size:11px; color:var(--text-muted); margin-top:2px; font-weight:600; }
+        .ov-kpi-card-label  { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-sub); margin-top:4px; }
+        .ov-kpi-card-sub    { font-size:11px; color:var(--text-sub); margin-top:2px; font-weight:600; }
 
         /* ── Alert banner ── */
-        .ov-alert { display:flex; align-items:center; gap:14px; padding:15px 20px; border-radius:14px; border:2px solid #FDE68A; background:linear-gradient(135deg,#FFFBEB,#FEF3C7); text-decoration:none; transition:box-shadow var(--t-base),transform var(--t-base); cursor:pointer; }
+        .ov-alert { display:flex; align-items:center; gap:14px; padding:15px 20px; border-radius:18px; border:1px solid var(--amber-border); background:linear-gradient(135deg,#FFFBEB,#FEF3C7); text-decoration:none; transition:box-shadow var(--t-base),transform var(--t-base); cursor:pointer; }
         .ov-alert:hover  { box-shadow:0 6px 24px rgba(180,130,0,0.2); transform:translateY(-1px); }
         .ov-alert:active { transform:translateY(0) scale(0.995); transition-duration:var(--t-fast); }
 
@@ -233,26 +241,26 @@ export default function OverviewPage() {
         .ov-pill-tab:active { transform:scale(0.94); }
 
         /* ── Section card ── */
-        .ov-card { background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; animation:slideUp 0.35s ease both; transition:box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease; }
-        .ov-card:hover { box-shadow:0 10px 28px rgba(0,0,0,0.07); border-color:var(--border-strong,var(--border)); transform:translateY(-2px); }
+        .ov-card { background:var(--card); border:1px solid var(--border); border-radius:18px; overflow:hidden; animation:slideUp 0.35s ease both; transition:box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease; }
+        .ov-card:hover { box-shadow:var(--shadow-lg); border-color:var(--border-strong,var(--border)); transform:translateY(-2px); }
         .ov-two > .ov-card:nth-child(2) { animation-delay:0.05s; }
-        .ov-card-hd { padding:18px 20px; display:flex; align-items:flex-end; justify-content:space-between; gap:8px; border-bottom:1px solid var(--border); }
-        .ov-card-hd-icon { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .ov-card-hd { padding:20px 22px; display:flex; align-items:flex-end; justify-content:space-between; gap:8px; border-bottom:1px solid var(--border); }
+        .ov-card-hd-icon { width:34px; height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
         .ov-card-title { font-weight:800; font-size:14px; color:var(--text); letter-spacing:-0.02em; margin:0; }
         .ov-card-sub   { font-size:11.5px; color:var(--text-muted); margin-top:3px; }
         .ov-viewall    { font-size:12px; font-weight:600; color:var(--gold); display:flex; align-items:center; gap:3px; white-space:nowrap; flex-shrink:0; }
 
         /* ── 2-col grid ── */
-        .ov-two { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .ov-two { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
 
         /* ── 2×2 stat grid ── */
         .ov-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:16px 20px; }
-        .ov-stat  { border-radius:12px; padding:13px 14px; border:1px solid; }
+        .ov-stat  { border-radius:14px; padding:14px 16px; border:1px solid; }
         .ov-stat-val { font-weight:800; font-size:22px; letter-spacing:-0.05em; line-height:1; }
         .ov-stat-lbl { font-size:10.5px; font-weight:600; margin-top:3px; opacity:0.75; }
 
         /* ── Progress strip ── */
-        .ov-strip { margin:0 20px 20px; padding:12px 16px; border-radius:12px; background:var(--bg-alt); border:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+        .ov-strip { margin:0 20px 20px; padding:12px 16px; border-radius:14px; background:var(--bg-alt); border:1px solid var(--border); display:flex; align-items:center; gap:12px; }
         .ov-progress-head { display:flex; justify-content:space-between; align-items:baseline; }
         .ov-progress-name { font-size:12px; font-weight:700; color:var(--text); }
         .ov-progress-pct  { font-size:14px; font-weight:900; letter-spacing:-0.03em; }
@@ -267,13 +275,13 @@ export default function OverviewPage() {
         .ov-cat-amt  { font-size:11.5px; font-weight:700; color:var(--text); flex-shrink:0; }
 
         /* ── SIM station blocks ── */
-        .ov-station { margin:0 20px 10px; border-radius:12px; background:var(--bg-alt); border:1px solid var(--border); padding:14px 16px; }
+        .ov-station { margin:0 20px 10px; border-radius:14px; background:var(--bg-alt); border:1px solid var(--border); padding:14px 16px; }
         .ov-station:last-child { margin-bottom:20px; }
 
         /* ── Quick actions ── */
         .ov-qa-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; padding:16px 20px 20px; }
         .ov-qa-item {
-          display:flex; flex-direction:column; align-items:center; gap:9px; padding:16px 8px; border-radius:14px;
+          display:flex; flex-direction:column; align-items:center; gap:9px; padding:16px 8px; border-radius:16px;
           text-decoration:none; background:var(--qa-bg); border:1px solid var(--qa-border);
           transition:background var(--t-base), transform var(--t-base), box-shadow var(--t-base);
         }
@@ -296,6 +304,7 @@ export default function OverviewPage() {
         @media (max-width:480px) {
           .ov-header-title { font-size:18px; }
           .ov-kpi-cards { grid-template-columns:repeat(1,1fr); }
+          .ov-kpi-card  { padding:14px 16px; }
           .ov-stats     { gap:7px; padding:12px 14px; }
           .ov-strip     { margin:0 14px 14px; }
           .ov-cat       { padding:0 14px 14px; }
@@ -340,7 +349,7 @@ export default function OverviewPage() {
               val:   loadingHero ? null : (fleetStats?.active ?? 0),
               lbl:   'Vehicles on Road',
               hint:  loadingHero ? '' : `of ${fleetStats?.total ?? 0} fleet`,
-              Icon:  Car, color:'#38BDF8', bg:'#38BDF818', border:'#38BDF830',
+              Icon:  Car, color:'var(--ov-sky)', bg:'var(--ov-sky-bg)', border:'var(--ov-sky-border)',
             }]),
             {
               val:   loadingExp  ? null : fmtAED(totalExp),
@@ -358,10 +367,11 @@ export default function OverviewPage() {
                 : { color:'var(--green)', bg:'var(--green-bg)', border:'var(--green-border)' }),
             },
           ].map(({ val, lbl, hint, Icon, color, bg, border, small }, i) => (
-            <div key={lbl} className={i<3?`ov-kpi-card fade-up-${i+1}`:'ov-kpi-card fade-up'} style={i===3?{animationDelay:'0.16s'}:undefined}>
+            <div key={lbl} className={i<3?`ov-kpi-card fade-up-${i+1}`:'ov-kpi-card fade-up'}
+              style={{ '--ov-kpi-grad-a':bg, '--ov-kpi-grad-b':border, ...(i===3?{animationDelay:'0.16s'}:{}) }}>
               <div className="ov-kpi-card-top">
-                <div className="ov-kpi-badge" style={{color,background:bg,borderColor:border}}><Icon size={16}/></div>
-                <KpiSpark color={color}/>
+                <div className="ov-kpi-badge" style={{color}}><Icon size={16}/></div>
+                <KpiSpark/>
               </div>
               {val === null
                 ? <div className="sk" style={{height:23,width:'55%',borderRadius:6,marginBottom:2}}/>
@@ -644,8 +654,8 @@ export default function OverviewPage() {
           <div className="ov-card">
             <div className="ov-card-hd">
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <div className="ov-card-hd-icon" style={{ background:'#38BDF818', border:'1px solid #38BDF830' }}>
-                  <Car size={16} color="#38BDF8"/>
+                <div className="ov-card-hd-icon" style={{ background:'var(--ov-sky-bg)', border:'1px solid var(--ov-sky-border)' }}>
+                  <Car size={16} color="var(--ov-sky)"/>
                 </div>
                 <div>
                   <div className="ov-card-title">Fleet Vehicles</div>
@@ -668,8 +678,8 @@ export default function OverviewPage() {
               ))}
             </div>
             <div className="ov-strip">
-              <div style={{ width:38, height:38, borderRadius:11, background:'#38BDF818', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                <Car size={17} color="#38BDF8"/>
+              <div style={{ width:38, height:38, borderRadius:11, background:'var(--ov-sky-bg)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <Car size={17} color="var(--ov-sky)"/>
               </div>
               <div style={{ flex:1 }}>
                 <div className="ov-progress-head">
@@ -677,11 +687,11 @@ export default function OverviewPage() {
                     ? <span className="ov-sk-dark" style={{ display:'inline-block', width:130, height:11, borderRadius:4 }}/>
                     : <span className="ov-progress-name">{fleetStats?.active ?? 0} vehicles active</span>}
                   {fleetStats !== null && fleetStats.total > 0 && (
-                    <span className="ov-progress-pct" style={{ color:'#38BDF8' }}>{Math.round((fleetStats.active||0)/fleetStats.total*100)}%</span>
+                    <span className="ov-progress-pct" style={{ color:'var(--ov-sky)' }}>{Math.round((fleetStats.active||0)/fleetStats.total*100)}%</span>
                   )}
                 </div>
                 <div className="ov-bar">
-                  <div className="ov-fill" style={{ width:`${fleetStats?.total>0?((fleetStats.active||0)/fleetStats.total)*100:0}%`, background:'linear-gradient(90deg,#38BDF8,#7DD3FC)' }}/>
+                  <div className="ov-fill" style={{ width:`${fleetStats?.total>0?((fleetStats.active||0)/fleetStats.total)*100:0}%`, background:'linear-gradient(90deg,var(--ov-sky),#7DD3FC)' }}/>
                 </div>
               </div>
             </div>
