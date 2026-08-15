@@ -359,24 +359,28 @@ function ExpensesPageInner() {
 
                   {/* Donut — by category */}
                   {byCat.length > 0 && (
-                    <div style={{ background: 'var(--bg-alt)', borderRadius: 12, padding: 16 }}>
-                      <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--text)', marginBottom: 10 }}>By Category</div>
-                      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-                        <PieChart width={130} height={120}>
-                          <Pie data={byCat} cx={60} cy={55} innerRadius={30} outerRadius={52} paddingAngle={3} dataKey="value">
+                    <div style={{ background: 'var(--bg-alt)', borderRadius: 14, padding: 18 }}>
+                      <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--text)', marginBottom: 14 }}>By Category</div>
+                      <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                        <PieChart width={160} height={160}>
+                          <Pie data={byCat} cx={80} cy={80} innerRadius={52} outerRadius={76} paddingAngle={3} dataKey="value" strokeWidth={0}>
                             {byCat.map(c => <Cell key={c.name} fill={c.color}/>)}
                           </Pie>
                           <Tooltip content={<Tip/>}/>
                         </PieChart>
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                          <div style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total</div>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.02em', marginTop: 2 }}>AED {Number(total).toLocaleString('en-AE', { maximumFractionDigits: 0 })}</div>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                        {byCat.slice(0, 5).map(c => (
-                          <div key={c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <div style={{ width: 7, height: 7, borderRadius: 2, background: c.color, flexShrink: 0 }}/>
-                              <span style={{ fontSize: 11, color: 'var(--text-muted)', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 16px', justifyContent: 'center' }}>
+                        {byCat.slice(0, 6).map(c => (
+                          <div key={c.name} style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 74 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                              <div style={{ width: 7, height: 7, borderRadius: '50%', background: c.color, flexShrink: 0 }}/>
+                              <span style={{ fontSize: 10, color: 'var(--text-muted)', maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
                             </div>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: c.color }}>AED {fmt(c.value)}</span>
+                            <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)' }}>AED {fmt(c.value)}</span>
                           </div>
                         ))}
                       </div>
