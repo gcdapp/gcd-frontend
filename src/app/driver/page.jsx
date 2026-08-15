@@ -80,13 +80,11 @@ function expiryAlert(ds) {
 
 const TABS = [
   { id:'home',      label:'Home',        icon:Home      },
-  { id:'att',       label:'Attendance',  icon:Clock     },
   { id:'pay',       label:'Payslips',    icon:Wallet    },
   { id:'leaves',    label:'Leaves',      icon:Calendar  },
   { id:'perf',      label:'Performance', icon:BarChart2 },
   { id:'vehicle',   label:'Vehicle',     icon:Car       },
   { id:'insurance', label:'Insurance',   icon:Shield    },
-  { id:'notices',   label:'Notices',     icon:Bell      },
 ]
 
 // ── Leave Modal ───────────────────────────────────────────────────
@@ -548,9 +546,7 @@ export default function DriverPortal() {
   // (not a UTC ISO string) so this can't drift a day off PAY_MONTHS' own values.
   const [payMonth,      setPayMonth]      = useState(PAY_MONTHS[1])
   const [payslip,       setPayslip]       = useState(null)
-  const [attEarnings,   setAttEarnings]   = useState(null)
   const [leaves,        setLeaves]        = useState([])
-  const [notices,       setNotices]       = useState([])
   const [handovers,     setHandovers]     = useState([])
   const [perf,          setPerf]          = useState(null)
   const [todayAsgn,     setTodayAsgn]     = useState(null)
@@ -619,7 +615,6 @@ export default function DriverPortal() {
         .then(r => r.json()).then(onData).catch(() => {})
 
     bg(`/api/leaves`,                                                        d => setLeaves(d.leaves || []))
-    bg(`/api/poc/announcements?station_code=${user.station_code}`,           d => setNotices(d.announcements || []))
     bg(`/api/notifications`,                                                 d => {
       const list = d.notifications || []
       setNotifications(list)
@@ -643,22 +638,18 @@ export default function DriverPortal() {
     return () => ctrl.abort()
   }, [user, authLoading, router])
 
-  // Current month's payroll + attendance-earnings — feeds the Home hero card and the
-  // Attendance tab, both of which mean "right now," not whatever month is selected in
-  // the Payslip tab below.
+  // Current month's payroll — feeds the Home hero card, which means "right now,"
+  // not whatever month is selected in the Payslip tab below.
   useEffect(() => {
     if (!user?.emp_id) return
     const hdr   = authHeader()
     const month = new Date().toISOString().slice(0, 7)
     const ctrl  = new AbortController()
-    Promise.all([
-      fetch(`${API}/api/payroll?month=${month}`,             { headers: hdr, signal: ctrl.signal }).then(r => r.json()).catch(() => ({ payroll: [] })),
-      fetch(`${API}/api/attendance/earnings?month=${month}`, { headers: hdr, signal: ctrl.signal }).then(r => r.json()).catch(() => null),
-    ]).then(([pr, ae]) => {
-      const slip = (pr.payroll || []).find(p => p.id === user.emp_id || p.emp_id === user.emp_id)
-      setPayroll(slip || null)
-      setAttEarnings(ae || null)
-    })
+    fetch(`${API}/api/payroll?month=${month}`, { headers: hdr, signal: ctrl.signal }).then(r => r.json()).catch(() => ({ payroll: [] }))
+      .then(pr => {
+        const slip = (pr.payroll || []).find(p => p.id === user.emp_id || p.emp_id === user.emp_id)
+        setPayroll(slip || null)
+      })
     return () => ctrl.abort()
   }, [user?.emp_id])
 
@@ -719,8 +710,7 @@ export default function DriverPortal() {
     registerPush()
   }, [user])
 
-  function openNotices() {
-    setTab('notices')
+  function clearUnread() {
     if (unreadCount > 0) {
       setUnreadCount(0)
       setNotifications(p => p.map(n => ({ ...n, read: true })))
@@ -743,15 +733,7 @@ export default function DriverPortal() {
 
   const net          = payroll ? Number(payroll.base_salary||0) + Number(payroll.bonus_total||0) - Number(payroll.deduction_total||0) : 0
   const payslipNet   = payslip ? Number(payslip.base_salary||0) + Number(payslip.bonus_total||0) - Number(payslip.deduction_total||0) : 0
-  const isCurrentPayMonth = payMonth === new Date().toISOString().slice(0, 7)
   const payMonthLabel = new Date(payMonth+'-01').toLocaleString('en-US',{month:'long',year:'numeric',timeZone:'UTC'}).toUpperCase()
-  const isShipmentEmp = profile?.station_code === 'DXE6'
-  const attRecords   = attEarnings?.records || []
-  const attPresent   = attRecords.filter(r => r.status === 'present').length
-  const attAbsent    = attRecords.filter(r => r.status === 'absent').length
-  const attLeave     = attRecords.filter(r => r.status === 'leave').length
-  const totalUnits   = attRecords.filter(r => r.status === 'present').reduce((s,r) => s + parseFloat(r.cycle_hours||0), 0)
-  const variablePay  = attRecords.reduce((s,r) => s + parseFloat(r.earnings||0), 0)
   const grade        = perf ? getGrade(perf.total_score) : null
   const p            = profile
   const today2       = mounted ? localDateKey() : ''
@@ -775,7 +757,7 @@ export default function DriverPortal() {
 
       {/* ── TOAST ── */}
       {toast && (
-        <div onClick={openNotices}
+        <div onClick={() => { clearUnread(); setToast(null) }}
           style={{ position:'fixed', top:16, left:'50%', transform:'translateX(-50%)', zIndex:200, maxWidth:340, width:'calc(100% - 32px)', background:'#FFF', borderRadius:16, padding:'12px 14px', boxShadow:'0 8px 30px rgba(0,0,0,0.12)', border:'1px solid #EBEBEB', cursor:'pointer', animation:'slideUp 0.3s ease', display:'flex', gap:10, alignItems:'flex-start' }}>
           <div style={{ width:32, height:32, borderRadius:10, background:'#111', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
             <Bell size={15} color="#FFF"/>
@@ -862,7 +844,6 @@ export default function DriverPortal() {
                   { l:'Vehicle',      icon:Car,        c:'#2563EB', bg:'#EFF6FF', action:()=>setTab('vehicle')    },
                   { l:'Performance',  icon:BarChart2,  c:'#F97316', bg:'#FFF7ED', action:()=>setTab('perf')       },
                   { l:'Insurance',    icon:Shield,     c:'#0F766E', bg:'#F0FDFA', action:()=>setTab('insurance')  },
-                  { l:'Notices',      icon:Bell,       c:'#DC2626', bg:'#FEF2F2', action:openNotices              },
                 ].map(a => {
                   const Icon = a.icon
                   return (
@@ -1070,100 +1051,7 @@ export default function DriverPortal() {
                 </div>
               )}
 
-              {/* Latest notice */}
-              {notices.length > 0 && (
-                <Card>
-                  <div style={{ fontSize:10, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:8 }}>Latest Notice</div>
-                  <div style={{ fontWeight:600, fontSize:13.5, color:'#111', marginBottom:4 }}>{notices[0].title}</div>
-                  <div style={{ fontSize:12.5, color:'#6B7280', lineHeight:1.6 }}>
-                    {notices[0].message?.slice(0,120)}{notices[0].message?.length>120?'…':''}
-                  </div>
-                  {notices.length > 1 && (
-                    <button onClick={()=>setTab('notices')}
-                      style={{ marginTop:8, fontSize:12, color:'#2563EB', fontWeight:600, background:'none', border:'none', cursor:'pointer', fontFamily:'Poppins,sans-serif', padding:0, display:'flex', alignItems:'center', gap:3 }}>
-                      View all {notices.length} <ChevronRight size={12}/>
-                    </button>
-                  )}
-                </Card>
-              )}
             </div>
-          </div>
-        )}
-
-        {/* ════ ATTENDANCE ════ */}
-        {tab === 'att' && (
-          <div style={{ padding:'16px', display:'flex', flexDirection:'column', gap:14 }} className="fade">
-            <h2 style={{ fontWeight:800, fontSize:22, color:'#111', margin:0 }}>My Attendance</h2>
-            <div style={{ fontSize:12, color:'#9CA3AF', marginTop:-8 }}>{monthLabel}</div>
-
-            {/* Monthly summary */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
-              {[
-                { label:'Present', value:attPresent, color:'#059669', bg:'#ECFDF5', border:'#A7F3D0' },
-                { label:'Absent',  value:attAbsent,  color:'#DC2626', bg:'#FEF2F2', border:'#FCA5A5' },
-                { label:'Leave',   value:attLeave,   color:'#D97706', bg:'#FFFBEB', border:'#FCD34D' },
-              ].map(s => (
-                <div key={s.label} style={{ background:s.bg, border:`1px solid ${s.border}`, borderRadius:14, padding:'14px 10px', textAlign:'center' }}>
-                  <div style={{ fontSize:28, fontWeight:900, color:s.color, letterSpacing:'-0.05em' }}>{s.value}</div>
-                  <div style={{ fontSize:11, fontWeight:600, color:s.color, opacity:0.8 }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Variable pay summary */}
-            <div style={{ background:'linear-gradient(135deg,#FFFBEB,#FEF3C7)', border:'1.5px solid #FDE68A', borderRadius:16, padding:'18px 16px' }}>
-              <div style={{ fontSize:10, fontWeight:700, color:'#B45309', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:4 }}>
-                {isShipmentEmp ? 'Total Shipments This Month' : 'Total Hours This Month'}
-              </div>
-              <div style={{ fontWeight:900, fontSize:32, color:'#92400E', letterSpacing:'-0.04em' }}>
-                {totalUnits > 0 ? (isShipmentEmp ? `${Math.round(totalUnits)} shipments` : `${totalUnits.toFixed(1)}h`) : '—'}
-              </div>
-              <div style={{ marginTop:10, paddingTop:10, borderTop:'1px solid #FDE68A', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <span style={{ fontSize:13, color:'#92400E', fontWeight:600 }}>Variable pay so far</span>
-                <span style={{ fontWeight:900, fontSize:18, color:'#B8860B' }}>{fmtA(variablePay)}</span>
-              </div>
-              <div style={{ fontSize:11, color:'#B45309', marginTop:4, opacity:0.7 }}>
-                {isShipmentEmp ? 'shipments × AED 0.50' : 'hours × AED 3.85'} + AED 2,000 base = monthly salary
-              </div>
-            </div>
-
-            {/* Daily records */}
-            {attRecords.length > 0 ? (
-              <div style={{ background:'#FFF', border:'1px solid #EBEBEB', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
-                <div style={{ padding:'12px 16px', borderBottom:'1px solid #F3F4F6', fontSize:11, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.08em' }}>Daily Records</div>
-                {[...attRecords].sort((a,b) => b.date.localeCompare(a.date)).map(r => {
-                  const sColor = { present:'#059669', absent:'#DC2626', leave:'#D97706' }[r.status] || '#9CA3AF'
-                  const sBg    = { present:'#ECFDF5', absent:'#FEF2F2', leave:'#FFFBEB' }[r.status] || '#F9FAFB'
-                  const units  = parseFloat(r.cycle_hours || 0)
-                  const dLabel = new Date(r.date + 'T00:00:00').toLocaleDateString('en-AE', { weekday:'short', day:'numeric', month:'short' })
-                  return (
-                    <div key={r.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', borderBottom:'1px solid #F9FAFB' }}>
-                      <div>
-                        <div style={{ fontSize:13, fontWeight:600, color:'#111' }}>{dLabel}</div>
-                        {units > 0 && r.status === 'present' && (
-                          <div style={{ fontSize:11, color:'#9CA3AF', marginTop:1 }}>
-                            {isShipmentEmp ? `${Math.round(units)} shipments` : `${units}h worked`}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:3 }}>
-                        <span style={{ fontSize:11, fontWeight:700, color:sColor, background:sBg, padding:'3px 10px', borderRadius:20 }}>
-                          {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-                        </span>
-                        {r.status === 'present' && parseFloat(r.earnings||0) > 0 && (
-                          <span style={{ fontSize:11, fontWeight:600, color:'#B8860B' }}>{fmtA(parseFloat(r.earnings).toFixed(2))}</span>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div style={{ background:'#FFF', border:'1px solid #EBEBEB', borderRadius:16, padding:'40px 20px', textAlign:'center' }}>
-                <Clock size={28} color="#D1D5DB" style={{ margin:'0 auto 10px', display:'block' }}/>
-                <div style={{ fontSize:14, color:'#9CA3AF', fontWeight:500 }}>No attendance records this month</div>
-              </div>
-            )}
           </div>
         )}
 
@@ -1197,21 +1085,6 @@ export default function DriverPortal() {
                     }
                   </div>
                 </div>
-
-                {/* Variable pay from attendance — only meaningful for the month in
-                    progress; a closed past month's totals are already in the breakdown below. */}
-                {isCurrentPayMonth && attEarnings && variablePay > 0 && (
-                  <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:14, padding:'14px 16px' }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:'#065F46', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:6 }}>Variable Pay This Month</div>
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                      <span style={{ fontSize:12, color:'#065F46' }}>
-                        {isShipmentEmp ? `${Math.round(totalUnits)} shipments × AED 0.50` : `${totalUnits.toFixed(1)}h × AED 3.85`}
-                      </span>
-                      <span style={{ fontWeight:800, fontSize:16, color:'#16A34A' }}>{fmtA(variablePay.toFixed(2))}</span>
-                    </div>
-                    <div style={{ fontSize:10, color:'#6B7280', marginTop:4 }}>Added to AED 2,000 base → monthly salary</div>
-                  </div>
-                )}
 
                 {/* Breakdown */}
                 <Card>
@@ -1526,26 +1399,6 @@ export default function DriverPortal() {
           </div>
         )}
 
-        {/* ════ NOTICES ════ */}
-        {tab === 'notices' && (
-          <div style={{ padding:'16px', display:'flex', flexDirection:'column', gap:14 }} className="fade">
-            <h2 style={{ fontWeight:800, fontSize:22, color:'#111', margin:0 }}>Notices</h2>
-            {notices.length === 0 ? (
-              <Card style={{ textAlign:'center', padding:'40px' }}>
-                <Bell size={32} color="#D1D5DB" style={{ margin:'0 auto 10px', display:'block' }}/>
-                <div style={{ fontSize:14, color:'#9CA3AF' }}>No notices from your station</div>
-              </Card>
-            ) : notices.map(n => (
-              <Card key={n.id}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
-                  <span style={{ fontWeight:700, fontSize:14, color:'#111' }}>{n.title}</span>
-                  <span style={{ fontSize:11, color:'#9CA3AF', flexShrink:0, marginLeft:8 }}>{n.created_at?.slice(0,10)}</span>
-                </div>
-                <div style={{ fontSize:13, color:'#6B7280', lineHeight:1.6 }}>{n.message}</div>
-              </Card>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* ── BOTTOM NAV ── */}
@@ -1553,19 +1406,11 @@ export default function DriverPortal() {
         {TABS.map(t => {
           const Icon   = t.icon
           const active = tab === t.id
-          const isNotices = t.id === 'notices'
           return (
-            <button key={t.id} onClick={isNotices ? openNotices : () => setTab(t.id)}
+            <button key={t.id} onClick={() => setTab(t.id)}
               style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'9px 1px 10px', border:'none', background:'none', cursor:'pointer', fontFamily:'Poppins,sans-serif', minWidth:0, position:'relative' }}>
               {active && <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:24, height:3, background:'#111', borderRadius:'0 0 4px 4px' }}/>}
-              <span style={{ position:'relative' }}>
-                <Icon size={19} color={active ? '#111' : '#9CA3AF'} strokeWidth={active ? 2.5 : 1.8}/>
-                {isNotices && unreadCount > 0 && (
-                  <span style={{ position:'absolute', top:-4, right:-5, minWidth:14, height:14, borderRadius:7, background:'#EF4444', color:'#FFF', fontSize:8, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 3px', lineHeight:1 }}>
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </span>
+              <Icon size={19} color={active ? '#111' : '#9CA3AF'} strokeWidth={active ? 2.5 : 1.8}/>
               <span className="dp-nav-label" style={{ fontWeight: active ? 700 : 500, color: active ? '#111' : '#9CA3AF', marginTop:3, fontSize:9.5, lineHeight:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'100%', padding:'0 1px' }}>
                 {t.label}
               </span>

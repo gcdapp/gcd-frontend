@@ -5,21 +5,18 @@ import { useAuth } from '@/lib/auth'
 import { API } from '@/lib/api'
 import { useStation } from './_components/poc-shared'
 import {
-  Clock, Users, Truck, Package, ArrowLeftRight, Smartphone,
-  CalendarOff, Bell, ChevronRight, Radio, MapPin, AlertTriangle,
+  Users, Truck, ArrowLeftRight, Smartphone,
+  CalendarOff, ChevronRight, Radio, MapPin, AlertTriangle,
 } from 'lucide-react'
 
 const TODAY = () => new Date().toISOString().slice(0, 10)
 
 const SECTIONS = [
-  { id:'attendance', label:'Attendance',  icon:Clock,          color:'#10B981', href:'/dashboard/poc/attendance',  desc:'Log daily DA attendance & cycles' },
   { id:'das',        label:'DAs',         icon:Users,          color:'#8B5CF6', href:'/dashboard/poc/das',          desc:'Browse & manage delivery agents'  },
   { id:'fleet',      label:'Fleet',       icon:Truck,          color:'#3B82F6', href:'/dashboard/poc/fleet',        desc:'Vehicles, status & assignments'   },
-  { id:'deliveries', label:'Deliveries',  icon:Package,        color:'#F97316', href:'/dashboard/poc/deliveries',   desc:'Track daily delivery numbers'     },
   { id:'handovers',  label:'Handovers',   icon:ArrowLeftRight, color:'#06B6D4', href:'/dashboard/poc/handovers',    desc:'Vehicle pickup & return forms'    },
   { id:'sims',       label:'SIM Cards',   icon:Smartphone,     color:'#0D9488', href:'/dashboard/poc/sims',         desc:'Manage & assign station SIMs'     },
   { id:'leaves',     label:'Leaves',      icon:CalendarOff,    color:'#EF4444', href:'/dashboard/poc/leaves',       desc:'Review & approve leave requests'  },
-  { id:'notices',    label:'Notices',     icon:Bell,           color:'#6366F1', href:'/dashboard/poc/notices',      desc:'Station-wide announcements'       },
 ]
 
 export default function POCHub() {
@@ -34,27 +31,18 @@ export default function POCHub() {
     setLoading(true)
     const h = { headers: { Authorization: `Bearer ${localStorage.getItem('gcd_token')}` } }
     Promise.all([
-      fetch(`${API}/api/attendance?date=${date}`, h).then(r => r.json()),
       fetch(`${API}/api/vehicles`, h).then(r => r.json()),
       fetch(`${API}/api/leaves?stage=all`, h).then(r => r.json()),
       fetch(`${API}/api/sims`, h).then(r => r.json()),
-      fetch(`${API}/api/poc/announcements`, h).then(r => r.json()),
       fetch(`${API}/api/handovers/current?station_code=${station}`, h).then(r => r.json()),
       fetch(`${API}/api/employees`, h).then(r => r.json()),
-      fetch(`${API}/api/deliveries?station=${station}`, h).then(r => r.json()),
-    ]).then(([att, vehs, lvs, sims, anns, hvs, emps, delivs]) => {
-      const stationAtt  = (att.attendance||[]).filter(a => a.station_code === station)
+    ]).then(([vehs, lvs, sims, hvs, emps]) => {
       const stationEmps = (emps.employees||[]).filter(e => e.station_code === station)
       const stationSims = (sims.sims||[]).filter(s => s.station_code === station)
       const stationVehs = (vehs.vehicles||[]).filter(v => v.station_code === station)
       const pendingLvs  = (lvs.leaves||[]).filter(l => l.poc_status === 'pending')
-      const todayDelivs = (delivs.deliveries||[]).find(d => d.date === date)
       setStats({
-        present:       stationAtt.filter(a => a.status==='present').length,
-        absent:        stationAtt.filter(a => a.status==='absent').length,
-        logged:        stationAtt.length,
         total_das:     stationEmps.length,
-        earnings:      stationAtt.reduce((s,a) => s+parseFloat(a.earnings||0), 0),
         active_vehs:   stationVehs.filter(v => v.status==='active').length,
         total_vehs:    stationVehs.length,
         grounded:      stationVehs.filter(v => v.status!=='active').length,
@@ -62,8 +50,6 @@ export default function POCHub() {
         sims_total:    stationSims.length,
         pending_leaves:pendingLvs.length,
         handovers:     (hvs.current||[]).length,
-        notices:       (anns.announcements||[]).length,
-        deliveries:    todayDelivs?.total || null,
       })
     }).catch(console.error).finally(() => setLoading(false))
   }, [station, date])
@@ -71,10 +57,10 @@ export default function POCHub() {
   function getSectionCount(id) {
     if (!stats) return null
     const m = {
-      attendance: stats.present||null, das: stats.total_das||null,
-      fleet: stats.active_vehs||null,  deliveries: stats.deliveries,
+      das: stats.total_das||null,
+      fleet: stats.active_vehs||null,
       handovers: stats.handovers||null, sims: stats.sims_total||null,
-      leaves: stats.pending_leaves||null, notices: stats.notices||null,
+      leaves: stats.pending_leaves||null,
     }
     return m[id]
   }
@@ -126,14 +112,12 @@ export default function POCHub() {
           {/* Quick stats */}
           {loading ? (
             <div className="four-kpi-grid">
-              {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height:78, borderRadius:14 }}/>)}
+              {[1,2].map(i => <div key={i} className="skeleton" style={{ height:78, borderRadius:14 }}/>)}
             </div>
           ) : stats && (
-            <div className="four-kpi-grid">
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10 }}>
               {[
-                { l:'Present Today',   v:stats.present,                      sub:`${stats.logged}/${stats.total_das} logged`,  c:'#10B981', bg:'#ECFDF5', bc:'#A7F3D0' },
                 { l:'Active Vehicles', v:stats.active_vehs,                  sub:`${stats.grounded} down`,                     c:'#3B82F6', bg:'#EFF6FF', bc:'#BFDBFE' },
-                { l:'Earnings Today',  v:`AED ${stats.earnings.toFixed(0)}`, sub:'attendance wages',                           c:'#B8860B', bg:'#FDF6E3', bc:'#F0D78C' },
                 { l:'Pending Leaves',  v:stats.pending_leaves,               sub:'awaiting review',                            c:stats.pending_leaves>0?'#EF4444':'#10B981', bg:stats.pending_leaves>0?'#FEF2F2':'#ECFDF5', bc:stats.pending_leaves>0?'#FCA5A5':'#A7F3D0' },
               ].map(s => (
                 <div key={s.l} style={{ background:s.bg, border:`1px solid ${s.bc}`, borderRadius:14, padding:'14px 10px', textAlign:'center' }}>

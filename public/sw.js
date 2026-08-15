@@ -4,8 +4,6 @@ const API_CACHE     = 'gcd-api-v1'
 
 // Driver API routes worth caching for offline reads
 const DRIVER_API_PATTERNS = [
-  '/api/attendance',
-  '/api/deliveries',
   '/api/shifts',
   '/api/leaves',
 ]

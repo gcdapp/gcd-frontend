@@ -37,20 +37,16 @@ export const NAV = [
   { label:'Payroll',          href:'/dashboard/finance/payroll',    icon:'Wallet',     roles:['admin','accountant','manager','general_manager'], hideIfAmazonOnly:true },
   { label:'Expenses',         href:'/dashboard/finance/expenses',   icon:'Receipt',    roles:['admin','accountant','manager','general_manager'], hideIfScoped:true },
   { label:'Petty Cash',       href:'/dashboard/finance/petty-cash', icon:'Banknote',   roles:['admin','accountant','general_manager','hr','poc'] },
-  { label:'Staff Attendance', href:'/dashboard/finance/attendance', icon:'Clock',      roles:['admin','accountant'] },
   { label:'Customers',        href:'/dashboard/finance/customers',  icon:'Building2',  roles:['admin','accountant'] },
 
   // ── Operations ────────────────────────────────────────────────
   { type:'section', label:'Operations', roles:['admin','general_manager','poc','manager'] },
-  { label:'Attendance',          href:'/dashboard/poc/attendance',         icon:'Clock',          roles:['admin','general_manager','poc'], hideIfScoped:true },
   { label:'DAs',                 href:'/dashboard/poc/das',                icon:'UserCircle',     roles:['admin','general_manager','poc'], hideIfScoped:true },
   { label:'Fleet',               href:'/dashboard/poc/fleet',              icon:'Truck',          roles:['admin','general_manager','poc'], alertKey:'fleet', hideIfScoped:true },
   { label:'Vehicle Handovers',   href:'/dashboard/poc/handovers',          icon:'ArrowLeftRight', roles:['admin','general_manager','manager','poc'], hideIfScoped:true },
   { label:'Vehicle Inspections', href:'/dashboard/hr/vehicle-inspection',  icon:'ClipboardCheck', roles:['admin','general_manager','hr','poc'], hideIfScoped:true },
-  { label:'Deliveries',          href:'/dashboard/poc/deliveries',         icon:'Package',        roles:['admin','general_manager','poc'], hideIfScoped:true },
   { label:'SIM Cards',           href:'/dashboard/poc/sims',               icon:'Smartphone',     roles:['admin','general_manager','poc'], alertKey:'sims', hideIfScoped:true },
   { label:'Leaves',              href:'/dashboard/poc/leaves',             icon:'CalendarOff',    roles:['admin','general_manager','poc'], alertKey:'leaves', hideIfScoped:true },
-  { label:'Notices',             href:'/dashboard/poc/notices',            icon:'Bell',           roles:['admin','general_manager','poc'] },
 
   // ── System ────────────────────────────────────────────────────
   { type:'section', label:'System', roles:['admin'] },

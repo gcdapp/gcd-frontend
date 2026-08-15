@@ -582,104 +582,6 @@ function SalaryPanel({ emp, userRole }) {
   )
 }
 
-/* ── Attendance Panel ─────────────────────────────────────────── */
-function AttendancePanel({ emp, userRole }) {
-  const [month,   setMonth]   = useState(new Date().toISOString().slice(0,7))
-  const [records, setRecords] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [logDate, setLogDate] = useState(new Date().toISOString().slice(0,10))
-  const [logStatus,setLogStatus]=useState('present')
-  const [logNote, setLogNote] = useState('')
-  const [saving,  setSaving]  = useState(false)
-  const [showLog, setShowLog] = useState(false)
-
-  const canManage = ['admin','manager','general_manager'].includes(userRole)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const r = await fetch(`${API}/api/attendance?date=${month}-01&emp_id=${emp.id}`, { headers: hdr() })
-      // Actually fetch month range - use earnings endpoint which gives monthly records
-      const r2 = await fetch(`${API}/api/attendance/earnings?emp_id=${emp.id}&month=${month}`, { headers: hdr() })
-      const d = await r2.json()
-      setRecords(d.records||[])
-    } catch(e) {} finally { setLoading(false) }
-  }, [emp.id, month])
-
-  useEffect(() => { load() }, [load])
-
-  async function logAttendance() {
-    if (!logDate || !logStatus) return
-    setSaving(true)
-    try {
-      await fetch(`${API}/api/attendance`, {
-        method: 'POST', headers: hdr(),
-        body: JSON.stringify({ emp_id: emp.id, date: logDate, status: logStatus, note: logNote||null })
-      })
-      setLogDate(new Date().toISOString().slice(0,10)); setLogNote(''); setShowLog(false); load()
-    } catch(e) { alert('Failed to log attendance') } finally { setSaving(false) }
-  }
-
-  const present = records.filter(r=>r.status==='present').length
-  const absent  = records.filter(r=>r.status==='absent').length
-  const leave   = records.filter(r=>r.status==='leave').length
-
-  return (
-    <div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-        <input type="month" value={month} onChange={e=>setMonth(e.target.value)}
-          style={{ padding:'6px 10px', borderRadius:9, border:'1px solid var(--border)', fontSize:12, background:'var(--card)', color:'var(--text)', fontFamily:'Poppins,sans-serif' }}/>
-        {canManage && <button onClick={()=>setShowLog(p=>!p)} style={{ padding:'5px 12px', borderRadius:9, background:showLog?'var(--bg-alt)':'var(--gold)', color:showLog?'var(--text-muted)':'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'Poppins,sans-serif' }}>{showLog?'Cancel':'Log Day'}</button>}
-      </div>
-
-      {/* Summary */}
-      <div className="r-grid-3" style={{ gap:8, marginBottom:12 }}>
-        {[{l:'Present',v:present,c:'#10B981',bg:'#F0FDF4'},{l:'Absent',v:absent,c:'#EF4444',bg:'#FEF2F2'},{l:'Leave',v:leave,c:'#F59E0B',bg:'#FFFBEB'}].map(s=>(
-          <div key={s.l} style={{ textAlign:'center', padding:'9px', borderRadius:10, background:s.bg, border:'1px solid var(--border)' }}>
-            <div style={{ fontWeight:900, fontSize:17, color:s.c }}>{s.v}</div>
-            <div style={{ fontSize:10, color:s.c, fontWeight:600, marginTop:1, opacity:0.8 }}>{s.l}</div>
-          </div>
-        ))}
-      </div>
-
-      {showLog && (
-        <div style={{ background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:10, padding:'12px', marginBottom:12 }}>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:8 }}>
-            <div><Lbl>Date</Lbl><input className="input" type="date" value={logDate} onChange={e=>setLogDate(e.target.value)}/></div>
-            <div>
-              <Lbl>Status</Lbl>
-              <select className="input" value={logStatus} onChange={e=>setLogStatus(e.target.value)}>
-                <option value="present">Present</option>
-                <option value="absent">Absent</option>
-                <option value="leave">Leave</option>
-              </select>
-            </div>
-            <div style={{ gridColumn:'span 2' }}><Lbl>Note</Lbl><input className="input" value={logNote} onChange={e=>setLogNote(e.target.value)} placeholder="Optional note"/></div>
-          </div>
-          <button onClick={logAttendance} disabled={saving} className="btn btn-primary" style={{ width:'100%', justifyContent:'center' }}>{saving?'Logging…':'Log Attendance'}</button>
-        </div>
-      )}
-
-      {loading ? <div className="sk" style={{ height:60, borderRadius:10 }}/> : (
-        records.length === 0
-          ? <div style={{ textAlign:'center', padding:'20px 0', color:'var(--text-muted)', fontSize:12 }}>No records for this month</div>
-          : <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-              {records.map(r=>{
-                const SC2 = { present:'#10B981', absent:'#EF4444', leave:'#F59E0B' }
-                const SBG = { present:'#F0FDF4', absent:'#FEF2F2', leave:'#FFFBEB' }
-                return (
-                  <div key={r.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 10px', background:SBG[r.status]||'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:9, fontSize:12 }}>
-                    <span style={{ fontWeight:600, color:'var(--text)' }}>{r.date?.slice(0,10)}</span>
-                    <span style={{ fontWeight:700, color:SC2[r.status]||'var(--text-muted)', fontSize:11 }}>{r.status}</span>
-                  </div>
-                )
-              })}
-            </div>
-      )}
-    </div>
-  )
-}
-
 /* ── Detail Drawer ─────────────────────────────────────────────── */
 function DetailDrawer({ emp, onEdit, onDelete, onClose, onRefresh, onCreateProfile, userRole }) {
   const [tab, setTab] = useState('profile')
@@ -710,7 +612,7 @@ function DetailDrawer({ emp, onEdit, onDelete, onClose, onRefresh, onCreateProfi
         <div style={{ flex:1, overflowY:'auto', padding:'16px' }}>
           <div style={{ background:'#FFFBEB', border:'1px solid #FDE68A', borderRadius:12, padding:'12px 14px', marginBottom:14, fontSize:12.5, color:'#B45309', display:'flex', gap:8, alignItems:'flex-start' }}>
             <AlertCircle size={14} style={{ flexShrink:0, marginTop:1 }}/>
-            <span>This user has a login account but no employee profile yet. Create a profile to track their salary, attendance, and documents.</span>
+            <span>This user has a login account but no employee profile yet. Create a profile to track their salary and documents.</span>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:16 }}>
             {[
@@ -738,7 +640,6 @@ function DetailDrawer({ emp, onEdit, onDelete, onClose, onRefresh, onCreateProfi
     { id:'docs',       l:'Documents'  },
     { id:'sims',       l:'SIMs'       },
     { id:'salary',     l:'Salary'     },
-    { id:'attendance', l:'Attendance' },
   ]
 
   return (
@@ -874,9 +775,6 @@ function DetailDrawer({ emp, onEdit, onDelete, onClose, onRefresh, onCreateProfi
 
         {/* ── Salary ── */}
         {tab==='salary' && <SalaryPanel emp={emp} userRole={userRole}/>}
-
-        {/* ── Attendance ── */}
-        {tab==='attendance' && <AttendancePanel emp={emp} userRole={userRole}/>}
       </div>
     </div>
   )
@@ -1076,7 +974,7 @@ export default function AdminsPage() {
             </div>
             <div>
               <div style={{ fontWeight:900, fontSize:20, color:'white', letterSpacing:'-0.02em', lineHeight:1.1 }}>Admin Staff</div>
-              <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginTop:3 }}>Admin accounts, salaries &amp; attendance</div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginTop:3 }}>Admin accounts &amp; salaries</div>
             </div>
             <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:8 }}>
               <button onClick={load} title="Refresh"

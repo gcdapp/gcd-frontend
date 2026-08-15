@@ -12,7 +12,7 @@ import {
 import {
   Phone, Mail, Calendar, Building2, Briefcase, CreditCard, User,
   Truck, ArrowLeftRight, Receipt, ExternalLink, X, AlertTriangle, Wallet,
-  TrendingUp, FileText, Clock, Pencil, FolderOpen, Banknote, ChevronRight
+  TrendingUp, FileText, Pencil, FolderOpen, Banknote, ChevronRight
 } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
 
@@ -231,8 +231,6 @@ export default function DriverDashboardPage() {
   const [fleetHv,     setFleetHv]    = useState([])
   const [fleetAsgn,   setFleetAsgn]  = useState([])
   const [fleetLoad,   setFleetLoad]  = useState(false)
-  const [attendance,  setAttendance] = useState([])
-  const [attLoad,     setAttLoad]    = useState(true)
   const [salarySnap,      setSalarySnap]      = useState(null)
   const [salarySnapMonth, setSalarySnapMonth]  = useState(null)
   const [salaryLoad,      setSalaryLoad]       = useState(true)
@@ -260,13 +258,6 @@ export default function DriverDashboardPage() {
     setLeavesLoad(true)
     fetch(`${API}/api/leaves?emp_id=${id}&stage=all`, { headers: hdr() })
       .then(r => r.json()).then(d => setLeaves(d.leaves || [])).catch(() => setLeaves([])).finally(() => setLeavesLoad(false))
-  }, [id])
-
-  useEffect(() => {
-    setAttLoad(true)
-    const month = new Date().toISOString().slice(0, 7)
-    fetch(`${API}/api/attendance?emp_id=${id}&month=${month}`, { headers: hdr() })
-      .then(r => r.json()).then(d => setAttendance(d.records || d.attendance || [])).catch(() => setAttendance([])).finally(() => setAttLoad(false))
   }, [id])
 
   // Eager (not tab-gated) — feeds the Expenses snapshot tile
@@ -347,9 +338,6 @@ export default function DriverDashboardPage() {
   const curVehicle  = fleetHv.find(h => h.type === 'received' && !fleetHv.find(h2 => h2.vehicle_id === h.vehicle_id && h2.type === 'returned' && new Date(h2.submitted_at) > new Date(h.submitted_at)))
 
   const alertCount = [emp.visa_expiry, emp.license_expiry, emp.iloe_expiry].filter(d => { const n = docDays(d); return n !== null && n <= 30 }).length
-  const attPresent = attendance.filter(a => a.status === 'present').length
-  const attAbsent  = attendance.filter(a => a.status === 'absent').length
-  const attLeave   = attendance.filter(a => a.status === 'leave').length
 
   const TABS = [
     { id:'overview',  l:'Overview'  },
@@ -542,38 +530,20 @@ export default function DriverDashboardPage() {
               )}
             </Section>
 
-            <div style={{ display:'grid', gridTemplateColumns:isMobile?'1fr':'1fr 1fr', gap:12 }}>
-              <Section title="Leave Balance" icon={Calendar}>
-                <div style={{ padding:'14px 16px' }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:7 }}>
-                    <span style={{ fontSize:12.5, fontWeight:600, color:'var(--text)' }}>Annual Leave</span>
-                    <span style={{ fontSize:11.5, color:'var(--text-muted)', fontWeight:500 }}>{leavesLoad ? '…' : `${usedAnnual} / 30d`}</span>
-                  </div>
-                  <div style={{ height:8, borderRadius:99, background:'var(--border)', overflow:'hidden' }}>
-                    {!leavesLoad && <div style={{ height:'100%', width:`${Math.min(100,(usedAnnual/30)*100)}%`, background:'linear-gradient(90deg,#7C3AEDaa,#7C3AED)', borderRadius:99 }}/>}
-                  </div>
-                  <div style={{ fontSize:10.5, color:'#7C3AED', marginTop:5, fontWeight:700 }}>
-                    {!leavesLoad && `${Math.max(0,30-usedAnnual)} days remaining`}
-                  </div>
+            <Section title="Leave Balance" icon={Calendar}>
+              <div style={{ padding:'14px 16px' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:7 }}>
+                  <span style={{ fontSize:12.5, fontWeight:600, color:'var(--text)' }}>Annual Leave</span>
+                  <span style={{ fontSize:11.5, color:'var(--text-muted)', fontWeight:500 }}>{leavesLoad ? '…' : `${usedAnnual} / 30d`}</span>
                 </div>
-              </Section>
-              <Section title="Attendance — This Month" icon={Clock}>
-                <div style={{ padding:'14px 16px' }}>
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
-                    {[
-                      { l:'Present', v:attPresent, c:'#059669', bg:'#F0FDF4' },
-                      { l:'Absent',  v:attAbsent,  c:'#DC2626', bg:'#FEF2F2' },
-                      { l:'Leave',   v:attLeave,   c:'#D97706', bg:'#FFFBEB' },
-                    ].map(a => (
-                      <div key={a.l} style={{ textAlign:'center', padding:'9px 6px', borderRadius:10, background:a.bg, border:'1px solid var(--border)' }}>
-                        <div style={{ fontWeight:900, fontSize:20, color:a.c, lineHeight:1 }}>{attLoad?'…':a.v}</div>
-                        <div style={{ fontSize:9.5, fontWeight:600, color:a.c, opacity:0.8, marginTop:4 }}>{a.l}</div>
-                      </div>
-                    ))}
-                  </div>
+                <div style={{ height:8, borderRadius:99, background:'var(--border)', overflow:'hidden' }}>
+                  {!leavesLoad && <div style={{ height:'100%', width:`${Math.min(100,(usedAnnual/30)*100)}%`, background:'linear-gradient(90deg,#7C3AEDaa,#7C3AED)', borderRadius:99 }}/>}
                 </div>
-              </Section>
-            </div>
+                <div style={{ fontSize:10.5, color:'#7C3AED', marginTop:5, fontWeight:700 }}>
+                  {!leavesLoad && `${Math.max(0,30-usedAnnual)} days remaining`}
+                </div>
+              </div>
+            </Section>
           </>)}
 
           {tab === 'leaves' && (

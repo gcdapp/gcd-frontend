@@ -65,15 +65,6 @@ export const empApi = {
   createUser: (id, data)    => api.post(`/api/employees/${id}/create-user`, data),
 }
 
-// Attendance
-export const attApi = {
-  list:     (params = {}) => api.get(`/api/attendance?${new URLSearchParams(params)}`),
-  summary:  (month)       => api.get(`/api/attendance/summary?month=${month}`),
-  log:      (data)        => api.post('/api/attendance', data),
-  bulkLog:  (records)     => api.post('/api/attendance/bulk', { records }),
-  checkout: (id, time)    => api.patch(`/api/attendance/${id}/checkout`, { check_out: time }),
-}
-
 // Payroll
 export const payrollApi = {
   list:           (params = {}) => api.get(`/api/payroll?${new URLSearchParams(params)}`),
@@ -151,24 +142,12 @@ export const pocApi = {
   drivers:           (station) => api.get(`/api/poc/drivers${station ? `?station=${station}` : ''}`),
   stations:          ()        => api.get('/api/poc/stations'),
   addStation:        (data)    => api.post('/api/poc/stations', data),
-  announcements:     (station) => api.get(`/api/poc/announcements${station ? `?station=${station}` : ''}`),
-  addAnnouncement:   (data)    => api.post('/api/poc/announcements', data),
-  updateAnnouncement:(id, data)=> api.put(`/api/poc/announcements/${id}`, data),
-  deleteAnnouncement:(id)      => api.delete(`/api/poc/announcements/${id}`),
 }
 
 // Analytics
 export const analyticsApi = {
   summary:       () => api.get('/api/analytics/summary'),
-  deliveryChart: (months=6) => api.get(`/api/analytics/deliveries-chart?months=${months}`),
   stationStats:  () => api.get('/api/analytics/station-stats'),
-}
-
-// Deliveries
-export const deliveriesApi = {
-  list:    (p={}) => api.get(`/api/deliveries?${new URLSearchParams(p)}`),
-  log:     (data) => api.post('/api/deliveries', data),
-  summary: (months=6) => api.get(`/api/deliveries/monthly-summary?months=${months}`),
 }
 
 // Vehicle Inspections

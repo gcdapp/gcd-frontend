@@ -1,14 +1,11 @@
 'use client'
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { analyticsApi } from '@/lib/api'
+import { Tooltip, PieChart, Pie, Cell } from 'recharts'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  AreaChart, Area, PieChart, Pie, Cell, LineChart, Line
-} from 'recharts'
-import {
-  Users, Package, Activity, Wallet, AlertTriangle, Calendar,
-  ChevronRight, ArrowUp, ArrowDown, TrendingUp, Smartphone,
-  Receipt, CheckCircle, UserMinus, Clock, Zap, Shield
+  Users, Wallet, AlertTriangle, Calendar,
+  ChevronRight, ArrowUp, ArrowDown, TrendingUp,
+  Receipt, CheckCircle
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -141,12 +138,10 @@ const ECATS = [
 ════════════════════════════════════════════════════════════ */
 
 /* Admin / Manager — full view */
-function AdminDashboard({ summary, chart, loading, leaves, onApproveLeave, simStats, simByStation, expenses }) {
+function AdminDashboard({ summary, loading, leaves, onApproveLeave, simStats, simByStation, expenses }) {
   const totalExp   = expenses.reduce((s,e)=>s+Number(e.amount||0),0)
   const pendingExp = expenses.filter(e=>e.status==='pending').length
   const approvedExp= expenses.filter(e=>e.status==='approved').reduce((s,e)=>s+Number(e.amount||0),0)
-  const delivData  = chart.length ? chart : []
-  const totalDeliv = delivData.reduce((a,m)=>a+(m.DDB1||0)+(m.DXE6||0),0)
 
   const byCat = ECATS.map(cat=>({
     name:cat.v, value:expenses.filter(e=>e.category===cat.v).reduce((s,e)=>s+Number(e.amount||0),0), color:cat.c,
@@ -159,18 +154,10 @@ function AdminDashboard({ summary, chart, loading, leaves, onApproveLeave, simSt
 
   const kpis = [
     { icon:Users,         label:'Active DAs',       value:summary?String(summary.employees?.active||0):'—',          color:'#F59E0B' },
-    { icon:Package,       label:'Today Deliveries', value:summary?String(summary.today_deliveries||0):'—',            color:'#38BDF8' },
-    { icon:Activity,      label:'Present Today',    value:summary?String(summary.attendance?.present||0):'—',        color:'#34D399' },
     { icon:Wallet,        label:'Net Payroll',       value:summary?fmtAED(Number(summary.payroll?.base_total||0)+Number(summary.payroll?.bonus_total||0)-Number(summary.payroll?.ded_total||0)):'—', color:'#A78BFA' },
     { icon:AlertTriangle, label:'Compliance Alerts', value:summary?String(summary.compliance?.expired||0):'—',       color:'#F87171' },
     { icon:Calendar,      label:'Pending Leaves',   value:summary?String(summary.pending_leaves||0):'—',             color:'#FB923C' },
   ]
-
-  const stationData = Object.entries(SC).map(([s,col]) => ({
-    name:s, value:delivData.reduce((a,m)=>a+(m[s]||0),0), color:col,
-  })).filter(s=>s.value>0)
-
-  const projectData = delivData.map(m=>({ month:m.month, Pulser:m.DDB1||0, CRET:m.DXE6||0 }))
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
@@ -178,41 +165,13 @@ function AdminDashboard({ summary, chart, loading, leaves, onApproveLeave, simSt
       {/* KPIs */}
       <div>
         <SH title="Key Metrics" sub="Live operational snapshot"/>
-        <div className="desk" style={{ gridTemplateColumns:'repeat(6,1fr)', gap:10 }}>
+        <div className="desk" style={{ gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
           {kpis.map((k,i)=><KPI key={k.label} {...k} loading={loading} delay={i*0.05}/>)}
         </div>
         <div className="mob">
           <Swiper items={kpis} peek="calc(50% - 15px)" render={(k,i)=><KPI {...k} loading={loading} delay={i*0.05}/>}/>
         </div>
       </div>
-
-      {/* Delivery chart */}
-      <Card>
-        <SH title="Monthly Deliveries" sub="Last 6 months by project" href="/dashboard/analytics"/>
-        {delivData.length===0 ? <div className="sk" style={{ height:180, borderRadius:10 }}/> : (
-          <>
-            <div style={{ display:'flex', gap:10, marginBottom:14, flexWrap:'wrap' }}>
-              {[{l:'DDB1 Pulser',v:fmt(delivData.reduce((a,m)=>a+(m.DDB1||0),0)),c:'#F59E0B'},{l:'DXE6 CRET',v:fmt(delivData.reduce((a,m)=>a+(m.DXE6||0),0)),c:'#38BDF8'},{l:'Combined',v:fmt(totalDeliv),c:'#10B981'}].map(s=>(
-                <div key={s.l} style={{ display:'flex', alignItems:'center', gap:7, padding:'5px 12px', borderRadius:20, background:'var(--bg-alt)', border:'1px solid var(--border)' }}>
-                  <div style={{ width:8, height:8, borderRadius:3, background:s.c }}/>
-                  <span style={{ fontSize:11.5, color:'var(--text-muted)' }}>{s.l}</span>
-                  <span style={{ fontSize:12.5, fontWeight:800, color:s.c }}>{s.v}</span>
-                </div>
-              ))}
-            </div>
-            <ResponsiveContainer width="99%" height={180}>
-              <BarChart data={projectData} barSize={9} barGap={3}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
-                <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false}/>
-                <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false}/>
-                <Tooltip content={<Tip/>} cursor={{ fill:'rgba(0,0,0,0.03)' }}/>
-                <Bar dataKey="Pulser" fill="#F59E0B" radius={[4,4,0,0]}/>
-                <Bar dataKey="CRET"   fill="#38BDF8" radius={[4,4,0,0]}/>
-              </BarChart>
-            </ResponsiveContainer>
-          </>
-        )}
-      </Card>
 
       {/* Expenses */}
       <Card>
@@ -295,120 +254,58 @@ function AdminDashboard({ summary, chart, loading, leaves, onApproveLeave, simSt
         )}
       </Card>
 
-      {/* Attendance + Payroll */}
-      <div style={{ display:'grid', gap:14 }} className="two-col-glass">
+      {/* Payroll */}
+      <Card style={{ padding:'18px' }}>
+        <SH title="Payroll This Month" href="/dashboard/finance/payroll"/>
+        {[
+          { l:'Base Salaries', v:Number(summary?.payroll?.base_total||0), c:'var(--text)' },
+          { l:'Bonuses',       v:Number(summary?.payroll?.bonus_total||0),c:'#10B981' },
+          { l:'Deductions',    v:Number(summary?.payroll?.ded_total||0),  c:'#EF4444' },
+        ].map(s=>{
+          const total=Number(summary?.payroll?.base_total||0)+Number(summary?.payroll?.bonus_total||0)
+          return (
+            <div key={s.l} style={{ marginBottom:13 }}>
+              <div style={{ display:'flex',justifyContent:'space-between',marginBottom:5 }}>
+                <span style={{ fontSize:12,color:'var(--text-sub)',fontWeight:500 }}>{s.l}</span>
+                <span style={{ fontSize:12,fontWeight:700,color:s.c }}>{fmtAED(s.v)}</span>
+              </div>
+              <Bar2 value={s.v} total={total||1} color={s.c}/>
+            </div>
+          )
+        })}
+        <div style={{ background:'var(--amber-bg)',borderRadius:12,padding:'11px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',border:'1px solid var(--amber-border)',marginTop:4 }}>
+          <span style={{ fontSize:12.5,fontWeight:700,color:'var(--text)' }}>Net Total</span>
+          <span style={{ fontWeight:900,fontSize:17,color:'var(--gold)' }}>
+            {fmtAED(Number(summary?.payroll?.base_total||0)+Number(summary?.payroll?.bonus_total||0)-Number(summary?.payroll?.ded_total||0))}
+          </span>
+        </div>
+      </Card>
+
+      {/* SIM */}
+      {simStats && (
         <Card style={{ padding:'18px' }}>
-          <SH title="Attendance Today"/>
-          <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
-            {[
-              { l:'Present', v:summary?.attendance?.present||0, c:'#10B981', icon:CheckCircle },
-              { l:'Absent',  v:summary?.attendance?.absent||0,  c:'#EF4444', icon:UserMinus },
-              { l:'On Leave',v:summary?.pending_leaves||0,      c:'#F59E0B', icon:Calendar },
-            ].map(s=>{
-              const Icon=s.icon
-              const total=(summary?.attendance?.present||0)+(summary?.attendance?.absent||0)
-              return (
-                <div key={s.l} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', background:`${s.c}0d`, borderRadius:12, border:`1px solid ${s.c}22` }}>
-                  <div style={{ width:30,height:30,borderRadius:9,background:`${s.c}18`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
-                    <Icon size={14} color={s.c}/>
-                  </div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ display:'flex',justifyContent:'space-between',marginBottom:4 }}>
-                      <span style={{ fontSize:12,color:'var(--text)',fontWeight:600 }}>{s.l}</span>
-                      <span style={{ fontWeight:900,fontSize:17,color:s.c }}>{s.v}</span>
-                    </div>
-                    <Bar2 value={s.v} total={total||1} color={s.c}/>
-                  </div>
-                </div>
-              )
-            })}
+          <SH title="SIM Inventory" sub="Fleet communication" href="/dashboard/poc"/>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8, marginBottom:14 }}>
+            {[{l:'Total',v:simStats.total||0,c:'var(--text)'},{l:'Assigned',v:simStats.assigned||0,c:'#F59E0B'},{l:'Available',v:simStats.available||0,c:'#10B981'},{l:'Cost/mo',v:fmtAED(simStats.monthly_cost),c:'#A78BFA'}].map(s=>(
+              <div key={s.l} style={{ textAlign:'center',padding:'9px 6px',borderRadius:11,background:'var(--bg-alt)',border:'1px solid var(--border)' }}>
+                <div style={{ fontWeight:900,fontSize:15,color:s.c }}>{s.v}</div>
+                <div style={{ fontSize:10,color:'var(--text-muted)',fontWeight:600,marginTop:2 }}>{s.l}</div>
+              </div>
+            ))}
           </div>
-        </Card>
-        <Card style={{ padding:'18px' }}>
-          <SH title="Payroll This Month" href="/dashboard/finance/payroll"/>
-          {[
-            { l:'Base Salaries', v:Number(summary?.payroll?.base_total||0), c:'var(--text)' },
-            { l:'Bonuses',       v:Number(summary?.payroll?.bonus_total||0),c:'#10B981' },
-            { l:'Deductions',    v:Number(summary?.payroll?.ded_total||0),  c:'#EF4444' },
-          ].map(s=>{
-            const total=Number(summary?.payroll?.base_total||0)+Number(summary?.payroll?.bonus_total||0)
+          {simByStation.map(s=>{
+            const col=SC[s.station_code]||'#F59E0B'
             return (
-              <div key={s.l} style={{ marginBottom:13 }}>
-                <div style={{ display:'flex',justifyContent:'space-between',marginBottom:5 }}>
-                  <span style={{ fontSize:12,color:'var(--text-sub)',fontWeight:500 }}>{s.l}</span>
-                  <span style={{ fontSize:12,fontWeight:700,color:s.c }}>{fmtAED(s.v)}</span>
+              <div key={s.station_code} style={{ marginBottom:8 }}>
+                <div style={{ display:'flex',justifyContent:'space-between',marginBottom:3 }}>
+                  <span style={{ fontSize:11.5,fontWeight:700,color:col }}>{s.station_code}</span>
+                  <span style={{ fontSize:11,color:'var(--text-muted)' }}>{s.assigned}/{s.total}</span>
                 </div>
-                <Bar2 value={s.v} total={total||1} color={s.c}/>
+                <Bar2 value={s.assigned} total={s.total||1} color={col}/>
               </div>
             )
           })}
-          <div style={{ background:'var(--amber-bg)',borderRadius:12,padding:'11px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',border:'1px solid var(--amber-border)',marginTop:4 }}>
-            <span style={{ fontSize:12.5,fontWeight:700,color:'var(--text)' }}>Net Total</span>
-            <span style={{ fontWeight:900,fontSize:17,color:'var(--gold)' }}>
-              {fmtAED(Number(summary?.payroll?.base_total||0)+Number(summary?.payroll?.bonus_total||0)-Number(summary?.payroll?.ded_total||0))}
-            </span>
-          </div>
         </Card>
-      </div>
-
-      {/* Station split + SIM */}
-      {(stationData.length>0||simStats) && (
-        <div style={{ display:'grid', gridTemplateColumns:simStats?'1fr 1fr':'1fr', gap:14 }} className="two-col-glass">
-          {stationData.length>0 && (
-            <Card style={{ padding:'18px' }}>
-              <SH title="Station Split" sub="Total deliveries by station"/>
-              <div style={{ display:'flex', alignItems:'center', gap:16 }}>
-                <div style={{ position:'relative', flexShrink:0 }}>
-                  <PieChart width={120} height={120}>
-                    <Pie data={stationData} cx={55} cy={55} innerRadius={36} outerRadius={54} paddingAngle={4} dataKey="value">
-                      {stationData.map((s,i)=><Cell key={s.name} fill={s.color}/>)}
-                    </Pie>
-                  </PieChart>
-                  <div style={{ position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',pointerEvents:'none' }}>
-                    <div style={{ fontWeight:900,fontSize:15,color:'var(--text)' }}>{fmt(totalDeliv)}</div>
-                    <div style={{ fontSize:9,color:'var(--text-muted)',fontWeight:600 }}>TOTAL</div>
-                  </div>
-                </div>
-                <div style={{ flex:1 }}>
-                  {stationData.map(s=>(
-                    <div key={s.name} style={{ marginBottom:10 }}>
-                      <div style={{ display:'flex',justifyContent:'space-between',marginBottom:4 }}>
-                        <span style={{ fontSize:12,fontWeight:700,color:s.color }}>{s.name}</span>
-                        <span style={{ fontSize:12,fontWeight:700,color:'var(--text)' }}>{fmt(s.value)}</span>
-                      </div>
-                      <Bar2 value={s.value} total={totalDeliv||1} color={s.color}/>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-          )}
-          {simStats && (
-            <Card style={{ padding:'18px' }}>
-              <SH title="SIM Inventory" sub="Fleet communication" href="/dashboard/poc"/>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8, marginBottom:14 }}>
-                {[{l:'Total',v:simStats.total||0,c:'var(--text)'},{l:'Assigned',v:simStats.assigned||0,c:'#F59E0B'},{l:'Available',v:simStats.available||0,c:'#10B981'},{l:'Cost/mo',v:fmtAED(simStats.monthly_cost),c:'#A78BFA'}].map(s=>(
-                  <div key={s.l} style={{ textAlign:'center',padding:'9px 6px',borderRadius:11,background:'var(--bg-alt)',border:'1px solid var(--border)' }}>
-                    <div style={{ fontWeight:900,fontSize:15,color:s.c }}>{s.v}</div>
-                    <div style={{ fontSize:10,color:'var(--text-muted)',fontWeight:600,marginTop:2 }}>{s.l}</div>
-                  </div>
-                ))}
-              </div>
-              {simByStation.map(s=>{
-                const col=SC[s.station_code]||'#F59E0B'
-                return (
-                  <div key={s.station_code} style={{ marginBottom:8 }}>
-                    <div style={{ display:'flex',justifyContent:'space-between',marginBottom:3 }}>
-                      <span style={{ fontSize:11.5,fontWeight:700,color:col }}>{s.station_code}</span>
-                      <span style={{ fontSize:11,color:'var(--text-muted)' }}>{s.assigned}/{s.total}</span>
-                    </div>
-                    <Bar2 value={s.assigned} total={s.total||1} color={col}/>
-                  </div>
-                )
-              })}
-            </Card>
-          )}
-        </div>
       )}
 
       {/* Pending leaves */}
@@ -436,39 +333,21 @@ function AdminDashboard({ summary, chart, loading, leaves, onApproveLeave, simSt
 }
 
 /* General Manager */
-function GMDashboard({ summary, chart, loading }) {
-  const delivData = chart.length ? chart : []
+function GMDashboard({ summary, loading }) {
   const kpis = [
     { icon:Users,         label:'Total Staff',      value:summary?String(summary.employees?.c||0):'—',         color:'#F59E0B' },
-    { icon:Activity,      label:'Present Today',    value:summary?String(summary.attendance?.present||0):'—',  color:'#34D399' },
     { icon:Calendar,      label:'Pending Leaves',   value:summary?String(summary.pending_leaves||0):'—',       color:'#FB923C' },
     { icon:AlertTriangle, label:'Compliance Alerts',value:summary?String(summary.compliance?.expired||0):'—',  color:'#F87171' },
-    { icon:Package,       label:'Today Deliveries', value:summary?String(summary.today_deliveries||0):'—',     color:'#38BDF8' },
   ]
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
       <div>
         <SH title="Operations Overview"/>
-        <div className="desk" style={{ gridTemplateColumns:'repeat(5,1fr)', gap:10 }}>
+        <div className="desk" style={{ gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
           {kpis.map((k,i)=><KPI key={k.label} {...k} loading={loading} delay={i*0.05}/>)}
         </div>
         <div className="mob"><Swiper items={kpis} peek="calc(50% - 15px)" render={(k,i)=><KPI {...k} loading={loading}/>}/></div>
       </div>
-      {delivData.length>0 && (
-        <Card>
-          <SH title="Monthly Deliveries" sub="Last 6 months"/>
-          <ResponsiveContainer width="99%" height={180}>
-            <BarChart data={delivData} barSize={9} barGap={3}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
-              <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false}/>
-              <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false}/>
-              <Tooltip content={<Tip/>} cursor={{ fill:'rgba(0,0,0,0.03)' }}/>
-              <Bar dataKey="DDB1" name="DDB1" fill="#F59E0B" radius={[4,4,0,0]}/>
-              <Bar dataKey="DXE6" name="DXE6" fill="#38BDF8" radius={[4,4,0,0]}/>
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
-      )}
     </div>
   )
 }
@@ -480,37 +359,24 @@ function HRDashboard({ summary, loading }) {
     { icon:CheckCircle,   label:'Active',           value:summary?String(summary.employees?.active||0):'—',  color:'#10B981' },
     { icon:Calendar,      label:'Pending Leaves',  value:summary?String(summary.pending_leaves||0):'—',      color:'#FB923C' },
     { icon:AlertTriangle, label:'Doc Alerts',       value:summary?String(summary.compliance?.expired||0):'—',color:'#EF4444' },
-    { icon:Activity,      label:'Present Today',   value:summary?String(summary.attendance?.present||0):'—', color:'#38BDF8' },
-    { icon:UserMinus,     label:'Absent Today',    value:summary?String(summary.attendance?.absent||0):'—',  color:'#6B7280' },
   ]
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
       <SH title="HR Overview" sub="Workforce at a glance"/>
-      <div className="desk" style={{ gridTemplateColumns:'repeat(6,1fr)', gap:10 }}>
+      <div className="desk" style={{ gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
         {kpis.map((k,i)=><KPI key={k.label} {...k} loading={loading} delay={i*0.05}/>)}
       </div>
       <div className="mob"><Swiper items={kpis} peek="calc(50% - 15px)" render={(k,i)=><KPI {...k} loading={loading}/>}/></div>
       {summary && (
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }} className="two-col-glass">
-          <Card style={{ padding:'18px' }}>
-            <SH title="Attendance Today"/>
-            {[{l:'Present',v:summary.attendance?.present||0,c:'#10B981'},{l:'Absent',v:summary.attendance?.absent||0,c:'#EF4444'},{l:'On Leave',v:summary.pending_leaves||0,c:'#F59E0B'}].map(s=>(
-              <div key={s.l} style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 12px',background:`${s.c}0d`,borderRadius:10,marginBottom:7,border:`1px solid ${s.c}22` }}>
-                <span style={{ fontSize:12.5,color:'var(--text)',fontWeight:600 }}>{s.l}</span>
-                <span style={{ fontWeight:900,fontSize:18,color:s.c }}>{s.v}</span>
-              </div>
-            ))}
-          </Card>
-          <Card style={{ padding:'18px' }}>
-            <SH title="Staff Summary"/>
-            {[{l:'Total Employees',v:summary.employees?.c||0,c:'var(--text)'},{l:'Active',v:summary.employees?.active||0,c:'#10B981'},{l:'Compliance Alerts',v:summary.compliance?.expired||0,c:'#EF4444'}].map(s=>(
-              <div key={s.l} style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 12px',background:'var(--bg-alt)',borderRadius:10,marginBottom:7,border:'1px solid var(--border)' }}>
-                <span style={{ fontSize:12.5,color:'var(--text-sub)' }}>{s.l}</span>
-                <span style={{ fontWeight:900,fontSize:18,color:s.c }}>{s.v}</span>
-              </div>
-            ))}
-          </Card>
-        </div>
+        <Card style={{ padding:'18px' }}>
+          <SH title="Staff Summary"/>
+          {[{l:'Total Employees',v:summary.employees?.c||0,c:'var(--text)'},{l:'Active',v:summary.employees?.active||0,c:'#10B981'},{l:'Compliance Alerts',v:summary.compliance?.expired||0,c:'#EF4444'}].map(s=>(
+            <div key={s.l} style={{ display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 12px',background:'var(--bg-alt)',borderRadius:10,marginBottom:7,border:'1px solid var(--border)' }}>
+              <span style={{ fontSize:12.5,color:'var(--text-sub)' }}>{s.l}</span>
+              <span style={{ fontWeight:900,fontSize:18,color:s.c }}>{s.v}</span>
+            </div>
+          ))}
+        </Card>
       )}
     </div>
   )
@@ -588,38 +454,20 @@ function AccountantDashboard({ summary, loading, expenses }) {
 }
 
 /* POC */
-function POCDashboard({ summary, chart, loading }) {
-  const delivData = chart.length ? chart : []
+function POCDashboard({ summary, loading }) {
   const kpis = [
     { icon:Users,   label:'My DAs',           value:summary?String(summary.employees?.active||0):'—', color:'#F59E0B' },
-    { icon:Package, label:'Today Deliveries', value:summary?String(summary.today_deliveries||0):'—',  color:'#38BDF8' },
-    { icon:Activity,label:'Present',           value:summary?String(summary.attendance?.present||0):'—',color:'#10B981' },
     { icon:Calendar,label:'On Leave',          value:summary?String(summary.pending_leaves||0):'—',   color:'#FB923C' },
   ]
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:18 }}>
       <div>
         <SH title="Station Overview"/>
-        <div className="desk" style={{ gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+        <div className="desk" style={{ gridTemplateColumns:'repeat(2,1fr)', gap:10 }}>
           {kpis.map((k,i)=><KPI key={k.label} {...k} loading={loading} delay={i*0.05}/>)}
         </div>
         <div className="mob"><Swiper items={kpis} peek="calc(50% - 15px)" render={(k,i)=><KPI {...k} loading={loading}/>}/></div>
       </div>
-      {delivData.length>0 && (
-        <Card>
-          <SH title="Delivery Trend" sub="Last 6 months"/>
-          <ResponsiveContainer width="99%" height={160}>
-            <BarChart data={delivData} barSize={9}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false}/>
-              <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false}/>
-              <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false}/>
-              <Tooltip content={<Tip/>} cursor={{ fill:'rgba(0,0,0,0.03)' }}/>
-              <Bar dataKey="DDB1" name="DDB1" fill="#F59E0B" radius={[4,4,0,0]}/>
-              <Bar dataKey="DXE6" name="DXE6" fill="#38BDF8" radius={[4,4,0,0]}/>
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
-      )}
     </div>
   )
 }
@@ -629,7 +477,6 @@ function POCDashboard({ summary, chart, loading }) {
 ══════════════════════════════════════════════════════════════ */
 export default function AnalyticsPage() {
   const [summary,      setSummary]      = useState(null)
-  const [chart,        setChart]        = useState([])
   const [leaves,       setLeaves]       = useState([])
   const [loading,      setLoading]      = useState(true)
   const [userRole,     setUserRole]     = useState(null)
@@ -648,7 +495,6 @@ export default function AnalyticsPage() {
     catch(e) { setLoading(false) }
 
     const month = new Date().toISOString().slice(0,7)
-    fetch(`${API}/api/analytics/deliveries-chart?months=6`,{headers:hdr()}).then(r=>r.json()).then(d=>setChart(d.chart||[])).catch(()=>{})
     fetch(`${API}/api/expenses?month=${month}`,{headers:hdr()}).then(r=>r.json()).then(d=>setExpenses(d.expenses||[])).catch(()=>{})
     fetch(`${API}/api/sims/stats`,{headers:hdr()}).then(r=>r.json()).then(d=>{setSimStats(d.stats||null);setSimByStation(d.by_station||[])}).catch(()=>{})
     if (['admin','general_manager','manager'].includes(role)) {
@@ -677,12 +523,12 @@ export default function AnalyticsPage() {
   )
 
   const dashboards = {
-    admin:           <AdminDashboard    summary={summary} chart={chart} loading={loading} leaves={leaves} onApproveLeave={handleApproveLeave} simStats={simStats} simByStation={simByStation} expenses={expenses}/>,
-    manager:         <AdminDashboard    summary={summary} chart={chart} loading={loading} leaves={leaves} onApproveLeave={handleApproveLeave} simStats={simStats} simByStation={simByStation} expenses={expenses}/>,
-    general_manager: <GMDashboard       summary={summary} chart={chart} loading={loading}/>,
+    admin:           <AdminDashboard    summary={summary} loading={loading} leaves={leaves} onApproveLeave={handleApproveLeave} simStats={simStats} simByStation={simByStation} expenses={expenses}/>,
+    manager:         <AdminDashboard    summary={summary} loading={loading} leaves={leaves} onApproveLeave={handleApproveLeave} simStats={simStats} simByStation={simByStation} expenses={expenses}/>,
+    general_manager: <GMDashboard       summary={summary} loading={loading}/>,
     hr:              <HRDashboard       summary={summary} loading={loading}/>,
     accountant:      <AccountantDashboard summary={summary} loading={loading} expenses={expenses}/>,
-    poc:             <POCDashboard      summary={summary} chart={chart} loading={loading}/>,
+    poc:             <POCDashboard      summary={summary} loading={loading}/>,
   }
 
   return dashboards[role] || dashboards.admin
