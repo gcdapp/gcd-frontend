@@ -39,6 +39,12 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
   const { user } = useAuth()
   const { counts = {} } = useAlerts()
   const [expanded, setExpanded] = useState({})
+  // Section groups (Office/HR Management/Operations/System) start collapsed and
+  // only reveal their items once the section header is clicked — Finance is the
+  // one section that's always visible, never collapsible. A section not yet
+  // manually toggled still auto-opens if the current page lives inside it, so
+  // the active link is never hidden behind a collapsed header.
+  const [openSections, setOpenSections] = useState({})
 
   function isChildActive(href) {
     const [path, qs] = href.split('?')
@@ -76,6 +82,87 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
     if (pathname === href) return true
     if (!pathname.startsWith(href + '/')) return false
     return !navHrefs.some(other => other !== href && other.startsWith(href + '/') && (pathname === other || pathname.startsWith(other + '/')))
+  }
+
+  // Group the flat, already-filtered nav list into { label, items } sections —
+  // every leaf item after a 'section' marker belongs to that section, until the
+  // next marker. Items before the first marker (just Overview) form an
+  // unlabeled leading group that's always rendered, never collapsible.
+  const navGroups = []
+  let currentGroup = null
+  for (const item of nav) {
+    if (item.type === 'section') {
+      currentGroup = { label: item.label, items: [] }
+      navGroups.push(currentGroup)
+    } else if (currentGroup) {
+      currentGroup.items.push(item)
+    } else {
+      navGroups.push({ label: null, items: [item] })
+    }
+  }
+
+  function toggleSection(label, currentlyOpen) {
+    setOpenSections(p => ({ ...p, [label]: !currentlyOpen }))
+  }
+
+  function renderItem(item) {
+    const Icon       = ICONS[item.icon]
+    const isActive   = isItemActive(item.href)
+    const isExpanded = expanded[item.href]
+    const hasKids    = item.children?.length > 0
+    const itemBadge  = item.alertKey ? (counts[item.alertKey] || 0) : 0
+
+    return (
+      <div key={item.href}>
+        {hasKids ? (<>
+          <div className={`nav-item${isActive?' active':''}`}
+            onClick={() => !collapsed && toggle(item.href)}
+            style={{ userSelect:'none', cursor:'pointer' }}>
+            {Icon && <Icon size={16}/>}
+            <span className="nav-label" style={{ flex:1 }}>{item.label}</span>
+            {itemBadge > 0 && (
+              <span style={{ minWidth:17, height:17, borderRadius:9, background:'#EF4444', color:'white', fontSize:10, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px', flexShrink:0 }}>
+                {itemBadge > 99 ? '99+' : itemBadge}
+              </span>
+            )}
+            {!collapsed && (
+              <ChevronDown size={12} style={{ transition:'transform 0.2s', transform:isExpanded?'rotate(180deg)':'none', opacity:0.4, flexShrink:0 }}/>
+            )}
+          </div>
+          <div style={{ overflow:'hidden', maxHeight: collapsed?0 : isExpanded?'500px':'0', transition:'max-height 0.3s ease' }}>
+            {item.children
+              ?.filter(c => !c.roles || c.roles.includes(user?.role))
+              .filter(c => !c.roles || !c.roles.every(r => r === 'manager'))
+              .map(child => {
+                const CIcon      = ICONS[child.icon]
+                const active     = isChildActive(child.href)
+                const childBadge = child.alertKey ? (counts[child.alertKey] || 0) : 0
+                return (
+                  <Link key={child.href} href={child.href}
+                    className={`nav-item${active?' active':''}`}
+                    style={{ paddingLeft: collapsed?undefined:34, fontSize:12.5 }}
+                    onClick={() => setMobileOpen(false)}>
+                    {CIcon && <CIcon size={13} style={{ opacity:0.7 }}/>}
+                    <span className="nav-label" style={{ flex:1 }}>{child.label}</span>
+                    {childBadge > 0 && (
+                      <span style={{ minWidth:16, height:16, borderRadius:8, background:'#EF4444', color:'white', fontSize:9, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px', flexShrink:0 }}>
+                        {childBadge > 99 ? '99+' : childBadge}
+                      </span>
+                    )}
+                  </Link>
+                )
+            })}
+          </div>
+        </>) : (
+          <Link href={item.href}
+            className={`nav-item${isActive?' active':''}`}
+            onClick={() => setMobileOpen(false)}>
+            {Icon && <Icon size={16}/>}
+            <span className="nav-label">{item.label}</span>
+          </Link>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -126,72 +213,29 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
 
         {/* ── Nav ── */}
         <nav style={{ flex:1, paddingTop:4, paddingBottom:12, overflowY:'auto', overflowX:'hidden' }}>
-          {nav.map((item, i) => {
-            // Section divider
-            if (item.type === 'section') {
-              if (collapsed) return null
-              return (
-                <div key={`section-${item.label}`} style={{ fontSize:9, fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.1em', textTransform:'uppercase', padding:'14px 14px 4px', marginTop:2 }}>
-                  {item.label}
-                </div>
-              )
-            }
+          {navGroups.map(group => {
+            // Leading ungrouped items (just Overview) — always shown, no header
+            if (!group.label) return group.items.map(item => renderItem(item))
 
-            const Icon       = ICONS[item.icon]
-            const isActive   = isItemActive(item.href)
-            const isExpanded = expanded[item.href]
-            const hasKids    = item.children?.length > 0
-            const itemBadge  = item.alertKey ? (counts[item.alertKey] || 0) : 0
+            const isFinance = group.label === 'Finance'
+            const hasActive = group.items.some(item => isItemActive(item.href))
+            const isOpen    = isFinance || collapsed || (group.label in openSections ? openSections[group.label] : hasActive)
 
             return (
-              <div key={item.href}>
-                {hasKids ? (<>
-                  <div className={`nav-item${isActive?' active':''}`}
-                    onClick={() => !collapsed && toggle(item.href)}
-                    style={{ userSelect:'none', cursor:'pointer' }}>
-                    {Icon && <Icon size={16}/>}
-                    <span className="nav-label" style={{ flex:1 }}>{item.label}</span>
-                    {itemBadge > 0 && (
-                      <span style={{ minWidth:17, height:17, borderRadius:9, background:'#EF4444', color:'white', fontSize:10, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px', flexShrink:0 }}>
-                        {itemBadge > 99 ? '99+' : itemBadge}
-                      </span>
-                    )}
-                    {!collapsed && (
-                      <ChevronDown size={12} style={{ transition:'transform 0.2s', transform:isExpanded?'rotate(180deg)':'none', opacity:0.4, flexShrink:0 }}/>
+              <div key={`group-${group.label}`}>
+                {!collapsed && (
+                  <div
+                    onClick={() => !isFinance && toggleSection(group.label, isOpen)}
+                    style={{ fontSize:9, fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.1em', textTransform:'uppercase', padding:'14px 14px 4px', marginTop:2, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:isFinance?'default':'pointer', userSelect:'none' }}>
+                    <span>{group.label}</span>
+                    {!isFinance && (
+                      <ChevronDown size={11} style={{ transition:'transform 0.2s', transform:isOpen?'rotate(180deg)':'none', opacity:0.5, flexShrink:0 }}/>
                     )}
                   </div>
-                  <div style={{ overflow:'hidden', maxHeight: collapsed?0 : isExpanded?'500px':'0', transition:'max-height 0.3s ease' }}>
-                    {item.children
-                      ?.filter(c => !c.roles || c.roles.includes(user?.role))
-                      .filter(c => !c.roles || !c.roles.every(r => r === 'manager'))
-                      .map(child => {
-                        const CIcon      = ICONS[child.icon]
-                        const active     = isChildActive(child.href)
-                        const childBadge = child.alertKey ? (counts[child.alertKey] || 0) : 0
-                        return (
-                          <Link key={child.href} href={child.href}
-                            className={`nav-item${active?' active':''}`}
-                            style={{ paddingLeft: collapsed?undefined:34, fontSize:12.5 }}
-                            onClick={() => setMobileOpen(false)}>
-                            {CIcon && <CIcon size={13} style={{ opacity:0.7 }}/>}
-                            <span className="nav-label" style={{ flex:1 }}>{child.label}</span>
-                            {childBadge > 0 && (
-                              <span style={{ minWidth:16, height:16, borderRadius:8, background:'#EF4444', color:'white', fontSize:9, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px', flexShrink:0 }}>
-                                {childBadge > 99 ? '99+' : childBadge}
-                              </span>
-                            )}
-                          </Link>
-                        )
-                    })}
-                  </div>
-                </>) : (
-                  <Link href={item.href}
-                    className={`nav-item${isActive?' active':''}`}
-                    onClick={() => setMobileOpen(false)}>
-                    {Icon && <Icon size={16}/>}
-                    <span className="nav-label">{item.label}</span>
-                  </Link>
                 )}
+                <div style={{ overflow:'hidden', maxHeight: isOpen ? '600px' : '0px', transition:'max-height 0.3s ease' }}>
+                  {group.items.map(item => renderItem(item))}
+                </div>
               </div>
             )
           })}

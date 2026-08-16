@@ -6,7 +6,7 @@ import { isAmazonOnlyScoped } from '@/lib/employees'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts'
 import {
   Users, Car, Wallet, ChevronRight, Smartphone,
-  Receipt, ScrollText, Activity, RefreshCw,
+  Receipt, ScrollText, Activity, RefreshCw, Banknote,
 } from 'lucide-react'
 import Link from 'next/link'
 import { API } from '@/lib/api'
@@ -167,6 +167,11 @@ export default function OverviewPage() {
     color: cat.c,
   })).filter(c => c.value > 0).sort((a,b) => b.value - a.value)
 
+  const payrollBase = Number(summary?.payroll?.base_total || 0)
+  const payrollBonus = Number(summary?.payroll?.bonus_total || 0)
+  const payrollDed   = Number(summary?.payroll?.ded_total || 0)
+  const netPayroll   = payrollBase + payrollBonus - payrollDed
+
   const totalEmp    = summary?.employees?.c        || 0
   const activeEmp   = summary?.employees?.active   || 0
   const onLeaveEmp  = summary?.employees?.on_leave || 0
@@ -226,7 +231,7 @@ export default function OverviewPage() {
         .ov-refresh-btn:disabled { opacity:0.5; cursor:not-allowed; }
 
         /* ── KPI cards ── */
-        .ov-kpi-cards       { display:grid; grid-template-columns:repeat(${isProjectScoped ? 3 : 4},1fr); gap:14px; }
+        .ov-kpi-cards       { display:grid; grid-template-columns:repeat(${isProjectScoped ? 4 : 5},1fr); gap:14px; }
         .ov-kpi-card        { background:linear-gradient(135deg,var(--ov-kpi-grad-a) 0%,var(--ov-kpi-grad-b) 100%); border:1px solid var(--ov-kpi-grad-b); border-radius:18px; box-shadow:var(--shadow); padding:18px 20px; transition:box-shadow var(--t-base),transform var(--t-base); }
         .ov-kpi-card:hover  { box-shadow:var(--shadow-md); transform:translateY(-2px); }
         .ov-kpi-card-top    { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
@@ -369,6 +374,12 @@ export default function OverviewPage() {
               Icon:  Wallet, color:'var(--gold)', bg:'var(--gold-pale)', border:'var(--gold-border)', small:true,
             },
             {
+              val:   loadingHero ? null : fmtAED(netPayroll),
+              lbl:   'Payroll This Month',
+              hint:  loadingHero ? '' : `${totalEmp} employees`,
+              Icon:  Banknote, color:'var(--purple)', bg:'var(--purple-bg)', border:'var(--purple-border)', small:true,
+            },
+            {
               val:   pendingLetters.length,
               lbl:   'Letters Pending',
               hint:  'awaiting signature',
@@ -378,8 +389,7 @@ export default function OverviewPage() {
                 : { color:'var(--green)', bg:'var(--green-bg)', border:'var(--green-border)' }),
             },
           ].map(({ val, lbl, hint, Icon, color, bg, border, small }, i) => (
-            <div key={lbl} className={i<3?`ov-kpi-card fade-up-${i+1}`:'ov-kpi-card fade-up'}
-              style={{ '--ov-kpi-grad-a':bg, '--ov-kpi-grad-b':border, ...(i===3?{animationDelay:'0.16s'}:{}) }}>
+            <div key={lbl} className="ov-kpi-card fade-up" style={{ '--ov-kpi-grad-a':bg, '--ov-kpi-grad-b':border, animationDelay:`${i*0.04}s` }}>
               <div className="ov-kpi-card-top">
                 <div className="ov-kpi-badge" style={{color}}><Icon size={16}/></div>
                 <KpiSpark/>
