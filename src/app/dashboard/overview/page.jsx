@@ -503,7 +503,8 @@ export default function OverviewPage() {
                       const row = payload[0].payload
                       const spend = expView === 'combined' ? row.total : row[expView]
                       const recv  = expView === 'combined' ? row.total_received : row[`${expView}_received`]
-                      const diff  = (recv||0) - (spend||0)
+                      const payrollThisMonth = (expView === 'combined' && !amazonLocked) ? (row.payroll||0) : 0
+                      const diff  = (recv||0) - (spend||0) - payrollThisMonth
                       const [y,m] = label.split('-')
                       const monthLabel = new Date(+y,+m-1).toLocaleDateString('en-US',{month:'long',year:'numeric'})
                       const colors = { amazon:'#60A5FA', client:'#A78BFA', amazon_received:'#6EE7B7', client_received:'#059669', payroll:'#7C3AED' }
@@ -580,18 +581,26 @@ export default function OverviewPage() {
             const recvField = expView === 'combined' ? 'total_received' : `${expView}_received`
             const totalExp6  = expChart.reduce((s,r) => s + (r[field]||0), 0)
             const totalRecv6 = expChart.reduce((s,r) => s + (r[recvField]||0), 0)
-            const diff6      = totalRecv6 - totalExp6
+            // Payroll is only ever shown (and only ever real) in the Combined view — an
+            // Amazon-only-scoped account never gets payroll data at all (see
+            // routes/analytics.js). Folding it into "Difference" everywhere else would
+            // subtract a company-wide figure from a project-sliced spend/received pair
+            // that doesn't correspond to it.
+            const includePayroll = expView === 'combined' && !amazonLocked
+            const totalPayroll6  = includePayroll ? expChart.reduce((s,r) => s + (r.payroll||0), 0) : 0
+            const diff6      = totalRecv6 - totalExp6 - totalPayroll6
             const avgExp6   = totalExp6 / expChart.length
             const peak      = expChart.reduce((max,r) => (r[field]||0) > (max?.[field]||0) ? r : max, expChart[0])
             const peakLabel = (() => { const [y,m] = peak.month.split('-'); return new Date(+y,+m-1).toLocaleDateString('en-US',{month:'short'}) })()
             const accent    = expView==='amazon' ? '#3B82F6' : expView==='client' ? '#7C3AED' : '#FCD34D'
+            const diffLabel = includePayroll ? 'Difference (Received − Spend − Payroll)' : 'Difference (Received − Spend)'
             return (
               <div style={{ display:'flex', borderTop:'1px solid var(--border)', background:'var(--bg-alt)', flexWrap:'wrap' }}>
                 {[
                   { label:`Total Spend (${expChart.length} month${expChart.length!==1?'s':''})`, value:`AED ${totalExp6.toLocaleString()}`, c:'var(--text)' },
                   { label:'Monthly Average',        value:`AED ${Math.round(avgExp6).toLocaleString()}`,   c:accent },
                   { label:`Peak Month (${peakLabel})`, value:`AED ${(peak[field]||0).toLocaleString()}`,   c:'#F59E0B' },
-                  { label:'Difference (Received − Spend)', value:`${diff6>=0?'+':'-'}AED ${Math.abs(diff6).toLocaleString()}`, c: diff6>=0?'#34D399':'#F87171' },
+                  { label:diffLabel, value:`${diff6>=0?'+':'-'}AED ${Math.abs(diff6).toLocaleString()}`, c: diff6>=0?'#34D399':'#F87171' },
                 ].map(({ label, value, c }) => (
                   <div key={label} style={{ flex:1, minWidth:150, padding:'12px 20px', borderRight:'1px solid var(--border)', textAlign:'center' }}>
                     <div style={{ fontWeight:800, fontSize:16, color:c, letterSpacing:'-0.03em' }}>{value}</div>
