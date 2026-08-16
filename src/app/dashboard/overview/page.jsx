@@ -537,12 +537,6 @@ export default function OverviewPage() {
                           formatter={v => `AED ${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
                           style={{ fontSize:10.5, fontWeight:800, fill:'var(--text)' }}/>
                       </Bar>
-                      <Bar dataKey="amazon_received"  name="Amazon received"          stackId="recv" fill="url(#gradAmazonRecv)"/>
-                      <Bar dataKey="client_received"  name="Other Projects received"  stackId="recv" fill="url(#gradClientRecv)" radius={[7,7,0,0]}>
-                        <LabelList dataKey="total_received" position="top" offset={9}
-                          formatter={v => `AED ${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
-                          style={{ fontSize:10.5, fontWeight:800, fill:'#059669' }}/>
-                      </Bar>
                       {/* Real recorded payroll (only ever set once a month is marked
                           paid — see routes/analytics.js) — not available to an
                           Amazon-only-scoped account, which has no Payroll access at all. */}
@@ -553,6 +547,12 @@ export default function OverviewPage() {
                             style={{ fontSize:10.5, fontWeight:800, fill:'#7C3AED' }}/>
                         </Bar>
                       )}
+                      <Bar dataKey="amazon_received"  name="Amazon received"          stackId="recv" fill="url(#gradAmazonRecv)"/>
+                      <Bar dataKey="client_received"  name="Other Projects received"  stackId="recv" fill="url(#gradClientRecv)" radius={[7,7,0,0]}>
+                        <LabelList dataKey="total_received" position="top" offset={9}
+                          formatter={v => `AED ${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
+                          style={{ fontSize:10.5, fontWeight:800, fill:'#059669' }}/>
+                      </Bar>
                     </>
                   ) : (
                     <>
