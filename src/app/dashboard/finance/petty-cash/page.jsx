@@ -37,6 +37,15 @@ const CLIENT_PROJECT_LABELS = {
 }
 const CLIENT_PROJECTS = Object.keys(CLIENT_PROJECT_LABELS)
 
+// An Amazon-only-scoped manager (e.g. Iftikhar, Waqar — assigned_projects is only
+// ever pulser/cret) isn't tagging a client project at all, just which Amazon
+// station the expense belongs to — same pulser=DDB1/cret=DXE6 mapping used
+// elsewhere (attendance, fleet). Shown as station codes here since that's how
+// Amazon-side people actually refer to it, not the internal "Pulser"/"CRET" names.
+const AMAZON_PROJECT_LABELS = { pulser: 'DDB1', cret: 'DXE6' }
+const AMAZON_PROJECTS = Object.keys(AMAZON_PROJECT_LABELS)
+const ALL_PROJECT_LABELS = { ...CLIENT_PROJECT_LABELS, ...AMAZON_PROJECT_LABELS }
+
 function fmt(n) {
   return `AED ${Math.abs(Number(n || 0)).toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
@@ -154,10 +163,13 @@ function ExpenseModal({ drivers, delegates, onSave, onClose }) {
   const { user } = useAuth()
   // A project-scoped manager (e.g. Asma) juggles several client projects at once —
   // without picking one per expense, her spend was only ever attributable to her
-  // account as a whole, never to a specific project. Mandatory for her; optional
-  // (but still available) for everyone else so their entries can feed the same
+  // account as a whole, never to a specific project. Same deal for an Amazon-only-
+  // scoped manager (e.g. Iftikhar, Waqar), just picking between DDB1/DXE6 instead
+  // of a client project — see AMAZON_PROJECT_LABELS above. Mandatory whenever the
+  // account has any assigned_projects; optional (but still available, client-
+  // projects only) for everyone else so their entries can feed the same
   // per-project report too.
-  const scopedProjects = Array.isArray(user?.assigned_projects) ? user.assigned_projects.filter(p => CLIENT_PROJECTS.includes(p)) : []
+  const scopedProjects = Array.isArray(user?.assigned_projects) ? user.assigned_projects : []
   const isScoped = scopedProjects.length > 0
   const projectOptions = isScoped ? scopedProjects : CLIENT_PROJECTS
 
@@ -225,7 +237,7 @@ function ExpenseModal({ drivers, delegates, onSave, onClose }) {
             <Lbl>{isScoped ? 'Project *' : 'Project (optional)'}</Lbl>
             <select className="input" value={form.project_type} onChange={set('project_type')} style={{ borderRadius:10 }}>
               <option value="">{isScoped ? 'Select a project…' : 'Not project-specific'}</option>
-              {projectOptions.map(p => <option key={p} value={p}>{CLIENT_PROJECT_LABELS[p]}</option>)}
+              {projectOptions.map(p => <option key={p} value={p}>{ALL_PROJECT_LABELS[p]}</option>)}
             </select>
           </div>
           {delegates?.length > 0 && (
@@ -289,7 +301,7 @@ function parseFlexibleDate(input) {
 /* ── Bulk Upload Modal ──────────────────────────────────────── */
 function BulkUploadModal({ drivers, onSave, onClose }) {
   const { user } = useAuth()
-  const scopedProjects = Array.isArray(user?.assigned_projects) ? user.assigned_projects.filter(p => CLIENT_PROJECTS.includes(p)) : []
+  const scopedProjects = Array.isArray(user?.assigned_projects) ? user.assigned_projects : []
   const isScoped = scopedProjects.length > 0
 
   const [rows,      setRows]      = useState([])
@@ -330,7 +342,7 @@ function BulkUploadModal({ drivers, onSave, onClose }) {
           if (emp_id && !drivers.find(d => d.id === emp_id)) errors.push(`unknown driver id "${emp_id}"`)
           if (isScoped && !project_type) errors.push('project_type required')
           else if (isScoped && !scopedProjects.includes(project_type)) errors.push(`"${project_type}" is not one of your assigned projects`)
-          else if (project_type && !CLIENT_PROJECTS.includes(project_type)) errors.push(`unknown project_type "${project_type}"`)
+          else if (project_type && !CLIENT_PROJECTS.includes(project_type) && !AMAZON_PROJECTS.includes(project_type)) errors.push(`unknown project_type "${project_type}"`)
           return { row: i + 2, expense_type, amount, date: date || rawDate, note: r.note || '', emp_id, project_type, errors }
         })
         setRows(parsed)
@@ -541,7 +553,15 @@ function GiveCashModal({ users, onSave, onClose }) {
 
 /* ── Edit Modal ─────────────────────────────────────────────── */
 function EditModal({ record, drivers, onSave, onClose }) {
+  const { user } = useAuth()
   const isExpense = record.type === 'expense'
+  // Same scoping as ExpenseModal above — a scoped account (client-project or
+  // Amazon-only) must still pick from their own projects when editing, and the
+  // record's already-saved project_type (which may be pulser/cret, e.g. an
+  // Amazon-only-scoped manager's own entry) needs to keep showing up correctly.
+  const scopedProjects = Array.isArray(user?.assigned_projects) ? user.assigned_projects : []
+  const isScoped = scopedProjects.length > 0
+  const projectOptions = isScoped ? scopedProjects : CLIENT_PROJECTS
   const [form, setForm] = useState({
     amount: record.amount,
     date: record.date?.slice(0,10) || new Date().toISOString().slice(0,10),
@@ -559,6 +579,7 @@ function EditModal({ record, drivers, onSave, onClose }) {
     const amt = parseFloat(form.amount)
     if (isNaN(amt) || amt <= 0) return setErr('Amount must be positive')
     if (isExpense && !form.expense_type) return setErr('Expense type required')
+    if (isExpense && isScoped && !form.project_type) return setErr('Select one of your projects for this expense')
     setSaving(true); setErr(null)
     try {
       const body = { amount:amt, date:form.date, note:form.note||null }
@@ -606,10 +627,10 @@ function EditModal({ record, drivers, onSave, onClose }) {
           )}
           {isExpense && (
             <div>
-              <Lbl>Project (optional)</Lbl>
+              <Lbl>{isScoped ? 'Project *' : 'Project (optional)'}</Lbl>
               <select className="input" value={form.project_type} onChange={set('project_type')} style={{ borderRadius:10 }}>
-                <option value="">Not project-specific</option>
-                {CLIENT_PROJECTS.map(p => <option key={p} value={p}>{CLIENT_PROJECT_LABELS[p]}</option>)}
+                <option value="">{isScoped ? 'Select a project…' : 'Not project-specific'}</option>
+                {projectOptions.map(p => <option key={p} value={p}>{ALL_PROJECT_LABELS[p]}</option>)}
               </select>
             </div>
           )}
