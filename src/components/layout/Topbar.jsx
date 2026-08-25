@@ -12,7 +12,7 @@ const PAGE_TITLES = {
   '/dashboard/hr/employees':              'Employees',
   '/dashboard/hr/leaves':                 'Leaves',
   '/dashboard/hr/documents':              'Documents',
-  '/dashboard/hr/compliance':             'Compliance',
+  '/dashboard/hr/compliance':             'Document Expiry',
   '/dashboard/hr/users':                  'User Accounts',
   '/dashboard/hr/admins':                 'Admin Accounts',
   '/dashboard/hr/handovers':              'Handovers',

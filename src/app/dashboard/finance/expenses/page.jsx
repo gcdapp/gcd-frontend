@@ -148,7 +148,7 @@ function ExpensesPageInner() {
   }, [month])
 
   useEffect(() => { load() }, [load])
-  useSocket({ 'expense:created': load, 'expense:updated': load })
+  useSocket({ 'expense:created': load, 'expense:updated': load, 'expense:deleted': load })
 
   // ── All computed values memoized ──────────────────────────────
   // Exclude expenses dated later than today (e.g. a forward-dated advance) so these

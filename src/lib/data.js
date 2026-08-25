@@ -29,7 +29,7 @@ export const NAV = [
   { label:'Admins',        href:'/dashboard/hr/admins',     icon:'Shield',      roles:['admin','general_manager','hr','accountant'], hideIfScoped:true },
   { label:'Leaves',        href:'/dashboard/hr/leaves',     icon:'CalendarOff', roles:['admin','general_manager','hr','accountant'], alertKey:'leaves' },
   { label:'Documents',     href:'/dashboard/hr/documents',  icon:'FileText',    roles:['admin','hr'] },
-  { label:'Compliance',    href:'/dashboard/hr/compliance', icon:'ShieldCheck', roles:['admin','hr'] },
+  { label:'Document Expiry', href:'/dashboard/hr/compliance', icon:'FileWarning', roles:['admin','general_manager','hr'], alertKey:'doc_expiry' },
   { label:'User Accounts', href:'/dashboard/hr/users',      icon:'KeyRound',    roles:['admin'] },
 
   // ── Finance ───────────────────────────────────────────────────

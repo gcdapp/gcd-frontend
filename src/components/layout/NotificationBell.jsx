@@ -321,8 +321,8 @@ export default function NotificationBell({ userRole }) {
           )}
           {(tab === 'drivers' || tab === 'staff') && (docData?.total || 0) > 0 && (
             <div style={{ padding:'10px 14px', borderTop:'1px solid var(--border)', flexShrink:0 }}>
-              <a href="/dashboard/hr/employees" style={{ fontSize:11.5, fontWeight:700, color:'#B8860B', textDecoration:'none', display:'flex', alignItems:'center', gap:4 }}>
-                View all employees →
+              <a href="/dashboard/hr/compliance" style={{ fontSize:11.5, fontWeight:700, color:'#B8860B', textDecoration:'none', display:'flex', alignItems:'center', gap:4 }}>
+                View all expiring documents →
               </a>
             </div>
           )}

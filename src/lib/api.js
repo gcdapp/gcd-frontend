@@ -189,6 +189,7 @@ export const handoverApi = {
 export const docApi = {
   list:     (params={}) => api.get(`/api/documents?${new URLSearchParams(params)}`),
   expiring: (days=60)   => api.get(`/api/documents/expiring?days=${days}`),
+  expiryOverview: (days=90) => api.get(`/api/documents/expiry-overview?days=${days}`),
   create:   (data)      => api.post('/api/documents', data),
   update:   (id, data)  => api.put(`/api/documents/${id}`, data),
   delete:   (id)        => api.delete(`/api/documents/${id}`),

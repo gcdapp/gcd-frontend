@@ -12,7 +12,7 @@ import {
   ShieldCheck, Radio, HardDrive, KeyRound, ChevronLeft, ChevronRight,
   Settings, Trophy, AlertTriangle, Calendar, Zap, LayoutDashboard,
   Truck, Smartphone, Shield, Package, Bell, Building2, ClipboardCheck,
-  ArrowLeftRight, ScrollText, CalendarDays, ClipboardList,
+  ArrowLeftRight, ScrollText, CalendarDays, ClipboardList, FileWarning,
 } from 'lucide-react'
 
 
@@ -21,7 +21,7 @@ const ICONS = {
   FileText, Wallet, Receipt, ShieldCheck, Radio, HardDrive, KeyRound,
   Settings, Trophy, AlertTriangle, Calendar, Zap, LayoutDashboard,
   Truck, Smartphone, Shield, Package, Bell, Banknote, Building2, ClipboardCheck,
-  ArrowLeftRight, ScrollText, CalendarDays, ClipboardList,
+  ArrowLeftRight, ScrollText, CalendarDays, ClipboardList, FileWarning,
 }
 
 const ROLE_LABELS = {
