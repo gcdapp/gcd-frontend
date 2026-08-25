@@ -236,10 +236,15 @@ function ExpensesPageInner() {
   // why these were falling into Unassigned before emp_project_type was added to the
   // GET /api/expenses response.
   const costwise = useMemo(() => {
-    const stationCols = [...new Set(expenses.map(e => e.emp_station).filter(Boolean))].sort()
+    const todayStr = new Date().toISOString().slice(0, 10)
+    // Same "so far this month" cutoff as the KPI total above — otherwise a
+    // forward-dated expense (e.g. an advance dated ahead) makes this table's
+    // footer Total silently disagree with the KPI card by that amount.
+    const soFar = expenses.filter(e => (e.date || '').slice(0, 10) <= todayStr)
+    const stationCols = [...new Set(soFar.map(e => e.emp_station).filter(Boolean))].sort()
       .map(s => ({ key: s, label: s }))
     const projectCols = CLIENT_PROJECT_COLS.filter(([v]) =>
-      expenses.some(e => !e.emp_station && e.emp_project_type === v)
+      soFar.some(e => !e.emp_station && e.emp_project_type === v)
     ).map(([v, label]) => ({ key: v, label }))
     const columns = [...stationCols, ...projectCols]
     const colIndex = Object.fromEntries(columns.map((c, i) => [c.key, i]))
@@ -247,7 +252,7 @@ function ExpensesPageInner() {
     const colTotals = columns.map(() => 0)
     let unassignedTotal = 0, grandTotal = 0
 
-    for (const e of expenses) {
+    for (const e of soFar) {
       const amt = Number(e.amount || 0)
       grandTotal += amt
       let entry = catMap.get(e.category)
