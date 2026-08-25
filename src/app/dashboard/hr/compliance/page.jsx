@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
-  AlertCircle, RefreshCw, Search, ExternalLink, ChevronRight, ShieldCheck,
+  AlertCircle, RefreshCw, ExternalLink, ChevronRight, ShieldCheck, ArrowUp, ArrowDown,
 } from 'lucide-react'
 
 import { docApi } from '@/lib/api'
@@ -21,20 +21,16 @@ const SEV = {
   soon:     { c:'#047857', bg:'#F0FDF4', bc:'#A7F3D0', label:'Upcoming' },
 }
 
-// Cumulative windows — "≤60d" includes everything already expired and ≤30d.
-const WINDOWS = [
-  { v:'all',     l:'All',        emoji:'',   match:()=>true },
-  { v:'expired', l:'Expired',    emoji:'🔴', match:i=>i.days < 0 },
-  { v:'30',      l:'≤ 30 days',  emoji:'🟠', match:i=>i.days <= 30 },
-  { v:'60',      l:'≤ 60 days',  emoji:'🟡', match:i=>i.days <= 60 },
-  { v:'90',      l:'≤ 90 days',  emoji:'🔵', match:i=>i.days <= 90 },
+const SORT_OPTIONS = [
+  { v:'expiry', l:'Sort: Expiry Date'    },
+  { v:'name',   l:'Sort: Employee Name'  },
 ]
-
-const WHO = [
-  { v:'all',    l:'Everyone' },
-  { v:'das',    l:'DAs'      },
-  { v:'admins', l:'Admins'   },
-]
+// Ascending direction per field: soonest-expiring first for dates, A→Z for names.
+function sortComparator(sortBy) {
+  return sortBy === 'name'
+    ? (a, b) => (a.emp_name || '').localeCompare(b.emp_name || '')
+    : (a, b) => a.days - b.days
+}
 
 // employees.role is stored capitalized ('Driver'/'Admin'/'Manager'/'POC') —
 // compare case-insensitively rather than assuming exact casing.
@@ -45,31 +41,6 @@ function roleLabel(role) { return isDA(role) ? 'DA' : (role || '') }
 
 function initials(name) {
   return (name||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase()
-}
-
-function Pill({ active, onClick, children, count, color }) {
-  const activeBg = color || 'linear-gradient(135deg,#B8860B,#D4A017)'
-  return (
-    <button onClick={onClick} style={{
-      display:'flex', alignItems:'center', gap:6,
-      padding:'7px 14px', borderRadius:20, cursor:'pointer',
-      border:`1px solid ${active ? (color||'#B8860B') : 'var(--border)'}`,
-      background: active ? activeBg : 'var(--card)',
-      color: active ? '#fff' : 'var(--text-sub)',
-      fontSize:12, fontWeight:700, fontFamily:'Poppins,sans-serif',
-      whiteSpace:'nowrap', transition:'all 0.15s',
-      boxShadow: active ? '0 2px 8px rgba(184,134,11,0.22)' : 'none',
-    }}>
-      {children}
-      {count !== undefined && (
-        <span style={{
-          background: active ? 'rgba(255,255,255,0.28)' : 'var(--bg-alt)',
-          color: active ? '#fff' : 'var(--text-muted)',
-          borderRadius:20, padding:'1px 7px', fontSize:10, fontWeight:800,
-        }}>{count}</span>
-      )}
-    </button>
-  )
 }
 
 // Section header for a document-type group — the list is organized primarily
@@ -195,9 +166,8 @@ export default function DocumentExpiryPage() {
   const [items,   setItems]   = useState([])
   const [loading, setLoading] = useState(true)
   const [err,     setErr]     = useState(null)
-  const [q,       setQ]       = useState('')
-  const [win,     setWin]     = useState('all')
-  const [who,     setWho]     = useState('all')
+  const [sortBy,  setSortBy]  = useState('expiry')
+  const [sortDir, setSortDir] = useState('asc')
 
   const load = useCallback(async () => {
     setLoading(true); setErr(null)
@@ -209,37 +179,22 @@ export default function DocumentExpiryPage() {
 
   useEffect(() => { load() }, [load])
 
-  // The who-filter narrows first so the window pill counts reflect the
-  // audience currently on screen, not the whole dataset.
-  const scoped = useMemo(() => items.filter(i =>
-    who === 'all' ? true : who === 'das' ? isDA(i.role) : !isDA(i.role)
-  ), [items, who])
-
-  const visible = useMemo(() => {
-    const w    = WINDOWS.find(x => x.v === win) || WINDOWS[0]
-    const term = q.trim().toLowerCase()
-    return scoped.filter(i => {
-      if (!w.match(i)) return false
-      if (!term) return true
-      return [i.emp_name, i.station_code, i.label, docMap[i.doc_type]?.l]
-        .some(v => (v||'').toLowerCase().includes(term))
-    })
-  }, [scoped, win, q])
-
   // Primary sort is by document type (grouped, in identity-document order);
-  // each group is then sorted by urgency so the most pressing renewal in
-  // that type still surfaces first.
+  // each group is then sorted by the chosen field/direction.
   const grouped = useMemo(() => {
     const byType = new Map()
-    for (const item of visible) {
+    for (const item of items) {
       if (!byType.has(item.doc_type)) byType.set(item.doc_type, [])
       byType.get(item.doc_type).push(item)
     }
-    for (const list of byType.values()) list.sort((a, b) => a.days - b.days)
+    const cmp = sortComparator(sortBy)
+    for (const list of byType.values()) {
+      list.sort((a, b) => sortDir === 'asc' ? cmp(a, b) : -cmp(a, b))
+    }
     return DOC_ORDER
       .filter(t => byType.has(t))
       .map(t => ({ type: t, doc: docMap[t] || docMap.other, items: byType.get(t) }))
-  }, [visible])
+  }, [items, sortBy, sortDir])
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
@@ -266,57 +221,36 @@ export default function DocumentExpiryPage() {
         </div>
       )}
 
-      {/* ── Controls ── */}
-      <div style={{
-        background:'var(--card)', border:'1px solid var(--border)', borderRadius:16,
-        padding:'16px 18px', boxShadow:'0 1px 3px rgba(0,0,0,0.04)',
-        display:'flex', flexDirection:'column', gap:12,
-      }}>
-        <div style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
-          <div style={{ position:'relative', flex:1, minWidth:220, maxWidth:340 }}>
-            <Search size={14} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)', pointerEvents:'none' }}/>
-            <input className="input" style={{ paddingLeft:34 }} value={q} onChange={e=>setQ(e.target.value)}
-              placeholder="Search name, station or document…"/>
-          </div>
-          <div style={{ display:'flex', gap:7, flexWrap:'wrap' }}>
-            {WHO.map(o => (
-              <Pill key={o.v} active={who===o.v} onClick={()=>setWho(o.v)}
-                count={o.v==='all' ? items.length : items.filter(i => o.v==='das' ? isDA(i.role) : !isDA(i.role)).length}>
-                {o.l}
-              </Pill>
-            ))}
-          </div>
+      {/* ── Sort ── */}
+      {items.length > 0 && (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', gap:8 }}>
+          <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{
+            padding:'8px 14px', borderRadius:20, border:'1.5px solid var(--border)',
+            background:'var(--card)', color:'var(--text)', fontSize:12.5, fontWeight:700,
+            fontFamily:'inherit', cursor:'pointer', outline:'none',
+          }}>
+            {SORT_OPTIONS.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+          </select>
+          <button onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+            title={sortDir === 'asc' ? 'Ascending — click to reverse' : 'Descending — click to reverse'}
+            style={{ width:34, height:34, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'50%', border:'1.5px solid var(--border)', background:'var(--card)', color:'var(--text)', cursor:'pointer' }}>
+            {sortDir === 'asc' ? <ArrowUp size={13}/> : <ArrowDown size={13}/>}
+          </button>
         </div>
-
-        <div style={{ display:'flex', gap:7, flexWrap:'wrap' }}>
-          {WINDOWS.map(w => (
-            <Pill key={w.v} active={win===w.v} onClick={()=>setWin(w.v)}
-              count={scoped.filter(w.match).length}
-              color={w.v==='expired' ? '#DC2626' : undefined}>
-              {w.emoji && <span>{w.emoji}</span>}{w.l}
-            </Pill>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* ── List, grouped by document type ── */}
       {loading ? (
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {[1,2,3,4].map(i => <div key={i} className="sk" style={{ height:86, borderRadius:16 }}/>)}
         </div>
-      ) : visible.length === 0 ? (
+      ) : items.length === 0 ? (
         <div style={{ textAlign:'center', padding:'80px 20px', background:'var(--card)', border:'1px solid var(--border)', borderRadius:16 }}>
           <div style={{ width:64, height:64, borderRadius:18, background:'linear-gradient(135deg,#F0FDF4,#DCFCE7)', border:'1px solid #A7F3D0', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
             <ShieldCheck size={28} color="#047857"/>
           </div>
-          <div style={{ fontWeight:800, fontSize:16, color:'var(--text-sub)' }}>
-            {items.length === 0 ? 'All clear' : 'Nothing matches this filter'}
-          </div>
-          <div style={{ fontSize:12.5, color:'var(--text-muted)', marginTop:4 }}>
-            {items.length === 0
-              ? 'No documents expiring in the next 90 days'
-              : 'Try a wider window or clear the search'}
-          </div>
+          <div style={{ fontWeight:800, fontSize:16, color:'var(--text-sub)' }}>All clear</div>
+          <div style={{ fontSize:12.5, color:'var(--text-muted)', marginTop:4 }}>No documents expiring in the next 90 days</div>
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:22 }}>
