@@ -2,12 +2,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   AlertCircle, RefreshCw, Search, ExternalLink, ChevronRight, ShieldCheck,
+  XCircle, Flame, Clock, CalendarClock,
 } from 'lucide-react'
 
 import { docApi } from '@/lib/api'
 import { DOC_TYPES } from '@/components/documents/DocModal'
 
-const docMap = Object.fromEntries(DOC_TYPES.map(d => [d.v, d]))
+const docMap  = Object.fromEntries(DOC_TYPES.map(d => [d.v, d]))
+// Groups render in this fixed identity-document order (matches DOC_TYPES),
+// not alphabetically or by whichever type happened to load first.
+const DOC_ORDER = DOC_TYPES.map(d => d.v)
 
 // Same three severities the notification bell uses, plus a fourth tier for the
 // 31-90 day horizon the bell never loads.
@@ -38,20 +42,22 @@ function initials(name) {
 }
 
 function Pill({ active, onClick, children, count, color }) {
+  const activeBg = color || 'linear-gradient(135deg,#B8860B,#D4A017)'
   return (
     <button onClick={onClick} style={{
       display:'flex', alignItems:'center', gap:6,
       padding:'7px 14px', borderRadius:20, cursor:'pointer',
       border:`1px solid ${active ? (color||'#B8860B') : 'var(--border)'}`,
-      background: active ? (color||'#B8860B') : 'var(--card)',
+      background: active ? activeBg : 'var(--card)',
       color: active ? '#fff' : 'var(--text-sub)',
       fontSize:12, fontWeight:700, fontFamily:'Poppins,sans-serif',
       whiteSpace:'nowrap', transition:'all 0.15s',
+      boxShadow: active ? '0 2px 8px rgba(184,134,11,0.22)' : 'none',
     }}>
       {children}
       {count !== undefined && (
         <span style={{
-          background: active ? 'rgba(255,255,255,0.25)' : 'var(--bg-alt)',
+          background: active ? 'rgba(255,255,255,0.28)' : 'var(--bg-alt)',
           color: active ? '#fff' : 'var(--text-muted)',
           borderRadius:20, padding:'1px 7px', fontSize:10, fontWeight:800,
         }}>{count}</span>
@@ -60,94 +66,131 @@ function Pill({ active, onClick, children, count, color }) {
   )
 }
 
+// Section header for a document-type group — the list is organized primarily
+// by document type (not a flat urgency feed), so each group needs a clear,
+// scannable label before its rows.
+function GroupHeader({ doc, items }) {
+  const expiredCount = items.filter(i => i.days < 0).length
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:10, padding:'2px 2px 2px' }}>
+      <div style={{
+        width:32, height:32, borderRadius:10, flexShrink:0,
+        background:doc.bg, border:`1.5px solid ${doc.c}40`,
+        display:'flex', alignItems:'center', justifyContent:'center', fontSize:15,
+      }}>
+        {doc.e}
+      </div>
+      <span style={{ fontWeight:800, fontSize:14.5, color:doc.c, letterSpacing:'-0.01em' }}>{doc.l}</span>
+      <span style={{
+        fontSize:10.5, fontWeight:800, color:'var(--text-muted)', background:'var(--bg-alt)',
+        border:'1px solid var(--border)', borderRadius:20, padding:'2px 9px',
+      }}>{items.length}</span>
+      {expiredCount > 0 && (
+        <span style={{
+          fontSize:10.5, fontWeight:800, color:'#C0392B', background:'#FEF2F2',
+          border:'1px solid #FCA5A5', borderRadius:20, padding:'2px 9px',
+        }}>{expiredCount} expired</span>
+      )}
+      <div style={{ flex:1, height:1, background:'var(--border)' }}/>
+    </div>
+  )
+}
+
 function ExpiryRow({ item }) {
-  const sev  = SEV[item.severity] || SEV.warning
-  const doc  = docMap[item.doc_type] || docMap.other
-  const abs  = Math.abs(item.days)
-  const file = item.signed_url || item.drive_link
+  const sev    = SEV[item.severity] || SEV.warning
+  const doc    = docMap[item.doc_type] || docMap.other
+  const abs    = Math.abs(item.days)
+  const file   = item.signed_url || item.drive_link
+  const urgent = item.days <= 30
 
   return (
     <div style={{
-      display:'flex', background:'var(--card)', border:`1px solid ${item.days <= 30 ? sev.bc : 'var(--border)'}`,
-      borderRadius:14, overflow:'hidden', boxShadow:'var(--shadow)', transition:'box-shadow 0.15s',
+      display:'flex', alignItems:'center', gap:14, flexWrap:'wrap',
+      background:'var(--card)',
+      border:`1px solid ${urgent ? sev.bc : 'var(--border)'}`,
+      borderLeft:`4px solid ${sev.c}`,
+      borderRadius:16, padding:'14px 18px 14px 16px',
+      boxShadow:'var(--shadow)', transition:'box-shadow 0.18s, transform 0.18s',
     }}
-      onMouseEnter={e=>e.currentTarget.style.boxShadow='var(--shadow-md)'}
-      onMouseLeave={e=>e.currentTarget.style.boxShadow='var(--shadow)'}>
+      onMouseEnter={e=>{ e.currentTarget.style.boxShadow='var(--shadow-md)'; e.currentTarget.style.transform='translateY(-1px)' }}
+      onMouseLeave={e=>{ e.currentTarget.style.boxShadow='var(--shadow)'; e.currentTarget.style.transform='translateY(0)' }}>
 
-      <div style={{ width:5, background:sev.c, flexShrink:0 }}/>
+      <div style={{
+        width:42, height:42, borderRadius:13, flexShrink:0, position:'relative',
+        background:doc.bg, border:`1.5px solid ${doc.c}33`,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:14.5, fontWeight:800, color:doc.c,
+      }}>
+        {initials(item.emp_name)}
+        <span style={{
+          position:'absolute', bottom:-4, right:-4, width:18, height:18, borderRadius:'50%',
+          background:'var(--card)', border:'1.5px solid var(--card)',
+          display:'flex', alignItems:'center', justifyContent:'center', fontSize:10,
+        }}>{doc.e}</span>
+      </div>
 
-      <div style={{ flex:1, minWidth:0, display:'flex', alignItems:'center', gap:14, padding:'14px 16px', flexWrap:'wrap' }}>
-
-        <div style={{
-          width:44, height:44, borderRadius:13, flexShrink:0,
-          background:doc.bg, border:`1.5px solid ${doc.c}33`,
-          display:'flex', alignItems:'center', justifyContent:'center',
-          fontSize:15, fontWeight:800, color:doc.c,
-        }}>
-          {initials(item.emp_name)}
-        </div>
-
-        <div style={{ flex:1, minWidth:180 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:7, flexWrap:'wrap', marginBottom:4 }}>
-            <span style={{
-              fontSize:10, fontWeight:800, color:doc.c, background:doc.bg,
-              border:`1px solid ${doc.c}33`, borderRadius:6, padding:'1px 8px',
-              textTransform:'uppercase', letterSpacing:'0.06em',
-            }}>{doc.e} {doc.l}</span>
-            {item.source === 'file' && (
-              <span style={{ fontSize:9.5, fontWeight:700, color:'var(--text-muted)', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:6, padding:'1px 7px' }}>
-                From upload
-              </span>
-            )}
-          </div>
-          <div style={{ fontWeight:800, fontSize:14.5, color:'var(--text)', marginBottom:4 }}>{item.emp_name}</div>
-          <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-            <span style={{ fontSize:10.5, color:'var(--text-sub)', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:6, padding:'2px 9px', textTransform:'capitalize' }}>
-              {(item.role||'').replace(/_/g,' ')}
+      <div style={{ flex:1, minWidth:170 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:7, flexWrap:'wrap' }}>
+          <span style={{ fontWeight:800, fontSize:14.5, color:'var(--text)' }}>{item.emp_name}</span>
+          {item.source === 'file' && (
+            <span style={{ fontSize:9.5, fontWeight:700, color:'var(--text-muted)', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:6, padding:'1px 7px' }}>
+              From upload
             </span>
-            {item.station_code && (
-              <span style={{ fontSize:10.5, fontWeight:700, color:'#B8860B', background:'#FDF6E3', border:'1px solid #E8D9A8', borderRadius:6, padding:'2px 9px' }}>
-                {item.station_code}
-              </span>
-            )}
-            <span style={{ fontSize:10.5, color:'var(--text-muted)', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:6, padding:'2px 9px' }}>
-              Expires {item.expires_at}
-            </span>
-          </div>
+          )}
         </div>
-
-        <div style={{ textAlign:'right', flexShrink:0, minWidth:82 }}>
-          <span style={{
-            fontSize:10.5, fontWeight:800, color:sev.c, background:sev.bg,
-            border:`1px solid ${sev.bc}`, borderRadius:20, padding:'2px 10px', display:'block',
-          }}>{sev.label}</span>
-          <span style={{ fontSize:11, color:sev.c, fontWeight:700, marginTop:4, display:'block' }}>
-            {item.days < 0 ? `${abs}d ago` : `${abs}d left`}
+        <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginTop:5 }}>
+          <span style={{ fontSize:10.5, color:'var(--text-sub)', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:6, padding:'2px 9px', textTransform:'capitalize' }}>
+            {(item.role||'').replace(/_/g,' ')}
+          </span>
+          {item.station_code && (
+            <span style={{ fontSize:10.5, fontWeight:700, color:'#B8860B', background:'#FDF6E3', border:'1px solid #E8D9A8', borderRadius:6, padding:'2px 9px' }}>
+              {item.station_code}
+            </span>
+          )}
+          <span style={{ fontSize:10.5, color:'var(--text-muted)', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:6, padding:'2px 9px' }}>
+            Expires {item.expires_at}
           </span>
         </div>
+      </div>
 
-        <div style={{ display:'flex', gap:7, flexShrink:0, flexWrap:'wrap' }}>
-          {file && (
-            <a href={file} target="_blank" rel="noreferrer" style={{
-              display:'flex', alignItems:'center', gap:5, padding:'7px 13px', borderRadius:9,
-              background:'#EFF6FF', border:'1px solid #BFDBFE', color:'#1D4ED8',
-              fontSize:12, fontWeight:700, textDecoration:'none', whiteSpace:'nowrap',
-            }}>
-              <ExternalLink size={12}/> View file
-            </a>
-          )}
-          <a href={`/dashboard/hr/employees/${item.emp_id}`} style={{
-            display:'flex', alignItems:'center', gap:4, padding:'7px 13px', borderRadius:9,
-            background:'var(--bg-alt)', border:'1px solid var(--border)', color:'var(--text-sub)',
+      <div style={{ textAlign:'right', flexShrink:0, minWidth:82 }}>
+        <span style={{
+          fontSize:10.5, fontWeight:800, color:sev.c, background:sev.bg,
+          border:`1px solid ${sev.bc}`, borderRadius:20, padding:'2px 10px', display:'block',
+        }}>{sev.label}</span>
+        <span style={{ fontSize:11, color:sev.c, fontWeight:700, marginTop:4, display:'block' }}>
+          {item.days < 0 ? `${abs}d ago` : `${abs}d left`}
+        </span>
+      </div>
+
+      <div style={{ display:'flex', gap:7, flexShrink:0, flexWrap:'wrap' }}>
+        {file && (
+          <a href={file} target="_blank" rel="noreferrer" style={{
+            display:'flex', alignItems:'center', gap:5, padding:'7px 13px', borderRadius:10,
+            background:'#EFF6FF', border:'1px solid #BFDBFE', color:'#1D4ED8',
             fontSize:12, fontWeight:700, textDecoration:'none', whiteSpace:'nowrap',
           }}>
-            Open employee <ChevronRight size={12}/>
+            <ExternalLink size={12}/> View file
           </a>
-        </div>
+        )}
+        <a href={`/dashboard/hr/employees/${item.emp_id}`} style={{
+          display:'flex', alignItems:'center', gap:4, padding:'7px 13px', borderRadius:10,
+          background:'var(--bg-alt)', border:'1px solid var(--border)', color:'var(--text-sub)',
+          fontSize:12, fontWeight:700, textDecoration:'none', whiteSpace:'nowrap',
+        }}>
+          Open employee <ChevronRight size={12}/>
+        </a>
       </div>
     </div>
   )
 }
+
+const STAT_CARDS = [
+  { key:'expired',  l:'Expired',             c:'#DC2626', bg:'#FEF2F2', bc:'#FECACA', Icon:XCircle      },
+  { key:'critical', l:'Critical (≤ 7 days)', c:'#D97706', bg:'#FFFBEB', bc:'#FDE68A', Icon:Flame        },
+  { key:'warning',  l:'Expiring ≤ 30 days',  c:'#1D6FA4', bg:'#EFF6FF', bc:'#BFDBFE', Icon:Clock        },
+  { key:'soon',     l:'Upcoming ≤ 90 days',  c:'#047857', bg:'#F0FDF4', bc:'#A7F3D0', Icon:CalendarClock},
+]
 
 export default function DocumentExpiryPage() {
   const [items,   setItems]   = useState([])
@@ -184,6 +227,21 @@ export default function DocumentExpiryPage() {
     })
   }, [scoped, win, q])
 
+  // Primary sort is by document type (grouped, in identity-document order);
+  // each group is then sorted by urgency so the most pressing renewal in
+  // that type still surfaces first.
+  const grouped = useMemo(() => {
+    const byType = new Map()
+    for (const item of visible) {
+      if (!byType.has(item.doc_type)) byType.set(item.doc_type, [])
+      byType.get(item.doc_type).push(item)
+    }
+    for (const list of byType.values()) list.sort((a, b) => a.days - b.days)
+    return DOC_ORDER
+      .filter(t => byType.has(t))
+      .map(t => ({ type: t, doc: docMap[t] || docMap.other, items: byType.get(t) }))
+  }, [visible])
+
   // Derived from `scoped`, not the server summary, so the cards agree with the
   // pill counts below them when the Drivers/Staff toggle is narrowing the list.
   const s = useMemo(() => {
@@ -203,7 +261,7 @@ export default function DocumentExpiryPage() {
         <div className="page-header" style={{ padding:'18px 22px', margin:0 }}>
           <div>
             <h1 style={{ fontWeight:900, fontSize:22, color:'var(--text)', margin:0, letterSpacing:'-0.03em' }}>Document Expiry</h1>
-            <p style={{ fontSize:12.5, color:'var(--text-muted)', marginTop:2 }}>Employee visa, license, ILOE &amp; uploaded document renewals — next 90 days</p>
+            <p style={{ fontSize:12.5, color:'var(--text-muted)', marginTop:2 }}>Employee visa, license, ILOE &amp; uploaded document renewals — grouped by document type, next 90 days</p>
           </div>
           <div className="page-header-actions">
             <button onClick={load} title="Refresh" style={{ width:36, height:36, borderRadius:'50%', background:'var(--bg-alt)', border:'1px solid var(--border)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -221,32 +279,51 @@ export default function DocumentExpiryPage() {
 
       {/* ── Stats ── */}
       <div className="r-grid-4">
-        {[
-          { l:'Expired',            v:s.expired,  c:'#DC2626', bg:'#FEF2F2', bc:'#FECACA' },
-          { l:'Critical (≤ 7 days)',v:s.critical, c:'#D97706', bg:'#FFFBEB', bc:'#FDE68A' },
-          { l:'Expiring ≤ 30 days', v:s.warning,  c:'#1D6FA4', bg:'#EFF6FF', bc:'#BFDBFE' },
-          { l:'Upcoming ≤ 90 days', v:s.soon,     c:'#047857', bg:'#F0FDF4', bc:'#A7F3D0' },
-        ].map(c=>(
-          <div key={c.l} style={{ background:c.bg, border:`1px solid ${c.bc}`, borderRadius:16, padding:'18px 16px', textAlign:'center', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
-            <div style={{ fontWeight:900, fontSize:30, color:c.c, letterSpacing:'-0.04em', lineHeight:1 }}>{c.v}</div>
-            <div style={{ fontSize:11, color:c.c, fontWeight:600, marginTop:7, opacity:0.8 }}>{c.l}</div>
+        {STAT_CARDS.map(c => (
+          <div key={c.key} style={{
+            background:c.bg, border:`1px solid ${c.bc}`, borderRadius:16, padding:'18px 16px',
+            textAlign:'center', boxShadow:'0 1px 4px rgba(0,0,0,0.04)',
+            display:'flex', flexDirection:'column', alignItems:'center', gap:8,
+            transition:'transform 0.15s, box-shadow 0.15s',
+          }}
+            onMouseEnter={e=>{ e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 6px 18px rgba(0,0,0,0.08)' }}
+            onMouseLeave={e=>{ e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div style={{ width:34, height:34, borderRadius:10, background:'rgba(255,255,255,0.55)', border:`1px solid ${c.bc}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <c.Icon size={16} color={c.c}/>
+            </div>
+            <div style={{ fontWeight:900, fontSize:28, color:c.c, letterSpacing:'-0.04em', lineHeight:1 }}>{s[c.key]}</div>
+            <div style={{ fontSize:11, color:c.c, fontWeight:600, opacity:0.85 }}>{c.l}</div>
           </div>
         ))}
       </div>
 
       {/* ── Expired banner ── */}
       {expiredNames.length > 0 && (
-        <div style={{ background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:12, padding:'11px 16px', display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-          <AlertCircle size={15} color="#DC2626"/>
-          <span style={{ fontSize:13, fontWeight:700, color:'#DC2626' }}>
-            {expiredNames.length} employee{expiredNames.length>1?'s have':' has'} expired document{expiredNames.length>1?'s':''}:
-          </span>
-          <span style={{ fontSize:12.5, color:'#7F1D1D' }}>{expiredNames.join(' · ')}</span>
+        <div style={{ background:'linear-gradient(135deg,#FEF2F2,#FEE2E2)', border:'1px solid #FECACA', borderRadius:16, padding:'14px 18px', display:'flex', flexDirection:'column', gap:10 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:9 }}>
+            <div style={{ width:28, height:28, borderRadius:9, flexShrink:0, background:'rgba(255,255,255,0.6)', border:'1px solid #FCA5A5', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <AlertCircle size={14} color="#DC2626"/>
+            </div>
+            <span style={{ fontSize:13, fontWeight:800, color:'#B91C1C' }}>
+              {expiredNames.length} employee{expiredNames.length>1?'s':''} {expiredNames.length>1?'have':'has'} expired documents
+            </span>
+          </div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+            {expiredNames.map(n => (
+              <span key={n} style={{ fontSize:11, fontWeight:700, color:'#B91C1C', background:'rgba(255,255,255,0.65)', border:'1px solid #FCA5A5', borderRadius:20, padding:'3px 10px' }}>
+                {n}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
       {/* ── Controls ── */}
-      <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+      <div style={{
+        background:'var(--card)', border:'1px solid var(--border)', borderRadius:16,
+        padding:'16px 18px', boxShadow:'0 1px 3px rgba(0,0,0,0.04)',
+        display:'flex', flexDirection:'column', gap:12,
+      }}>
         <div style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
           <div style={{ position:'relative', flex:1, minWidth:220, maxWidth:340 }}>
             <Search size={14} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)', pointerEvents:'none' }}/>
@@ -274,13 +351,13 @@ export default function DocumentExpiryPage() {
         </div>
       </div>
 
-      {/* ── List ── */}
+      {/* ── List, grouped by document type ── */}
       {loading ? (
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          {[1,2,3,4].map(i => <div key={i} className="sk" style={{ height:86, borderRadius:14 }}/>)}
+          {[1,2,3,4].map(i => <div key={i} className="sk" style={{ height:86, borderRadius:16 }}/>)}
         </div>
       ) : visible.length === 0 ? (
-        <div style={{ textAlign:'center', padding:'80px 20px' }}>
+        <div style={{ textAlign:'center', padding:'80px 20px', background:'var(--card)', border:'1px solid var(--border)', borderRadius:16 }}>
           <div style={{ width:64, height:64, borderRadius:18, background:'linear-gradient(135deg,#F0FDF4,#DCFCE7)', border:'1px solid #A7F3D0', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
             <ShieldCheck size={28} color="#047857"/>
           </div>
@@ -294,9 +371,14 @@ export default function DocumentExpiryPage() {
           </div>
         </div>
       ) : (
-        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          {visible.map(item => (
-            <ExpiryRow key={`${item.emp_id}:${item.doc_type}`} item={item}/>
+        <div style={{ display:'flex', flexDirection:'column', gap:22 }}>
+          {grouped.map(g => (
+            <div key={g.type} style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              <GroupHeader doc={g.doc} items={g.items}/>
+              {g.items.map(item => (
+                <ExpiryRow key={`${item.emp_id}:${item.doc_type}`} item={item}/>
+              ))}
+            </div>
           ))}
         </div>
       )}
