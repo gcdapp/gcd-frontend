@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   AlertCircle, RefreshCw, Search, ExternalLink, ChevronRight, ShieldCheck,
-  XCircle, Flame, Clock, CalendarClock,
 } from 'lucide-react'
 
 import { docApi } from '@/lib/api'
@@ -32,10 +31,17 @@ const WINDOWS = [
 ]
 
 const WHO = [
-  { v:'all',     l:'Everyone' },
-  { v:'drivers', l:'Drivers'  },
-  { v:'staff',   l:'Staff'    },
+  { v:'all',    l:'Everyone' },
+  { v:'das',    l:'DAs'      },
+  { v:'admins', l:'Admins'   },
 ]
+
+// employees.role is stored capitalized ('Driver'/'Admin'/'Manager'/'POC') —
+// compare case-insensitively rather than assuming exact casing.
+function isDA(role) { return (role || '').toLowerCase() === 'driver' }
+// "DA" reads better than "Driver" for this org's terminology; other roles
+// (Admin/Manager/POC) already display fine as-is.
+function roleLabel(role) { return isDA(role) ? 'DA' : (role || '') }
 
 function initials(name) {
   return (name||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase()
@@ -139,8 +145,8 @@ function ExpiryRow({ item }) {
           )}
         </div>
         <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginTop:5 }}>
-          <span style={{ fontSize:10.5, color:'var(--text-sub)', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:6, padding:'2px 9px', textTransform:'capitalize' }}>
-            {(item.role||'').replace(/_/g,' ')}
+          <span style={{ fontSize:10.5, color:'var(--text-sub)', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:6, padding:'2px 9px' }}>
+            {roleLabel(item.role)}
           </span>
           {item.station_code && (
             <span style={{ fontSize:10.5, fontWeight:700, color:'#B8860B', background:'#FDF6E3', border:'1px solid #E8D9A8', borderRadius:6, padding:'2px 9px' }}>
@@ -185,13 +191,6 @@ function ExpiryRow({ item }) {
   )
 }
 
-const STAT_CARDS = [
-  { key:'expired',  l:'Expired',             c:'#DC2626', bg:'#FEF2F2', bc:'#FECACA', Icon:XCircle      },
-  { key:'critical', l:'Critical (≤ 7 days)', c:'#D97706', bg:'#FFFBEB', bc:'#FDE68A', Icon:Flame        },
-  { key:'warning',  l:'Expiring ≤ 30 days',  c:'#1D6FA4', bg:'#EFF6FF', bc:'#BFDBFE', Icon:Clock        },
-  { key:'soon',     l:'Upcoming ≤ 90 days',  c:'#047857', bg:'#F0FDF4', bc:'#A7F3D0', Icon:CalendarClock},
-]
-
 export default function DocumentExpiryPage() {
   const [items,   setItems]   = useState([])
   const [loading, setLoading] = useState(true)
@@ -213,7 +212,7 @@ export default function DocumentExpiryPage() {
   // The who-filter narrows first so the window pill counts reflect the
   // audience currently on screen, not the whole dataset.
   const scoped = useMemo(() => items.filter(i =>
-    who === 'all' ? true : who === 'drivers' ? i.role === 'driver' : i.role !== 'driver'
+    who === 'all' ? true : who === 'das' ? isDA(i.role) : !isDA(i.role)
   ), [items, who])
 
   const visible = useMemo(() => {
@@ -242,16 +241,6 @@ export default function DocumentExpiryPage() {
       .map(t => ({ type: t, doc: docMap[t] || docMap.other, items: byType.get(t) }))
   }, [visible])
 
-  // Derived from `scoped`, not the server summary, so the cards agree with the
-  // pill counts below them when the Drivers/Staff toggle is narrowing the list.
-  const s = useMemo(() => {
-    const acc = { total: scoped.length, expired:0, critical:0, warning:0, soon:0 }
-    for (const i of scoped) if (acc[i.severity] !== undefined) acc[i.severity]++
-    return acc
-  }, [scoped])
-
-  const expiredNames = [...new Set(scoped.filter(i => i.days < 0).map(i => i.emp_name))]
-
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
@@ -277,47 +266,6 @@ export default function DocumentExpiryPage() {
         </div>
       )}
 
-      {/* ── Stats ── */}
-      <div className="r-grid-4">
-        {STAT_CARDS.map(c => (
-          <div key={c.key} style={{
-            background:c.bg, border:`1px solid ${c.bc}`, borderRadius:16, padding:'18px 16px',
-            textAlign:'center', boxShadow:'0 1px 4px rgba(0,0,0,0.04)',
-            display:'flex', flexDirection:'column', alignItems:'center', gap:8,
-            transition:'transform 0.15s, box-shadow 0.15s',
-          }}
-            onMouseEnter={e=>{ e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 6px 18px rgba(0,0,0,0.08)' }}
-            onMouseLeave={e=>{ e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,0.04)' }}>
-            <div style={{ width:34, height:34, borderRadius:10, background:'rgba(255,255,255,0.55)', border:`1px solid ${c.bc}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <c.Icon size={16} color={c.c}/>
-            </div>
-            <div style={{ fontWeight:900, fontSize:28, color:c.c, letterSpacing:'-0.04em', lineHeight:1 }}>{s[c.key]}</div>
-            <div style={{ fontSize:11, color:c.c, fontWeight:600, opacity:0.85 }}>{c.l}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Expired banner ── */}
-      {expiredNames.length > 0 && (
-        <div style={{ background:'linear-gradient(135deg,#FEF2F2,#FEE2E2)', border:'1px solid #FECACA', borderRadius:16, padding:'14px 18px', display:'flex', flexDirection:'column', gap:10 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:9 }}>
-            <div style={{ width:28, height:28, borderRadius:9, flexShrink:0, background:'rgba(255,255,255,0.6)', border:'1px solid #FCA5A5', display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <AlertCircle size={14} color="#DC2626"/>
-            </div>
-            <span style={{ fontSize:13, fontWeight:800, color:'#B91C1C' }}>
-              {expiredNames.length} employee{expiredNames.length>1?'s':''} {expiredNames.length>1?'have':'has'} expired documents
-            </span>
-          </div>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-            {expiredNames.map(n => (
-              <span key={n} style={{ fontSize:11, fontWeight:700, color:'#B91C1C', background:'rgba(255,255,255,0.65)', border:'1px solid #FCA5A5', borderRadius:20, padding:'3px 10px' }}>
-                {n}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ── Controls ── */}
       <div style={{
         background:'var(--card)', border:'1px solid var(--border)', borderRadius:16,
@@ -333,7 +281,7 @@ export default function DocumentExpiryPage() {
           <div style={{ display:'flex', gap:7, flexWrap:'wrap' }}>
             {WHO.map(o => (
               <Pill key={o.v} active={who===o.v} onClick={()=>setWho(o.v)}
-                count={o.v==='all' ? items.length : items.filter(i => o.v==='drivers' ? i.role==='driver' : i.role!=='driver').length}>
+                count={o.v==='all' ? items.length : items.filter(i => o.v==='das' ? isDA(i.role) : !isDA(i.role)).length}>
                 {o.l}
               </Pill>
             ))}

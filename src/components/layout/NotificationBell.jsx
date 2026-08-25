@@ -254,10 +254,10 @@ export default function NotificationBell({ userRole }) {
             {isDocRole && (
               <>
                 <TabBtn id="drivers" count={(docData?.drivers||[]).length} urgent={urgentDocs > 0}>
-                  <Truck size={11}/> Drivers
+                  <Truck size={11}/> DAs
                 </TabBtn>
                 <TabBtn id="staff" count={(docData?.staff||[]).length} urgent={urgentDocs > 0}>
-                  <Users size={11}/> Staff
+                  <Users size={11}/> Admins
                 </TabBtn>
               </>
             )}
@@ -277,7 +277,7 @@ export default function NotificationBell({ userRole }) {
                 <div style={{ padding:'40px 20px', textAlign:'center', color:'var(--text-muted)' }}>
                   <Bell size={30} style={{ margin:'0 auto 10px', display:'block', opacity:0.15 }}/>
                   <div style={{ fontWeight:700, fontSize:13, color:'var(--text-sub)' }}>All clear</div>
-                  <div style={{ fontSize:11, marginTop:4 }}>No {tab === 'drivers' ? 'driver' : 'staff'} document alerts</div>
+                  <div style={{ fontSize:11, marginTop:4 }}>No {tab === 'drivers' ? 'DA' : 'admin'} document alerts</div>
                 </div>
               )
               const exp  = list.filter(a=>a.severity==='expired').length
