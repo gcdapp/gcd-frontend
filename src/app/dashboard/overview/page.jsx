@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { API } from '@/lib/api'
+import { CATEGORIES as EXPENSE_CATEGORIES } from '@/components/expenses/ExpenseModal'
 
 function hdr() { return { Authorization:`Bearer ${localStorage.getItem('gcd_token')}` } }
 function fmt(n) { return Number(n||0).toLocaleString('en-US') }
@@ -26,14 +27,6 @@ function KpiSpark() {
     </svg>
   )
 }
-
-const ECATS = [
-  {v:'Parking',c:'#F59E0B'},{v:'Advances',c:'#10B981'},{v:'Air Tickets',c:'#3B82F6'},
-  {v:'ENOC',c:'#EF4444'},{v:'Health Insurance',c:'#8B5CF6'},{v:'Idfy',c:'#EC4899'},
-  {v:'Mobile Expenses',c:'#06B6D4'},{v:'Office Expenses',c:'#84CC16'},{v:'Pension',c:'#059669'},{v:'Petty Cash',c:'#F97316'},
-  {v:'RTA Top-up',c:'#0EA5E9'},{v:'Vehicle Expenses',c:'#6366F1'},{v:'Vehicle Rent',c:'#7C3AED'},
-  {v:'Visa Expenses',c:'#D97706'},{v:'Miscellaneous Expenses',c:'#94A3B8'},
-]
 
 export default function OverviewPage() {
   const { user } = useAuth()
@@ -161,7 +154,7 @@ export default function OverviewPage() {
   const approvedExp = expensesSoFar.filter(e => e.status === 'approved').reduce((s,e) => s + Number(e.amount||0), 0)
   const rejectedExp = expensesSoFar.filter(e => e.status === 'rejected').length
 
-  const byCat = ECATS.map(cat => ({
+  const byCat = EXPENSE_CATEGORIES.map(cat => ({
     name:  cat.v,
     value: expensesSoFar.filter(e => e.category === cat.v).reduce((s,e) => s + Number(e.amount||0), 0),
     color: cat.c,
