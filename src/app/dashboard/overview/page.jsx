@@ -118,10 +118,13 @@ export default function OverviewPage() {
       fetch(`${API}/api/analytics/expenses-chart?months=12`, h)
         .then(r => r.json()).then(d => {
           // total_received mirrors the backend's own `total` (amazon+client spend)
-          // so the Combined view's received bar can stack the same way. Includes
-          // other_received (customers that aren't Amazon or an Other-Projects
-          // client — vendor refunds, rent, telecom credits, etc.) so this always
-          // matches the Customers page's own total instead of quietly excluding them.
+          // so the Combined view's received bar can stack the same way. Backend
+          // gates received to sale_invoice customers only (real revenue) — a
+          // purchase_invoice customer's "receipt" is GCD paying a vendor, not
+          // income, so this deliberately does NOT match the Customers page's own
+          // blended total, which mixes both directions under one "Received" label.
+          // other_received exists as a safety net for a future sale customer not
+          // yet added to the Amazon/Other-Projects name lists below.
           const chart = (d.chart || []).map(r => ({ ...r, total_received: (r.amazon_received||0) + (r.client_received||0) + (r.other_received||0) }))
           setExpChart(chart); setLoadingExpChart(false)
         })
