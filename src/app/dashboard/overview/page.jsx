@@ -118,8 +118,11 @@ export default function OverviewPage() {
       fetch(`${API}/api/analytics/expenses-chart?months=12`, h)
         .then(r => r.json()).then(d => {
           // total_received mirrors the backend's own `total` (amazon+client spend)
-          // so the Combined view's received bar can stack the same way.
-          const chart = (d.chart || []).map(r => ({ ...r, total_received: (r.amazon_received||0) + (r.client_received||0) }))
+          // so the Combined view's received bar can stack the same way. Includes
+          // other_received (customers that aren't Amazon or an Other-Projects
+          // client — vendor refunds, rent, telecom credits, etc.) so this always
+          // matches the Customers page's own total instead of quietly excluding them.
+          const chart = (d.chart || []).map(r => ({ ...r, total_received: (r.amazon_received||0) + (r.client_received||0) + (r.other_received||0) }))
           setExpChart(chart); setLoadingExpChart(false)
         })
         .catch(() => setLoadingExpChart(false))
@@ -480,6 +483,10 @@ export default function OverviewPage() {
                       <stop offset="0%"   stopColor="#059669" stopOpacity={1}/>
                       <stop offset="100%" stopColor="#059669" stopOpacity={0.5}/>
                     </linearGradient>
+                    <linearGradient id="gradOtherRecv" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor="#94A3B8" stopOpacity={1}/>
+                      <stop offset="100%" stopColor="#94A3B8" stopOpacity={0.5}/>
+                    </linearGradient>
                   </defs>
                   <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 4" strokeOpacity={0.7}/>
                   <XAxis dataKey="month" tick={{ fontSize:11, fill:'var(--text-muted)', fontWeight:600, fontFamily:'inherit' }} axisLine={false} tickLine={false}
@@ -496,7 +503,7 @@ export default function OverviewPage() {
                       const diff  = (recv||0) - (spend||0)
                       const [y,m] = label.split('-')
                       const monthLabel = new Date(+y,+m-1).toLocaleDateString('en-US',{month:'long',year:'numeric'})
-                      const colors = { amazon:'#60A5FA', client:'#A78BFA', amazon_received:'#6EE7B7', client_received:'#059669' }
+                      const colors = { amazon:'#60A5FA', client:'#A78BFA', amazon_received:'#6EE7B7', client_received:'#059669', other_received:'#94A3B8' }
                       // Fixed light background regardless of the app's own dark/light theme —
                       // text below is hardcoded black, which would be unreadable against the
                       // dark-mode card color, so this tooltip intentionally doesn't follow it.
@@ -528,7 +535,8 @@ export default function OverviewPage() {
                           style={{ fontSize:10.5, fontWeight:800, fill:'var(--text)' }}/>
                       </Bar>
                       <Bar dataKey="amazon_received"  name="Amazon received"          stackId="recv" fill="url(#gradAmazonRecv)"/>
-                      <Bar dataKey="client_received"  name="Other Projects received"  stackId="recv" fill="url(#gradClientRecv)" radius={[7,7,0,0]}>
+                      <Bar dataKey="client_received"  name="Other Projects received"  stackId="recv" fill="url(#gradClientRecv)"/>
+                      <Bar dataKey="other_received"   name="Other/Unclassified received" stackId="recv" fill="url(#gradOtherRecv)" radius={[7,7,0,0]}>
                         <LabelList dataKey="total_received" position="top" offset={9}
                           formatter={v => `AED ${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`}
                           style={{ fontSize:10.5, fontWeight:800, fill:'#059669' }}/>
