@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 import { useParams, useRouter } from 'next/navigation'
 import { empApi, payrollApi, API } from '@/lib/api'
 import { getEmp, setEmp as cacheEmp } from '@/lib/empCache'
-import { hdr, getUserRole, fmt } from '@/lib/employees'
+import { hdr, getUserRole, fmt, stripRefTag } from '@/lib/employees'
 import PageHero from '@/components/employees/PageHero'
 import BackLink from '@/components/employees/BackLink'
 import { Banknote, Plus, Trash2, Check, Undo2, X } from 'lucide-react'
@@ -195,7 +195,7 @@ export default function DriverSalaryPage() {
               <div key={b.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 16px', borderBottom:'1px solid var(--border)' }}>
                 <div>
                   <div style={{ fontSize:12.5, fontWeight:600, color:'var(--text)' }}>{BON_TYPES.find(t=>t.v===b.type)?.l || b.type}</div>
-                  {b.description && <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{b.description}</div>}
+                  {b.description && <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{stripRefTag(b.description)}</div>}
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                   <span style={{ fontSize:13, fontWeight:800, color:'#059669' }}>+{fmt(b.amount)}</span>
@@ -217,7 +217,7 @@ export default function DriverSalaryPage() {
               <div key={d.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 16px', borderBottom:'1px solid var(--border)' }}>
                 <div>
                   <div style={{ fontSize:12.5, fontWeight:600, color:'var(--text)' }}>{DED_TYPES.find(t=>t.v===d.type)?.l || d.type}</div>
-                  {d.description && <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{d.description}</div>}
+                  {d.description && <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{stripRefTag(d.description)}</div>}
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                   <span style={{ fontSize:13, fontWeight:800, color:'#DC2626' }}>-{fmt(d.amount)}</span>

@@ -20,6 +20,7 @@ import {
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts'
 import { API } from '@/lib/api'
+import { stripRefTag } from '@/lib/employees'
 
 const APP_VERSION = '2.4.0'
 // Fixed, company-wide hourly rates for the two Packer project types — admin-editable
@@ -220,7 +221,7 @@ function slipData(slip, month) {
   const monthBonus   = otherBon.length ? Number(otherBon[otherBon.length-1].amount) : 0
   const otherAddition= otherBon.slice(0,-1).reduce((s,b)=>s+Number(b.amount),0)
   const monthBonusLabel = otherBon.length&&otherBon[otherBon.length-1].description
-    ? otherBon[otherBon.length-1].description
+    ? stripRefTag(otherBon[otherBon.length-1].description)
     : new Date(month+'-01').toLocaleString('en-US',{month:'long',timeZone:'UTC'})+' Bonus'
   // cash_advance and cash_variance are distinct sheet columns — cash_advance gets its own
   // labeled slot on the payslip; cash_variance/ILOE fee/fine fold into the "Other" slot
@@ -1475,7 +1476,7 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
                 <div key={b.id} className="py-item py-item-bon">
                   <div>
                     <span className="py-item-type">{BON_TYPES.find(t=>t.v===b.type)?.l||b.type}</span>
-                    {b.description&&<span className="py-item-desc"> · {b.description}</span>}
+                    {b.description&&<span className="py-item-desc"> · {stripRefTag(b.description)}</span>}
                   </div>
                   <div className="py-item-r">
                     <span className="py-item-amt py-item-amt-bon">+AED {fmt(b.amount)}</span>
@@ -1497,7 +1498,7 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
                   <div key={d.id} className="py-item py-item-ded">
                     <div>
                       <span className="py-item-type" style={{color:dt?.c}}>{dt?.l||d.type}</span>
-                      {d.description&&<span className="py-item-desc"> · {d.description}</span>}
+                      {d.description&&<span className="py-item-desc"> · {stripRefTag(d.description)}</span>}
                       {d.reference&&<span className="py-item-ref"> · Ref: {d.reference}</span>}
                     </div>
                     <div className="py-item-r">

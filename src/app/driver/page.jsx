@@ -15,6 +15,7 @@ import {
 import { useSocket } from '@/lib/socket'
 import { listenForSWReplay } from '@/lib/offline'
 import { API } from '@/lib/api'
+import { stripRefTag } from '@/lib/employees'
 import { differenceInDays, parseISO } from 'date-fns'
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -1136,7 +1137,7 @@ export default function DriverPortal() {
                     <div style={{ fontSize:10, fontWeight:800, color:'#16A34A', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:12 }}>Additions</div>
                     {payslip.bonuses.map(b => (
                       <div key={b.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:'#F0FDF4', borderRadius:10, marginBottom:6 }}>
-                        <span style={{ fontSize:13, color:'#065F46', fontWeight:500 }}>{b.type?.charAt(0).toUpperCase()+b.type?.slice(1)}{b.description ? ` — ${b.description}` : ''}</span>
+                        <span style={{ fontSize:13, color:'#065F46', fontWeight:500 }}>{b.type?.charAt(0).toUpperCase()+b.type?.slice(1)}{b.description ? ` — ${stripRefTag(b.description)}` : ''}</span>
                         <span style={{ fontWeight:700, fontSize:13, color:'#16A34A' }}>+{fmtA(b.amount)}</span>
                       </div>
                     ))}
@@ -1149,7 +1150,7 @@ export default function DriverPortal() {
                     <div style={{ fontSize:10, fontWeight:800, color:'#DC2626', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:12 }}>Deductions</div>
                     {payslip.deductions.map(d => (
                       <div key={d.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:'#FEF2F2', borderRadius:10, marginBottom:6 }}>
-                        <span style={{ fontSize:13, color:'#991B1B', fontWeight:500 }}>{DED_LABELS[d.type]||d.type}{d.description ? ` — ${d.description}` : ''}</span>
+                        <span style={{ fontSize:13, color:'#991B1B', fontWeight:500 }}>{DED_LABELS[d.type]||d.type}{d.description ? ` — ${stripRefTag(d.description)}` : ''}</span>
                         <span style={{ fontWeight:700, fontSize:13, color:'#DC2626' }}>−{fmtA(d.amount)}</span>
                       </div>
                     ))}
@@ -1206,7 +1207,7 @@ export default function DriverPortal() {
                         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8 }}>
                           <div style={{ minWidth:0 }}>
                             <div style={{ fontSize:13, fontWeight:700, color:'#111' }}>{e.category}</div>
-                            {e.description && <div style={{ fontSize:11.5, color:'#6B7280', marginTop:2 }}>{e.description}</div>}
+                            {e.description && <div style={{ fontSize:11.5, color:'#6B7280', marginTop:2 }}>{stripRefTag(e.description)}</div>}
                             <div style={{ fontSize:10.5, color:'#9CA3AF', marginTop:3 }}>{e.date?.slice(0,10)}</div>
                           </div>
                           <div style={{ textAlign:'right', flexShrink:0 }}>
