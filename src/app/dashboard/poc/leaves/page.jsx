@@ -1,16 +1,20 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth'
-import { API } from '@/lib/api'
+import { API, empApi } from '@/lib/api'
 import { useStation, hdr, POCHeader } from '../_components/poc-shared'
-import { CalendarOff, History, Calendar } from 'lucide-react'
+import { CalendarOff, History, Calendar, Plus } from 'lucide-react'
+import NewLeaveModal from '@/components/leaves/NewLeaveModal'
 
 export default function LeavesPage() {
   const { user } = useAuth()
   const { station, setStation, canSwitch } = useStation(user)
   const [leaves,          setLeaves]          = useState([])
+  const [employees,       setEmployees]       = useState([])
   const [loading,         setLoading]         = useState(true)
   const [showHistory,     setShowHistory]      = useState(false)
+  const [modal,           setModal]           = useState(false)
+  const canAddLeave = user?.role === 'admin' || user?.role === 'general_manager'
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -18,8 +22,9 @@ export default function LeavesPage() {
     try {
       const lv = await fetch(`${API}/api/leaves?stage=all`, h).then(r => r.json())
       setLeaves(lv.leaves||[])
+      if (canAddLeave) empApi.list().then(d => setEmployees(d.employees||[])).catch(() => {})
     } catch(e) { console.error(e) } finally { setLoading(false) }
-  }, [])
+  }, [canAddLeave])
 
   useEffect(() => { load() }, [load])
 
@@ -42,15 +47,22 @@ export default function LeavesPage() {
       />
 
       {/* Toggle */}
-      <div style={{ display:'flex', gap:6, background:'var(--bg-alt)', borderRadius:14, padding:4 }}>
-        <button onClick={() => setShowHistory(false)}
-          style={{ flex:1, padding:'9px 12px', borderRadius:11, border:'none', cursor:'pointer', fontWeight:600, fontSize:12.5, transition:'all 0.2s', background:!showHistory?'var(--card)':'transparent', color:!showHistory?'#EF4444':'var(--text-muted)', boxShadow:!showHistory?'0 1px 4px rgba(0,0,0,0.1)':'none', fontFamily:'inherit' }}>
-          Pending Review ({pendingLeaves.length})
-        </button>
-        <button onClick={() => setShowHistory(true)}
-          style={{ flex:1, padding:'9px 12px', borderRadius:11, border:'none', cursor:'pointer', fontWeight:600, fontSize:12.5, transition:'all 0.2s', display:'flex', alignItems:'center', justifyContent:'center', gap:5, background:showHistory?'var(--card)':'transparent', color:showHistory?'#EF4444':'var(--text-muted)', boxShadow:showHistory?'0 1px 4px rgba(0,0,0,0.1)':'none', fontFamily:'inherit' }}>
-          <History size={13}/> History ({historyLeaves.length})
-        </button>
+      <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+        <div style={{ display:'flex', gap:6, background:'var(--bg-alt)', borderRadius:14, padding:4, flex:1 }}>
+          <button onClick={() => setShowHistory(false)}
+            style={{ flex:1, padding:'9px 12px', borderRadius:11, border:'none', cursor:'pointer', fontWeight:600, fontSize:12.5, transition:'all 0.2s', background:!showHistory?'var(--card)':'transparent', color:!showHistory?'#EF4444':'var(--text-muted)', boxShadow:!showHistory?'0 1px 4px rgba(0,0,0,0.1)':'none', fontFamily:'inherit' }}>
+            Pending Review ({pendingLeaves.length})
+          </button>
+          <button onClick={() => setShowHistory(true)}
+            style={{ flex:1, padding:'9px 12px', borderRadius:11, border:'none', cursor:'pointer', fontWeight:600, fontSize:12.5, transition:'all 0.2s', display:'flex', alignItems:'center', justifyContent:'center', gap:5, background:showHistory?'var(--card)':'transparent', color:showHistory?'#EF4444':'var(--text-muted)', boxShadow:showHistory?'0 1px 4px rgba(0,0,0,0.1)':'none', fontFamily:'inherit' }}>
+            <History size={13}/> History ({historyLeaves.length})
+          </button>
+        </div>
+        {canAddLeave && (
+          <button className="btn btn-primary btn-sm" onClick={() => setModal(true)} style={{ borderRadius:20, flexShrink:0 }}>
+            <Plus size={13}/> New Request
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -108,6 +120,8 @@ export default function LeavesPage() {
           })}
         </div>
       )}
+
+      {modal && <NewLeaveModal employees={employees} onSave={() => { setModal(false); load() }} onClose={() => setModal(false)}/>}
     </div>
   )
 }
