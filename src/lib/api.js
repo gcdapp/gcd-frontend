@@ -114,7 +114,6 @@ export const leaveApi = {
   list:      (params = {}) => api.get(`/api/leaves?${new URLSearchParams(params)}`),
   create:    (data)        => api.post('/api/leaves', data),
   setStatus: (id, status)  => api.patch(`/api/leaves/${id}/status`, { status }),
-  hrAction:  (id, status)  => api.patch(`/api/leaves/${id}/hr`, { status }),
   mgrAction: (id, status)  => api.patch(`/api/leaves/${id}/manager`, { status }),
   delete:    (id)          => api.delete(`/api/leaves/${id}`),
 }

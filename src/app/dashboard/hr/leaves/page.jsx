@@ -103,12 +103,11 @@ export default function LeavesPage() {
     load()
   }
 
-  // Pending counts per role
+  // Pending counts per role — two-step workflow: POC, then final approval.
   const pocPending   = leaves.filter(l => l.poc_status==='pending').length
-  const mgrPending   = leaves.filter(l => l.poc_status==='approved' && !['approved','rejected'].includes(l.hr_status)).length
-  const adminPending = leaves.filter(l => l.hr_status==='approved'  && !['approved','rejected'].includes(l.mgr_status)).length
+  const adminPending = leaves.filter(l => l.poc_status==='approved' && !['approved','rejected'].includes(l.mgr_status)).length
 
-  const pendingCount = userRole==='poc' ? pocPending : userRole==='manager' ? mgrPending : adminPending
+  const pendingCount = userRole==='poc' ? pocPending : adminPending
 
   const STAGES = userRole==='driver'
     ? [{ v:'all', l:'All Leaves', count:null }]
@@ -124,7 +123,7 @@ export default function LeavesPage() {
       <div style={{ background:'linear-gradient(135deg,#F8F7FF,#F0EFFF)', border:'1px solid #DDD6FE', borderRadius:14, padding:'14px 18px' }}>
         <div style={{ fontWeight:700, fontSize:13, color:'#7C3AED', marginBottom:6, display:'flex', alignItems:'center', gap:6 }}><AlertCircle size={14}/> Leave Approval Workflow</div>
         <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
-          {['DA applies','POC reviews','Manager reviews','Admin approves','Done'].map((s,i,arr) => (
+          {['DA applies','POC reviews','Manager approves','Done'].map((s,i,arr) => (
             <React.Fragment key={s}>
               <span style={{ fontSize:11.5, fontWeight:600, color:'#7C3AED', background:'rgba(124,58,237,0.08)', padding:'3px 10px', borderRadius:20 }}>{s}</span>
               {i<arr.length-1 && <ChevronRight size={13} color="#A89880"/>}
@@ -178,11 +177,10 @@ export default function LeavesPage() {
                     </div>
                     {l.reason && <div style={{ fontSize:12, color:'#6B5D4A', marginTop:4 }}>{l.reason}</div>}
                   </div>
-                  {/* 3-stage pipeline */}
+                  {/* 2-stage pipeline: POC, then final approval (Admin/GM) */}
                   <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                    <StageChip label={l.poc_approver_name || 'POC'}     status={l.poc_status||'pending'}/>
-                    <StageChip label={l.mgr_approver_name || 'Manager'} status={l.hr_status||'waiting'}/>
-                    <StageChip label={l.admin_approver_name || 'Admin'} status={l.mgr_status||'waiting'}/>
+                    <StageChip label={l.poc_approver_name   || 'POC'}     status={l.poc_status||'pending'}/>
+                    <StageChip label={l.admin_approver_name || 'Manager'} status={l.mgr_status||'waiting'}/>
                   </div>
                 </div>
               </div>
@@ -196,17 +194,8 @@ export default function LeavesPage() {
                 </div>
               )}
 
-              {/* Manager action bar */}
-              {userRole==='manager' && l.poc_status==='approved' && !['approved','rejected'].includes(l.hr_status) && (
-                <div style={{ background:'linear-gradient(135deg,#FDF6E3,#FFFBEB)', borderTop:'1px solid #F0D78C', padding:'10px 16px', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
-                  <span style={{ fontSize:12, color:'#B8860B', fontWeight:700, flex:1 }}>Awaiting your decision</span>
-                  <button onClick={()=>action(l.id,'approved','hr')} style={{ padding:'7px 18px', borderRadius:20, background:'linear-gradient(135deg,#2E7D52,#22C55E)', border:'none', color:'white', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>Approve</button>
-                  <button onClick={()=>action(l.id,'rejected','hr')} style={{ padding:'7px 18px', borderRadius:20, background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#C0392B', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>Reject</button>
-                </div>
-              )}
-
-              {/* Admin action bar */}
-              {(userRole==='admin'||userRole==='general_manager') && l.hr_status==='approved' && !['approved','rejected'].includes(l.mgr_status) && (
+              {/* Final approval action bar — Admin/General Manager, right after POC */}
+              {(userRole==='admin'||userRole==='general_manager') && l.poc_status==='approved' && !['approved','rejected'].includes(l.mgr_status) && (
                 <div style={{ background:'linear-gradient(135deg,#F3F4F6,#E5E7EB)', borderTop:'1px solid #D1D5DB', padding:'10px 16px', display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
                   <span style={{ fontSize:12, color:'#374151', fontWeight:700, flex:1 }}>Final approval required</span>
                   <button onClick={()=>action(l.id,'approved','manager')} style={{ padding:'7px 18px', borderRadius:20, background:'linear-gradient(135deg,#2E7D52,#22C55E)', border:'none', color:'white', fontWeight:700, fontSize:12, cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>Approve</button>

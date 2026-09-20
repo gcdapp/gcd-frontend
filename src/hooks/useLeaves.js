@@ -29,10 +29,9 @@ export function useLeaves(params = {}) {
     return () => ctrl.abort()
   }, [load])
 
+  // Two-step workflow: POC, then final approval (Admin/General Manager).
   const approve = useCallback(async (id, status, step) => {
-    const fn = step === 'poc'     ? leavesApi.pocApprove
-             : step === 'manager' ? leavesApi.managerApprove
-             :                      leavesApi.adminApprove
+    const fn = step === 'poc' ? leavesApi.pocApprove : leavesApi.adminApprove
     await fn(id, status)
     await load()
   }, [load])
