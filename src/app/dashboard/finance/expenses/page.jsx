@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { API } from '@/lib/api'
-import { fmtEntryTime } from '@/lib/employees'
+import { fmtEntryTime, stripRefTag } from '@/lib/employees'
 import ExpenseModal, { CATEGORIES, CAT_MAP } from '@/components/expenses/ExpenseModal'
 
 // Not `d.setMonth(d.getMonth() - i)` — on a 31st, that overflows into the next
@@ -46,10 +46,6 @@ function fmt(n) { return Number(n || 0).toLocaleString('en-AE', { minimumFractio
 function getUserRole() {
   try { const t = localStorage.getItem('gcd_token'); return t ? JSON.parse(atob(t.split('.')[1])).role : null } catch { return null }
 }
-// Petty-cash/payroll mirrors append an internal "[pcref:ID]"/"[ref:ID]" tag to an
-// expense's description so the backend can find and clean it up later — never meant
-// to be user-facing. Strip it for display only; the stored description keeps the tag.
-function stripRefTag(desc) { return (desc || '').replace(/\s*\[(?:pcref|ref):[^\]]*\]\s*$/, '').trim() }
 function fmtMonthLabel(m) {
   const [y, mo] = m.split('-')
   return new Date(+y, +mo - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })

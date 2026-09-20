@@ -46,7 +46,10 @@ export function fmt(n) { return Number(n||0).toLocaleString('en-AE', { minimumFr
 // Petty-cash/payroll mirrors append an internal "[pcref:ID]"/"[ref:ID]" tag to an
 // expense's description so the backend can find and clean it up later — never meant
 // to be user-facing. Strip it for display only; the stored description keeps the tag.
-export function stripRefTag(desc) { return (desc || '').replace(/\s*\[(?:pcref|ref):[^\]]*\]\s*$/, '').trim() }
+// Global, not just trailing: a reimbursement bonus's description embeds the
+// original expense's own (already-tagged) description before appending its
+// own tag, so the pattern can appear more than once, not only at the end.
+export function stripRefTag(desc) { return (desc || '').replace(/\s*\[(?:pcref|ref):[^\]]*\]/g, '').trim() }
 
 // exp.date is the expense's own (editable/backdate-able) date — created_at is when
 // the record was actually entered into the system, time included.
