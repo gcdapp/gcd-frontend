@@ -10,7 +10,7 @@ import {
   TrendingUp, Shield, Package, FileText, ExternalLink, ZoomIn,
   Phone, Mail, MapPin, Users, CreditCard, User, Building2,
   Camera, Fuel, ArrowLeftRight, Download, AlertTriangle, Maximize2,
-  Settings, Eye, EyeOff, Lock
+  Settings, Eye, EyeOff, Lock, Receipt
 } from 'lucide-react'
 import { useSocket } from '@/lib/socket'
 import { listenForSWReplay } from '@/lib/offline'
@@ -20,6 +20,11 @@ import { differenceInDays, parseISO } from 'date-fns'
 // ── Helpers ──────────────────────────────────────────────────────
 const TYPE_COLORS = { Annual:'#B8860B', Sick:'#2563EB', Emergency:'#DC2626', Unpaid:'#6B7280', Other:'#6B7280' }
 const DED_LABELS  = { traffic_fine:'Traffic Fine', iloe_fee:'ILOE Fee', iloe_fine:'ILOE Fine', cash_variance:'Cash Variance', cash_advance:'Cash Advance', absent_days:'Absent Days', other:'Other' }
+const EXP_STATUS_COLORS = {
+  approved: { c:'#16A34A', bg:'#F0FDF4', bc:'#BBF7D0' },
+  pending:  { c:'#B45309', bg:'#FFFBEB', bc:'#FDE68A' },
+  rejected: { c:'#DC2626', bg:'#FEF2F2', bc:'#FECACA' },
+}
 // Plain year*12+month arithmetic — d.setMonth(d.getMonth()-i) overflows into
 // the next month on a 31st whenever the target month is shorter, producing
 // duplicate/skipped months.
@@ -81,6 +86,7 @@ function expiryAlert(ds) {
 const TABS = [
   { id:'home',      label:'Home',        icon:Home      },
   { id:'pay',       label:'Payslips',    icon:Wallet    },
+  { id:'expenses',  label:'Expenses',    icon:Receipt   },
   { id:'leaves',    label:'Leaves',      icon:Calendar  },
   { id:'perf',      label:'Performance', icon:BarChart2 },
   { id:'vehicle',   label:'Vehicle',     icon:Car       },
@@ -546,6 +552,11 @@ export default function DriverPortal() {
   // (not a UTC ISO string) so this can't drift a day off PAY_MONTHS' own values.
   const [payMonth,      setPayMonth]      = useState(PAY_MONTHS[1])
   const [payslip,       setPayslip]       = useState(null)
+  // Expenses default to the current month (PAY_MONTHS[0]) rather than last
+  // month like Payslips — a driver checking this wants to see what they've
+  // logged recently, not a finalized-last-month record.
+  const [expMonth,      setExpMonth]      = useState(PAY_MONTHS[0])
+  const [expenses,      setExpenses]      = useState([])
   const [leaves,        setLeaves]        = useState([])
   const [handovers,     setHandovers]     = useState([])
   const [perf,          setPerf]          = useState(null)
@@ -668,6 +679,19 @@ export default function DriverPortal() {
       })
     return () => ctrl.abort()
   }, [user?.emp_id, payMonth])
+
+  // Expenses tab — GET /api/expenses already scopes to the caller's own
+  // emp_id server-side when the requester is a driver, so no extra filtering
+  // needed here beyond the month.
+  useEffect(() => {
+    if (!user?.emp_id) return
+    const hdr  = authHeader()
+    const ctrl = new AbortController()
+    fetch(`${API}/api/expenses?month=${expMonth}`, { headers: hdr, signal: ctrl.signal })
+      .then(r => r.json()).catch(() => ({ expenses: [] }))
+      .then(d => setExpenses(d.expenses || []))
+    return () => ctrl.abort()
+  }, [user?.emp_id, expMonth])
 
   useSocket({
     'notification:new': (notif) => {
@@ -840,6 +864,7 @@ export default function DriverPortal() {
                 {[
                   { l:'Apply Leave',  icon:Plus,       c:'#F59E0B', bg:'#FFF7ED', action:()=>setLeaveModal(true)  },
                   { l:'Payslips',     icon:FileText,   c:'#10B981', bg:'#F0FDF4', action:()=>setTab('pay')        },
+                  { l:'Expenses',     icon:Receipt,    c:'#1D4ED8', bg:'#EFF6FF', action:()=>setTab('expenses')   },
                   { l:'Leaves',       icon:Calendar,   c:'#7C3AED', bg:'#F5F3FF', action:()=>setTab('leaves')     },
                   { l:'Vehicle',      icon:Car,        c:'#2563EB', bg:'#EFF6FF', action:()=>setTab('vehicle')    },
                   { l:'Performance',  icon:BarChart2,  c:'#F97316', bg:'#FFF7ED', action:()=>setTab('perf')       },
@@ -1134,6 +1159,69 @@ export default function DriverPortal() {
             )}
           </div>
         )}
+
+        {/* ════ EXPENSES ════ */}
+        {tab === 'expenses' && (() => {
+          const expTotal    = expenses.reduce((s,e) => s + Number(e.amount||0), 0)
+          const approvedN   = expenses.filter(e => e.status==='approved').length
+          const pendingN    = expenses.filter(e => e.status==='pending').length
+          const rejectedN   = expenses.filter(e => e.status==='rejected').length
+          const expMonthLabel = new Date(expMonth+'-01').toLocaleString('en-US',{month:'long',year:'numeric',timeZone:'UTC'})
+          return (
+            <div style={{ padding:'16px', display:'flex', flexDirection:'column', gap:14 }} className="fade">
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <h2 style={{ fontWeight:800, fontSize:22, color:'#111', margin:0 }}>My Expenses</h2>
+                <select value={expMonth} onChange={e=>setExpMonth(e.target.value)}
+                  style={{ fontSize:12, fontWeight:700, color:'#111', background:'#FFF', border:'1px solid #E5E7EB', borderRadius:10, padding:'7px 10px', fontFamily:'inherit' }}>
+                  {PAY_MONTHS.map(m => (
+                    <option key={m} value={m}>{new Date(m+'-01').toLocaleString('en-US',{month:'long',year:'numeric',timeZone:'UTC'})}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Total hero */}
+              <div style={{ borderRadius:20, padding:'22px 20px', background:'linear-gradient(135deg,#EFF6FF,#DBEAFE)', border:'1.5px solid #BFDBFE', boxShadow:'0 4px 16px rgba(37,99,235,0.10)' }}>
+                <div style={{ fontSize:10, fontWeight:700, color:'#1D4ED8', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:8 }}>Total · {expMonthLabel}</div>
+                <div style={{ fontWeight:900, fontSize:36, color:'#1E3A8A', letterSpacing:'-0.04em', marginBottom:10 }}>{fmtA(expTotal)}</div>
+                <div style={{ display:'flex', gap:14, fontSize:12.5, fontWeight:600, flexWrap:'wrap' }}>
+                  {approvedN>0 && <span style={{ color:'#16A34A' }}>{approvedN} approved</span>}
+                  {pendingN>0  && <span style={{ color:'#B45309' }}>{pendingN} pending</span>}
+                  {rejectedN>0 && <span style={{ color:'#DC2626' }}>{rejectedN} rejected</span>}
+                  {expenses.length===0 && <span style={{ color:'#1D4ED8' }}>No records yet</span>}
+                </div>
+              </div>
+
+              {expenses.length === 0 ? (
+                <Card style={{ textAlign:'center', padding:'40px' }}>
+                  <Receipt size={32} color="#D1D5DB" style={{ margin:'0 auto 10px', display:'block' }}/>
+                  <div style={{ fontSize:14, color:'#9CA3AF', fontWeight:500 }}>No expenses for {expMonthLabel}</div>
+                </Card>
+              ) : (
+                <Card>
+                  <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:12 }}>Records</div>
+                  {expenses.map(e => {
+                    const sc = EXP_STATUS_COLORS[e.status] || EXP_STATUS_COLORS.pending
+                    return (
+                      <div key={e.id} style={{ padding:'10px 12px', background:sc.bg, borderRadius:10, marginBottom:6, border:`1px solid ${sc.bc}` }}>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8 }}>
+                          <div style={{ minWidth:0 }}>
+                            <div style={{ fontSize:13, fontWeight:700, color:'#111' }}>{e.category}</div>
+                            {e.description && <div style={{ fontSize:11.5, color:'#6B7280', marginTop:2 }}>{e.description}</div>}
+                            <div style={{ fontSize:10.5, color:'#9CA3AF', marginTop:3 }}>{e.date?.slice(0,10)}</div>
+                          </div>
+                          <div style={{ textAlign:'right', flexShrink:0 }}>
+                            <div style={{ fontWeight:800, fontSize:14, color:'#111' }}>{fmtA(e.amount)}</div>
+                            <span style={{ fontSize:9.5, fontWeight:700, color:sc.c, textTransform:'uppercase', letterSpacing:'0.05em' }}>{e.status}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </Card>
+              )}
+            </div>
+          )
+        })()}
 
         {/* ════ LEAVES ════ */}
         {tab === 'leaves' && (
