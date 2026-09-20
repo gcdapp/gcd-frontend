@@ -39,12 +39,9 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
   const { user } = useAuth()
   const { counts = {} } = useAlerts()
   const [expanded, setExpanded] = useState({})
-  // Section groups (Office/HR Management/Operations/System) start collapsed and
-  // only reveal their items once the section header is clicked — Finance is the
-  // one section that's always visible, never collapsible. A section not yet
-  // manually toggled still auto-opens if the current page lives inside it, so
-  // the active link is never hidden behind a collapsed header.
-  const [openSections, setOpenSections] = useState({})
+  // Every section (Office/HR Management/Finance/Operations/System) is always
+  // expanded — no collapse/toggle. Only item-with-children rows (see `expanded`
+  // above) can still be individually opened/closed.
 
   function isChildActive(href) {
     const [path, qs] = href.split('?')
@@ -100,10 +97,6 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
     } else {
       navGroups.push({ label: null, items: [item] })
     }
-  }
-
-  function toggleSection(label, currentlyOpen) {
-    setOpenSections(p => ({ ...p, [label]: !currentlyOpen }))
   }
 
   function renderItem(item) {
@@ -218,25 +211,14 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
             // Leading ungrouped items (just Overview) — always shown, no header
             if (!group.label) return group.items.map(item => renderItem(item))
 
-            const isFinance = group.label === 'Finance'
-            const hasActive = group.items.some(item => isItemActive(item.href))
-            const isOpen    = isFinance || collapsed || (group.label in openSections ? openSections[group.label] : hasActive)
-
             return (
               <div key={`group-${group.label}`}>
                 {!collapsed && (
-                  <div
-                    onClick={() => !isFinance && toggleSection(group.label, isOpen)}
-                    style={{ fontSize:9, fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.1em', textTransform:'uppercase', padding:'14px 14px 4px', marginTop:2, display:'flex', alignItems:'center', justifyContent:'space-between', cursor:isFinance?'default':'pointer', userSelect:'none' }}>
-                    <span>{group.label}</span>
-                    {!isFinance && (
-                      <ChevronDown size={11} style={{ transition:'transform 0.2s', transform:isOpen?'rotate(180deg)':'none', opacity:0.5, flexShrink:0 }}/>
-                    )}
+                  <div style={{ fontSize:9, fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.1em', textTransform:'uppercase', padding:'14px 14px 4px', marginTop:2, userSelect:'none' }}>
+                    {group.label}
                   </div>
                 )}
-                <div style={{ overflow:'hidden', maxHeight: isOpen ? '600px' : '0px', transition:'max-height 0.3s ease' }}>
-                  {group.items.map(item => renderItem(item))}
-                </div>
+                {group.items.map(item => renderItem(item))}
               </div>
             )
           })}

@@ -16,6 +16,13 @@ export const NAV = [
   // was removed — Overview now covers that same audience instead of both existing.
   { label:'Overview', href:'/dashboard/overview', icon:'LayoutDashboard', roles:['admin','general_manager','hr','accountant'] },
 
+  // ── Finance ───────────────────────────────────────────────────
+  { type:'section', label:'Finance', roles:['admin','accountant','manager','general_manager','hr','poc'] },
+  { label:'Payroll',          href:'/dashboard/finance/payroll',    icon:'Wallet',     roles:['admin','accountant','manager','general_manager'], hideIfAmazonOnly:true },
+  { label:'Expenses',         href:'/dashboard/finance/expenses',   icon:'Receipt',    roles:['admin','accountant','manager','general_manager'], hideIfScoped:true },
+  { label:'Petty Cash',       href:'/dashboard/finance/petty-cash', icon:'Banknote',   roles:['admin','accountant','general_manager','hr','poc'] },
+  { label:'Customers',        href:'/dashboard/finance/customers',  icon:'Building2',  roles:['admin','accountant'] },
+
   // ── Office ────────────────────────────────────────────────────
   { type:'section', label:'Office', roles:['admin','general_manager','hr','accountant','poc'] },
   { label:'Office Profile', href:'/dashboard/office',         icon:'Building2',    roles:['admin','general_manager','hr','accountant'] },
@@ -31,13 +38,6 @@ export const NAV = [
   { label:'Documents',     href:'/dashboard/hr/documents',  icon:'FileText',    roles:['admin','hr'] },
   { label:'Document Expiry', href:'/dashboard/hr/compliance', icon:'FileWarning', roles:['admin','general_manager','hr'], alertKey:'doc_expiry' },
   { label:'User Accounts', href:'/dashboard/hr/users',      icon:'KeyRound',    roles:['admin'] },
-
-  // ── Finance ───────────────────────────────────────────────────
-  { type:'section', label:'Finance', roles:['admin','accountant','manager','general_manager','hr','poc'] },
-  { label:'Payroll',          href:'/dashboard/finance/payroll',    icon:'Wallet',     roles:['admin','accountant','manager','general_manager'], hideIfAmazonOnly:true },
-  { label:'Expenses',         href:'/dashboard/finance/expenses',   icon:'Receipt',    roles:['admin','accountant','manager','general_manager'], hideIfScoped:true },
-  { label:'Petty Cash',       href:'/dashboard/finance/petty-cash', icon:'Banknote',   roles:['admin','accountant','general_manager','hr','poc'] },
-  { label:'Customers',        href:'/dashboard/finance/customers',  icon:'Building2',  roles:['admin','accountant'] },
 
   // ── Operations ────────────────────────────────────────────────
   // hideIfClientScoped (not hideIfScoped): these screens are exactly what an
