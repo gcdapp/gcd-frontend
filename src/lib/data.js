@@ -46,12 +46,16 @@ export const NAV = [
   // to pulser/cret. Only a manager scoped to a non-Amazon client project (e.g.
   // Asma, scoped to her own client) has no use for these and gets them hidden.
   { type:'section', label:'Operations', roles:['admin','general_manager','poc','manager'] },
-  { label:'DAs',                 href:'/dashboard/poc/das',                icon:'UserCircle',     roles:['admin','general_manager','poc'], hideIfClientScoped:true },
+  // DAs and Leaves deliberately exclude 'admin' — Admin already reaches the
+  // same data via HR Management (Employees, Leaves), so these would just be
+  // a duplicate link for that role. Still shown for general_manager/poc, who
+  // don't have an HR Management section at all.
+  { label:'DAs',                 href:'/dashboard/poc/das',                icon:'UserCircle',     roles:['general_manager','poc'], hideIfClientScoped:true },
   { label:'Fleet',               href:'/dashboard/poc/fleet',              icon:'Truck',          roles:['admin','general_manager','poc'], alertKey:'fleet', hideIfClientScoped:true },
   { label:'Vehicle Handovers',   href:'/dashboard/poc/handovers',          icon:'ArrowLeftRight', roles:['admin','general_manager','manager','poc'], hideIfClientScoped:true },
   { label:'Vehicle Inspections', href:'/dashboard/hr/vehicle-inspection',  icon:'ClipboardCheck', roles:['admin','general_manager','hr','poc'], hideIfClientScoped:true },
   { label:'SIM Cards',           href:'/dashboard/poc/sims',               icon:'Smartphone',     roles:['admin','general_manager','poc'], alertKey:'sims', hideIfClientScoped:true },
-  { label:'Leaves',              href:'/dashboard/poc/leaves',             icon:'CalendarOff',    roles:['admin','general_manager','poc'], alertKey:'leaves', hideIfClientScoped:true },
+  { label:'Leaves',              href:'/dashboard/poc/leaves',             icon:'CalendarOff',    roles:['general_manager','poc'], alertKey:'leaves', hideIfClientScoped:true },
 
   // ── System ────────────────────────────────────────────────────
   { type:'section', label:'System', roles:['admin'] },
