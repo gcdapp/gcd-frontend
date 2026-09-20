@@ -23,13 +23,6 @@ export const NAV = [
   { label:'Petty Cash',       href:'/dashboard/finance/petty-cash', icon:'Banknote',   roles:['admin','accountant','general_manager','hr','poc'] },
   { label:'Customers',        href:'/dashboard/finance/customers',  icon:'Building2',  roles:['admin','accountant'] },
 
-  // ── Office ────────────────────────────────────────────────────
-  { type:'section', label:'Office', roles:['admin','general_manager','hr','accountant','poc'] },
-  { label:'Office Profile', href:'/dashboard/office',         icon:'Building2',    roles:['admin','general_manager','hr','accountant'] },
-  { label:'Letters',        href:'/dashboard/office/letters', icon:'ScrollText',   roles:['admin','general_manager','hr','accountant'] },
-  { label:'Events',         href:'/dashboard/office/events',  icon:'CalendarDays', roles:['admin','general_manager','hr','accountant'] },
-  { label:'Tasks',          href:'/dashboard/tasks',          icon:'ClipboardList', roles:['admin','general_manager','hr','accountant','poc'], alertKey:'tasks' },
-
   // ── HR Management ─────────────────────────────────────────────
   { type:'section', label:'HR Management', roles:['admin','general_manager','hr','accountant'] },
   { label:'Employees',     href:'/dashboard/hr/employees',  icon:'UserCircle',  roles:['admin','general_manager','hr','accountant'], alertKey:'employees' },
@@ -38,6 +31,13 @@ export const NAV = [
   { label:'Documents',     href:'/dashboard/hr/documents',  icon:'FileText',    roles:['admin','hr'] },
   { label:'Document Expiry', href:'/dashboard/hr/compliance', icon:'FileWarning', roles:['admin','general_manager','hr'], alertKey:'doc_expiry' },
   { label:'User Accounts', href:'/dashboard/hr/users',      icon:'KeyRound',    roles:['admin'] },
+
+  // ── Office ────────────────────────────────────────────────────
+  { type:'section', label:'Office', roles:['admin','general_manager','hr','accountant','poc'] },
+  { label:'Office Profile', href:'/dashboard/office',         icon:'Building2',    roles:['admin','general_manager','hr','accountant'] },
+  { label:'Letters',        href:'/dashboard/office/letters', icon:'ScrollText',   roles:['admin','general_manager','hr','accountant'] },
+  { label:'Events',         href:'/dashboard/office/events',  icon:'CalendarDays', roles:['admin','general_manager','hr','accountant'] },
+  { label:'Tasks',          href:'/dashboard/tasks',          icon:'ClipboardList', roles:['admin','general_manager','hr','accountant','poc'], alertKey:'tasks' },
 
   // ── Operations ────────────────────────────────────────────────
   // hideIfClientScoped (not hideIfScoped): these screens are exactly what an
