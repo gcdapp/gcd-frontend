@@ -40,13 +40,18 @@ export const NAV = [
   { label:'Customers',        href:'/dashboard/finance/customers',  icon:'Building2',  roles:['admin','accountant'] },
 
   // ── Operations ────────────────────────────────────────────────
+  // hideIfClientScoped (not hideIfScoped): these screens are exactly what an
+  // Amazon-only-scoped manager (pulser/cret — e.g. Iftikhar) needs, so they stay
+  // visible for that case — projectScopeSQL already filters the data itself down
+  // to pulser/cret. Only a manager scoped to a non-Amazon client project (e.g.
+  // Asma, scoped to her own client) has no use for these and gets them hidden.
   { type:'section', label:'Operations', roles:['admin','general_manager','poc','manager'] },
-  { label:'DAs',                 href:'/dashboard/poc/das',                icon:'UserCircle',     roles:['admin','general_manager','poc'], hideIfScoped:true },
-  { label:'Fleet',               href:'/dashboard/poc/fleet',              icon:'Truck',          roles:['admin','general_manager','poc'], alertKey:'fleet', hideIfScoped:true },
-  { label:'Vehicle Handovers',   href:'/dashboard/poc/handovers',          icon:'ArrowLeftRight', roles:['admin','general_manager','manager','poc'], hideIfScoped:true },
-  { label:'Vehicle Inspections', href:'/dashboard/hr/vehicle-inspection',  icon:'ClipboardCheck', roles:['admin','general_manager','hr','poc'], hideIfScoped:true },
-  { label:'SIM Cards',           href:'/dashboard/poc/sims',               icon:'Smartphone',     roles:['admin','general_manager','poc'], alertKey:'sims', hideIfScoped:true },
-  { label:'Leaves',              href:'/dashboard/poc/leaves',             icon:'CalendarOff',    roles:['admin','general_manager','poc'], alertKey:'leaves', hideIfScoped:true },
+  { label:'DAs',                 href:'/dashboard/poc/das',                icon:'UserCircle',     roles:['admin','general_manager','poc'], hideIfClientScoped:true },
+  { label:'Fleet',               href:'/dashboard/poc/fleet',              icon:'Truck',          roles:['admin','general_manager','poc'], alertKey:'fleet', hideIfClientScoped:true },
+  { label:'Vehicle Handovers',   href:'/dashboard/poc/handovers',          icon:'ArrowLeftRight', roles:['admin','general_manager','manager','poc'], hideIfClientScoped:true },
+  { label:'Vehicle Inspections', href:'/dashboard/hr/vehicle-inspection',  icon:'ClipboardCheck', roles:['admin','general_manager','hr','poc'], hideIfClientScoped:true },
+  { label:'SIM Cards',           href:'/dashboard/poc/sims',               icon:'Smartphone',     roles:['admin','general_manager','poc'], alertKey:'sims', hideIfClientScoped:true },
+  { label:'Leaves',              href:'/dashboard/poc/leaves',             icon:'CalendarOff',    roles:['admin','general_manager','poc'], alertKey:'leaves', hideIfClientScoped:true },
 
   // ── System ────────────────────────────────────────────────────
   { type:'section', label:'System', roles:['admin'] },

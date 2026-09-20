@@ -73,6 +73,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
   const nav = NAV.filter(item =>
     (!item.roles || item.roles.includes(user?.role)) &&
     !(item.hideIfScoped && isProjectScoped) &&
+    !(item.hideIfClientScoped && isProjectScoped && !amazonOnlyScoped) &&
     !(item.hideIfAmazonOnly && amazonOnlyScoped)
   )
 
