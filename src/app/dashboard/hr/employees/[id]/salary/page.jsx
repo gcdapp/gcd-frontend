@@ -126,13 +126,36 @@ export default function DriverSalaryPage() {
     load()
   }
 
-  const base    = Number(row?.base_salary || 0)
-  const bonuses = row?.bonuses || []
-  const deds    = row?.deductions || []
+  // Everything here comes from the month's payroll entry (Add Manually / Bulk Upload),
+  // computed server-side with the same formula mark-paid uses — base is the prorated/
+  // confirmed figure for the month, not the employee's contract salary.
+  const base       = Number(row?.earnings_base ?? row?.base_salary ?? 0)
+  const unitsPay   = Number(row?.earnings_units || 0)
+  const bonuses    = row?.bonuses || []
+  const deds       = row?.deductions || []
+  const pettyCash  = row?.petty_cash || []
   const bonusTotal = Number(row?.bonus_total || 0)
-  const dedTotal    = Number(row?.deduction_total || 0)
-  const net     = row ? Number(row.net_pay || (base + bonusTotal - dedTotal)) : 0
-  const isPaid  = row?.payroll_status === 'paid'
+  const dedTotal   = Number(row?.deduction_total || 0)
+  const dedPending = Number(row?.pending_deduction || 0)
+  const dedCarry   = Number(row?.deduction_carry_fwd || 0)
+  const pettyTotal = pettyCash.reduce((s, p) => s + Number(p.amount || 0), 0)
+  const isPaid     = row?.payroll_status === 'paid'
+  // A paid month is a locked snapshot; an unpaid one is whatever the entry computes to now.
+  const net        = !row ? 0 : isPaid && row.net_pay != null ? Number(row.net_pay) : Number(row.computed_net ?? (base + unitsPay + bonusTotal - dedTotal))
+  const pt         = (row?.project_type || '').toLowerCase()
+  const isHours    = !['cret','external','jnt_express','imile'].includes(pt)
+  const isSplit    = pt === 'jnt_express' || pt === 'imile'
+  const units      = Number(row?.total_hours || 0)
+  const unitsLabel = isSplit ? `COD ${units} · Non-COD ${Number(row?.units_non_cod || 0)}` : `${units} ${isHours ? 'hrs' : 'shipments'}`
+  const sheet = row ? [
+    row.working_days != null && { l:'Working Days', v:String(row.working_days) },
+    row.entry_amount == null && { l:isHours ? 'Hours Worked' : 'Shipments', v:isSplit ? unitsLabel : String(units) },
+    { l:row.entry_amount != null ? 'Confirmed Amount' : 'Basic Salary', v:`AED ${fmt(base)}` },
+    row.entry_amount == null && { l:isHours ? 'Hours Earnings' : 'Shipment Earnings', v:`AED ${fmt(unitsPay)}` },
+    { l:'Bonuses', v:`+${fmt(bonusTotal)}`, c:'#059669' },
+    { l:'Deductions Applied', v:`-${fmt(dedTotal)}`, c:'#DC2626' },
+    { l:'Carried Forward', v:fmt(dedCarry) },
+  ].filter(Boolean) : []
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14, animation:'slideUp 0.3s ease' }}>
@@ -152,6 +175,7 @@ export default function DriverSalaryPage() {
           <div style={{ fontSize:30, fontWeight:900, color:'#34D399', letterSpacing:'-0.03em' }}>{loading ? '—' : `AED ${fmt(net)}`}</div>
           <div style={{ display:'flex', gap:18, marginTop:10, flexWrap:'wrap' }}>
             <div><span style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>Base</span> <strong style={{ fontSize:13, color:'white', marginLeft:4 }}>AED {fmt(base)}</strong></div>
+            {unitsPay > 0 && <div><span style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>{isHours ? 'Hours' : 'Shipments'} ({unitsLabel})</span> <strong style={{ fontSize:13, color:'white', marginLeft:4 }}>AED {fmt(unitsPay)}</strong></div>}
             <div><span style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>Bonuses</span> <strong style={{ fontSize:13, color:'#34D399', marginLeft:4 }}>+{fmt(bonusTotal)}</strong></div>
             <div><span style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>Deductions</span> <strong style={{ fontSize:13, color:'#F87171', marginLeft:4 }}>-{fmt(dedTotal)}</strong></div>
           </div>
@@ -181,7 +205,24 @@ export default function DriverSalaryPage() {
           <Banknote size={32} style={{ margin:'0 auto 12px', display:'block', opacity:0.2 }}/>
           No payroll record for {month} yet.
         </div>
-      ) : (
+      ) : (<>
+        {/* Payroll sheet — what was entered for this month via Add Manually / Bulk Upload */}
+        {row && (
+          <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:14, overflow:'hidden' }}>
+            <div style={{ padding:'12px 16px', borderBottom:'1px solid var(--border)', background:'var(--bg-alt)' }}>
+              <span style={{ fontSize:12, fontWeight:800, color:'var(--text)' }}>Payroll Sheet — {month}</span>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:1, background:'var(--border)' }}>
+              {sheet.map(c => (
+                <div key={c.l} style={{ background:'var(--card)', padding:'12px 16px' }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em' }}>{c.l}</div>
+                  <div style={{ fontSize:14, fontWeight:800, color:c.c || 'var(--text)', marginTop:4 }}>{c.v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
           {/* Bonuses */}
           <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:14, overflow:'hidden' }}>
@@ -208,16 +249,16 @@ export default function DriverSalaryPage() {
           {/* Deductions */}
           <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:14, overflow:'hidden' }}>
             <div style={{ padding:'12px 16px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center', background:'var(--bg-alt)' }}>
-              <span style={{ fontSize:12, fontWeight:800, color:'var(--text)' }}>Deductions</span>
+              <span style={{ fontSize:12, fontWeight:800, color:'var(--text)' }}>Deductions Ledger <span style={{ fontWeight:500, color:'var(--text-muted)' }}>· all months</span></span>
               {canAddMod && <button onClick={()=>setAddModal('deduction')} style={{ display:'flex', alignItems:'center', gap:4, background:'none', border:'none', color:'#DC2626', fontWeight:700, fontSize:11.5, cursor:'pointer' }}><Plus size={11}/> Add</button>}
             </div>
             {deds.length === 0 ? (
-              <div style={{ padding:'20px', textAlign:'center', fontSize:12, color:'var(--text-muted)' }}>No deductions this month</div>
+              <div style={{ padding:'20px', textAlign:'center', fontSize:12, color:'var(--text-muted)' }}>No deductions logged</div>
             ) : deds.map(d => (
               <div key={d.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 16px', borderBottom:'1px solid var(--border)' }}>
                 <div>
                   <div style={{ fontSize:12.5, fontWeight:600, color:'var(--text)' }}>{DED_TYPES.find(t=>t.v===d.type)?.l || d.type}</div>
-                  {d.description && <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{stripRefTag(d.description)}</div>}
+                  <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{[d.month, stripRefTag(d.description)].filter(Boolean).join(' · ')}</div>
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                   <span style={{ fontSize:13, fontWeight:800, color:'#DC2626' }}>-{fmt(d.amount)}</span>
@@ -225,9 +266,35 @@ export default function DriverSalaryPage() {
                 </div>
               </div>
             ))}
+            {deds.length > 0 && (
+              <div style={{ display:'flex', justifyContent:'space-between', gap:12, flexWrap:'wrap', padding:'10px 16px', background:'var(--bg-alt)', fontSize:11.5, color:'var(--text-muted)' }}>
+                <span>Outstanding balance <strong style={{ color:'var(--text)' }}>{fmt(dedPending)}</strong></span>
+                <span>Applied this month <strong style={{ color:'#DC2626' }}>-{fmt(dedTotal)}</strong></span>
+                <span>Carried forward <strong style={{ color:'var(--text)' }}>{fmt(dedCarry)}</strong></span>
+              </div>
+            )}
           </div>
         </div>
-      )}
+
+        {/* Petty cash — already paid out in cash, so it is listed for reference only */}
+        {pettyCash.length > 0 && (
+          <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:14, overflow:'hidden' }}>
+            <div style={{ padding:'12px 16px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap', background:'var(--bg-alt)' }}>
+              <span style={{ fontSize:12, fontWeight:800, color:'var(--text)' }}>Petty Cash <span style={{ fontWeight:500, color:'var(--text-muted)' }}>· paid in cash, not included in net pay</span></span>
+              <span style={{ fontSize:12, fontWeight:800, color:'var(--text)' }}>AED {fmt(pettyTotal)}</span>
+            </div>
+            {pettyCash.map(p => (
+              <div key={p.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 16px', borderBottom:'1px solid var(--border)' }}>
+                <div>
+                  <div style={{ fontSize:12.5, fontWeight:600, color:'var(--text)' }}>{p.expense_type}</div>
+                  <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{[p.date, p.note].filter(Boolean).join(' · ')}</div>
+                </div>
+                <span style={{ fontSize:13, fontWeight:800, color:'var(--text)' }}>{fmt(p.amount)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </>)}
 
       {addModal && (
         <AddModal kind={addModal} empId={id} month={month} onClose={()=>setAddModal(null)} onSaved={()=>{ setAddModal(null); load() }}/>
