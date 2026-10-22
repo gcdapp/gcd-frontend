@@ -1547,8 +1547,15 @@ function AllTransactionsView() {
   const load = useCallback(async () => {
     setLoading(true); setErr('')
     try {
-      const [invRes, recRes] = await Promise.all([customerInvoiceApi.list(), customerReceiptApi.list()])
-      setInvoices(invRes.invoices || [])
+      const [invRes, recRes, custRes] = await Promise.all([customerInvoiceApi.list(), customerReceiptApi.list(), customerApi.list()])
+      // Sale vs purchase lives on the customer. Newer backends send it with each
+      // invoice; fill it in from the customer list so the Excel export works either way.
+      const custById = Object.fromEntries((custRes.customers || []).map(c => [c.id, c]))
+      setInvoices((invRes.invoices || []).map(i => ({
+        ...i,
+        customer_type: i.customer_type ?? custById[i.customer_id]?.customer_type,
+        customer_trn:  i.customer_trn  ?? custById[i.customer_id]?.trn_no,
+      })))
       setReceipts(recRes.receipts || [])
     } catch(e) { setErr(e.message) }
     finally { setLoading(false) }
