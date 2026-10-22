@@ -445,6 +445,8 @@ a { text-decoration:none; color:inherit; }
 
 /* ── Sidebar collapse button — hide on mobile ────────────────── */
 .sidebar-collapse-btn { display:flex; }
+.sidebar-close-btn    { display:none; }
+
 
 /* ── Mobile bottom nav ───────────────────────────────────────── */
 .mobile-bottomnav {
@@ -886,4 +888,13 @@ a { text-decoration:none; color:inherit; }
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Phones (kept last so it wins over the ≤1024px drawer width above): the menu opens full screen, with its own close button */
+@media (max-width:768px) {
+  .sidebar { width:100vw !important; min-width:100vw !important; height:100dvh; }
+  .sidebar.mobile-open { box-shadow:none; }
+  .sidebar-close-btn { display:flex !important; }
+  .sidebar .nav-item { min-height:44px; font-size:15px; }
+  .sidebar .nav-section-label { font-size:11.5px; }
 }

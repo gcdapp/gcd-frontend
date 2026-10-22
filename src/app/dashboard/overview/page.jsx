@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { isAmazonOnlyScoped } from '@/lib/employees'
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from 'recharts'
 import {
   Users, Car, Wallet, ChevronRight, Smartphone,
   Receipt, ScrollText, RefreshCw, ArrowUpRight,
@@ -436,7 +436,7 @@ export default function OverviewPage() {
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={expChart} barGap={4} barCategoryGap="28%" margin={{ top:12, right:12, left:4, bottom:0 }}>
+                  <BarChart data={expChart} barGap={4} barCategoryGap="28%" margin={{ top:26, right:12, left:4, bottom:0 }}>
                     <CartesianGrid vertical={false} stroke="#A8A29E" strokeOpacity={0.25}/>
                     <XAxis dataKey="month" tickFormatter={monthShort} axisLine={false} tickLine={false}
                       tick={{ fontSize:12, fill:'#78716C', fontFamily:'inherit' }}/>
@@ -480,8 +480,17 @@ export default function OverviewPage() {
                         )
                       }}
                     />
-                    <Bar dataKey={spendKey} name="Spend"    fill={SPEND}    radius={[5,5,0,0]} maxBarSize={30} isAnimationActive={false}/>
-                    <Bar dataKey={recvKey}  name="Received" fill={RECEIVED} radius={[5,5,0,0]} maxBarSize={30} isAnimationActive={false}/>
+                    {/* Amounts on top of each bar — compact (418k, 1.2M) so two labels fit
+                        per month; empty months get no label. Label colour follows the
+                        theme tokens (style, unlike SVG fill, can read CSS variables). */}
+                    <Bar dataKey={spendKey} name="Spend"    fill={SPEND}    radius={[5,5,0,0]} maxBarSize={30} isAnimationActive={false}>
+                      <LabelList dataKey={spendKey} position="top" offset={6} formatter={v => v > 0 ? compact(Math.round(v)) : ''}
+                        style={{ fontSize:11, fontWeight:600, fill:'var(--gold)' }}/>
+                    </Bar>
+                    <Bar dataKey={recvKey}  name="Received" fill={RECEIVED} radius={[5,5,0,0]} maxBarSize={30} isAnimationActive={false}>
+                      <LabelList dataKey={recvKey} position="top" offset={6} formatter={v => v > 0 ? compact(Math.round(v)) : ''}
+                        style={{ fontSize:11, fontWeight:600, fill:'var(--green)' }}/>
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               )}

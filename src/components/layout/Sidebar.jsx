@@ -12,7 +12,7 @@ import {
   ShieldCheck, Radio, HardDrive, KeyRound, ChevronLeft, ChevronRight,
   Settings, Trophy, AlertTriangle, Calendar, Zap, LayoutDashboard,
   Truck, Smartphone, Shield, Package, Bell, Building2, ClipboardCheck,
-  ArrowLeftRight, ScrollText, CalendarDays, ClipboardList, FileWarning,
+  ArrowLeftRight, ScrollText, CalendarDays, ClipboardList, FileWarning, X,
 } from 'lucide-react'
 
 
@@ -189,6 +189,12 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
               style={{ flexShrink:0, width:28, height:28, borderRadius:7, border:'1px solid var(--border)', background:'var(--card)', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--text-sub)' }}
               title={collapsed?'Expand sidebar':'Collapse sidebar'} aria-label={collapsed?'Expand sidebar':'Collapse sidebar'}>
               {collapsed ? <ChevronRight size={13}/> : <ChevronLeft size={13}/>}
+            </button>
+            {/* Close — phones only, where the menu covers the whole screen */}
+            <button onClick={() => setMobileOpen(false)} className="sidebar-close-btn"
+              aria-label="Close menu" title="Close menu"
+              style={{ flexShrink:0, width:40, height:40, borderRadius:10, border:'1px solid var(--border)', background:'var(--card)', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--text)' }}>
+              <X size={18}/>
             </button>
           </div>
         </div>
