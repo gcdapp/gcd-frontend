@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { useAuth } from '@/lib/auth'
 import { customerApi, customerInvoiceApi, customerReceiptApi, customerLedgerApi } from '@/lib/api'
 import { exportInvoicesXlsx } from '@/lib/invoiceExport'
+import { esc } from '@/lib/html'
 import {
   Building2, Plus, Search, Pencil, Trash2, X, ChevronLeft, ChevronRight,
   Hash, MapPin, FileText, DollarSign, Tag, Receipt,
@@ -745,9 +746,9 @@ function openLedgerPrint(customer, year, data) {
       <tr class="${inv?'inv-row':'rec-row'}">
         <td class="sno">${i+1}</td>
         <td class="date">${e.date?.slice(0,10)||''}</td>
-        <td><span class="pill ${inv?'pill-inv':'pill-rec'}">${inv?'INV':'REC'}</span>${e.description||'<span style="color:#bbb">—</span>'}</td>
-        <td class="mono">${e.ref||'—'}</td>
-        <td>${e.cost_center||'—'}</td>
+        <td><span class="pill ${inv?'pill-inv':'pill-rec'}">${inv?'INV':'REC'}</span>${e.description ? esc(e.description) : '<span style="color:#bbb">—</span>'}</td>
+        <td class="mono">${esc(e.ref||'—')}</td>
+        <td>${esc(e.cost_center||'—')}</td>
         <td class="${e.debit?'db':'nil'}">${e.debit?aed(e.debit):'—'}</td>
         <td class="${e.credit?'cr':'nil'}">${e.credit?aed(e.credit):'—'}</td>
         <td class="${e.balance_sign==='Db'?'db':'cr'}">${aed(e.balance)} <sup>${e.balance_sign}</sup></td>
@@ -767,7 +768,7 @@ function openLedgerPrint(customer, year, data) {
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<title>General Ledger — ${customer.name} — ${year}</title>
+<title>General Ledger — ${esc(customer.name)} — ${year}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #1a1a2e; padding: 28px 32px; font-size: 12px; }
@@ -838,11 +839,11 @@ function openLedgerPrint(customer, year, data) {
 
 <div class="cust-card">
   <div class="cust-left">
-    <div class="cust-name">${customer.name}</div>
+    <div class="cust-name">${esc(customer.name)}</div>
     <div class="cust-meta">
-      ${customer.trn_no ? `<span>TRN: <strong>${customer.trn_no}</strong></span>` : ''}
-      ${customer.cost_center ? `<span>Cost Center: <strong>${customer.cost_center}</strong></span>` : ''}
-      ${customer.address ? `<span>${customer.address}</span>` : ''}
+      ${customer.trn_no ? `<span>TRN: <strong>${esc(customer.trn_no)}</strong></span>` : ''}
+      ${customer.cost_center ? `<span>Cost Center: <strong>${esc(customer.cost_center)}</strong></span>` : ''}
+      ${customer.address ? `<span>${esc(customer.address)}</span>` : ''}
     </div>
   </div>
   <div class="year-pill">${year}</div>

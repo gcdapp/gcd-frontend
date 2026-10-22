@@ -21,6 +21,7 @@ import {
 } from 'recharts'
 import { API } from '@/lib/api'
 import { stripRefTag } from '@/lib/employees'
+import { esc } from '@/lib/html'
 
 const APP_VERSION = '2.4.0'
 // Fixed, company-wide hourly rates for the two Packer project types — admin-editable
@@ -259,8 +260,8 @@ function slipInnerHtml(slip, month, logoUrl, payMethod='bank') {
   </div>
   <div class="slip-title">Salary Slip</div>
   <table class="info-tbl">
-    <tr><td class="key">Employee ID</td><td class="data">${slip.id}</td><td class="key">Employee Name</td><td class="data">${slip.name}</td></tr>
-    <tr><td class="key">Designation</td><td class="data">${roleLabel}</td><td class="key">Salary Period</td><td class="data">${monthShort}</td></tr>
+    <tr><td class="key">Employee ID</td><td class="data">${esc(slip.id)}</td><td class="key">Employee Name</td><td class="data">${esc(slip.name)}</td></tr>
+    <tr><td class="key">Designation</td><td class="data">${esc(roleLabel)}</td><td class="key">Salary Period</td><td class="data">${monthShort}</td></tr>
   </table>
   <table class="main-tbl">
     <tr><th colspan="2">Earnings</th><th colspan="2">Deductions</th></tr>
@@ -272,7 +273,7 @@ function slipInnerHtml(slip, month, logoUrl, payMethod='bank') {
     ${row('Other Addition',otherAddition,'Carry Forwarded',carryForward)}
     ${cretNote}
     ${eidOtRow}
-    <tr><td class="lbl">${monthBonusLabel}</td><td class="val">${fmtN(monthBonus)}</td><td></td><td></td></tr>
+    <tr><td class="lbl">${esc(monthBonusLabel)}</td><td class="val">${fmtN(monthBonus)}</td><td></td><td></td></tr>
     <tr class="total-row"><td>TOTAL ADDITION</td><td style="text-align:right;font-weight:bold;">${fmtN(totalAdd)}</td><td>TOTAL DEDUCTION</td><td style="text-align:right;font-weight:bold;">${fmtN(totalDed)}</td></tr>
     <tr class="net-row"><td colspan="2" style="text-align:center;font-weight:bold;">Net Salary</td><td colspan="2" style="text-align:center;font-weight:bold;">${fmtN(net)}</td></tr>
   </table>
@@ -322,7 +323,7 @@ body{font-family:'Poppins',Arial,sans-serif;background:#fff;padding:24px;font-si
 
 function generatePayslip(slip, month, payMethod='bank') {
   const logoUrl = window.location.origin+'/logo.webp'
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Payslip — ${slip.name} — ${month}</title><style>${SLIP_CSS}</style></head><body><div class="wrap">${slipInnerHtml(slip,month,logoUrl,payMethod)}</div><script>window.onload=function(){setTimeout(function(){window.print()},700)}<\/script></body></html>`
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Payslip — ${esc(slip.name)} — ${esc(month)}</title><style>${SLIP_CSS}</style></head><body><div class="wrap">${slipInnerHtml(slip,month,logoUrl,payMethod)}</div><script>window.onload=function(){setTimeout(function(){window.print()},700)}<\/script></body></html>`
   const w = window.open('','_blank')
   if (!w) {
     // Popup blocked — download as HTML file instead

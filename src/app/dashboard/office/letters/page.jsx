@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/lib/auth'
 import { API } from '@/lib/api'
+import { esc, sanitizeRich, safeImgSrc } from '@/lib/html'
 import { ScrollText, Plus, ChevronLeft, User, Trash2, Pencil, CheckCircle, Clock, Send, Download, Calendar, Eye, FileText, Bold, Italic, Underline, List, ListOrdered, Table2, Undo2, Redo2 } from 'lucide-react'
 
 const hdr = () => ({ Authorization: `Bearer ${localStorage.getItem('gcd_token')}` })
@@ -19,10 +20,10 @@ function fmtShort(d) {
 function buildBodyHtml(body) {
   if (!body) return ''
   if (/<[a-z]/i.test(body)) {
-    return `<div style="font-family:Georgia,serif;font-size:13.5px;line-height:1.75;color:#1a1a1a">${body}</div>`
+    return `<div style="font-family:Georgia,serif;font-size:13.5px;line-height:1.75;color:#1a1a1a">${sanitizeRich(body)}</div>`
   }
   return body.split('\n').map(
-    line => `<p style="margin:0 0 11px 0;line-height:1.75;text-align:justify">${line.trim() ? line : '&nbsp;'}</p>`
+    line => `<p style="margin:0 0 11px 0;line-height:1.75;text-align:justify">${line.trim() ? esc(line) : '&nbsp;'}</p>`
   ).join('')
 }
 function isBodyEmpty(html) {
@@ -67,19 +68,19 @@ function buildLetterHTML(l, origin) {
   </div>
   <div style="padding:28px 40px 0">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;font-size:11.5px;font-family:Arial,sans-serif;color:#555">
-      <span style="font-weight:700;color:#333">Ref: ${l.ref_no || '—'}</span>
+      <span style="font-weight:700;color:#333">Ref: ${esc(l.ref_no || '—')}</span>
       <span>${fmtDate(l.date)}</span>
     </div>
     <p style="margin:0 0 14px;font-weight:700;font-size:13.5px">${(l.to_name || 'To Whom It May Concern').replace(/\n/g, '<br/>')}</p>
-    ${l.subject ? `<div style="margin-bottom:18px"><p style="margin:0 0 6px;font-size:16px;font-weight:700">Re: ${l.subject}</p><div style="height:2px;width:240px;background:#8F6807;border-radius:1px"></div></div>` : ''}
-    <p style="margin:0 0 16px">${l.greeting || 'Dear Sir / Madam,'}</p>
+    ${l.subject ? `<div style="margin-bottom:18px"><p style="margin:0 0 6px;font-size:16px;font-weight:700">Re: ${esc(l.subject)}</p><div style="height:2px;width:240px;background:#8F6807;border-radius:1px"></div></div>` : ''}
+    <p style="margin:0 0 16px">${esc(l.greeting || 'Dear Sir / Madam,')}</p>
     <div style="margin-bottom:44px">${bodyHtml}</div>
     <p style="margin:0 0 26px">With warm regards,</p>
     <div style="position:relative;min-height:140px;margin-bottom:6px;width:100%">
       <div style="display:inline-block">
-        ${showSign ? `<img src="${l.signature_data || (origin + '/sign.png')}" style="height:78px;display:block;margin-bottom:2px;mix-blend-mode:${l.signature_data ? 'multiply' : 'screen'}" alt="" onerror="this.style.display='none'"/>` : '<div style="height:80px"></div>'}
-        <p style="margin:0 0 1px;font-size:15.5px;font-weight:700">${l.signer_name || 'Vardeep Singh Sodhi'}</p>
-        <p style="margin:0 0 1px;font-size:12px;color:#555;font-family:Arial,sans-serif">${l.signer_title || 'Director'}</p>
+        ${showSign ? `<img src="${safeImgSrc(l.signature_data, origin + '/sign.png') || esc(origin + '/sign.png')}" style="height:78px;display:block;margin-bottom:2px;mix-blend-mode:${l.signature_data ? 'multiply' : 'screen'}" alt="" onerror="this.style.display='none'"/>` : '<div style="height:80px"></div>'}
+        <p style="margin:0 0 1px;font-size:15.5px;font-weight:700">${esc(l.signer_name || 'Vardeep Singh Sodhi')}</p>
+        <p style="margin:0 0 1px;font-size:12px;color:#555;font-family:Arial,sans-serif">${esc(l.signer_title || 'Director')}</p>
         <p style="margin:0;font-size:11.5px;color:#777;font-family:Arial,sans-serif">Golden Crescent Delivery Services LLC</p>
       </div>
       ${showStamp ? `<img src="${origin}/stamp.png" style="position:absolute;right:0;top:0;height:118px;mix-blend-mode:multiply" alt="" onerror="this.style.display='none'"/>` : ''}
@@ -121,7 +122,7 @@ function buildPrintHTML(l, origin) {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>${l.ref_no}</title>
+<title>${esc(l.ref_no)}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   @page{size:A4 portrait;margin:0}
@@ -171,19 +172,19 @@ function buildPrintHTML(l, origin) {
   <tbody>
     <tr><td>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;font-size:11.5px;font-family:Arial,sans-serif;color:#555">
-        <span style="font-weight:700;color:#333">Ref: ${l.ref_no || '—'}</span>
+        <span style="font-weight:700;color:#333">Ref: ${esc(l.ref_no || '—')}</span>
         <span>${fmtDate(l.date)}</span>
       </div>
       <p style="margin:0 0 14px;font-weight:700;font-size:13.5px">${(l.to_name || 'To Whom It May Concern').replace(/\n/g, '<br/>')}</p>
-      ${l.subject ? `<div style="margin-bottom:18px"><p style="margin:0 0 6px;font-size:16px;font-weight:700">Re: ${l.subject}</p><div style="height:2px;width:240px;background:#B8860B;border-radius:1px"></div></div>` : ''}
-      <p style="margin:0 0 16px">${l.greeting || 'Dear Sir / Madam,'}</p>
+      ${l.subject ? `<div style="margin-bottom:18px"><p style="margin:0 0 6px;font-size:16px;font-weight:700">Re: ${esc(l.subject)}</p><div style="height:2px;width:240px;background:#B8860B;border-radius:1px"></div></div>` : ''}
+      <p style="margin:0 0 16px">${esc(l.greeting || 'Dear Sir / Madam,')}</p>
       <div style="margin-bottom:44px">${bodyHtml}</div>
       <p style="margin:0 0 26px">With warm regards,</p>
       <div style="position:relative;min-height:140px;margin-bottom:6px;width:100%">
         <div style="display:inline-block">
-          ${showSign ? `<img src="${l.signature_data || (origin + '/sign.png')}" style="height:78px;display:block;margin-bottom:2px;mix-blend-mode:${l.signature_data ? 'multiply' : 'screen'}" alt="" onerror="this.style.display='none'"/>` : '<div style="height:80px"></div>'}
-          <p style="margin:0 0 1px;font-size:15.5px;font-weight:700">${l.signer_name || 'Vardeep Singh Sodhi'}</p>
-          <p style="margin:0 0 1px;font-size:12px;color:#555;font-family:Arial,sans-serif">${l.signer_title || 'Director'}</p>
+          ${showSign ? `<img src="${safeImgSrc(l.signature_data, origin + '/sign.png') || esc(origin + '/sign.png')}" style="height:78px;display:block;margin-bottom:2px;mix-blend-mode:${l.signature_data ? 'multiply' : 'screen'}" alt="" onerror="this.style.display='none'"/>` : '<div style="height:80px"></div>'}
+          <p style="margin:0 0 1px;font-size:15.5px;font-weight:700">${esc(l.signer_name || 'Vardeep Singh Sodhi')}</p>
+          <p style="margin:0 0 1px;font-size:12px;color:#555;font-family:Arial,sans-serif">${esc(l.signer_title || 'Director')}</p>
           <p style="margin:0;font-size:11.5px;color:#777;font-family:Arial,sans-serif">Golden Crescent Delivery Services LLC</p>
         </div>
         ${showStamp ? `<img src="${origin}/stamp.png" style="position:absolute;right:0;top:0;height:118px;mix-blend-mode:multiply" alt="" onerror="this.style.display='none'"/>` : ''}
@@ -240,7 +241,7 @@ function Toggle({ checked, onChange, label }) {
 function cleanPastedHtml(html) {
   try {
     const tmp = document.createElement('div')
-    tmp.innerHTML = html
+    tmp.innerHTML = sanitizeRich(html)
     // Remove HTML comments (Word puts a ton of them)
     const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_COMMENT)
     const comments = []
@@ -263,14 +264,15 @@ function cleanPastedHtml(html) {
       el.parentNode?.replaceChild(span, el)
     })
     return tmp.innerHTML
-  } catch { return html }
+  } catch { return sanitizeRich(html) }
 }
 
 function RichEditor({ defaultValue, onChange, placeholder = 'Write your letter content here…' }) {
   const editorRef = useRef(null)
 
   useEffect(() => {
-    if (editorRef.current) editorRef.current.innerHTML = defaultValue || ''
+    // Saved letters can be written by other staff — sanitise before loading into the editor
+    if (editorRef.current) editorRef.current.innerHTML = sanitizeRich(defaultValue || '')
   }, []) // Only on mount — parent uses key prop to trigger remount on letter change
 
   function exec(cmd, val) {

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '@/lib/auth'
 import { vehicleApi, vehicleInspectionApi } from '@/lib/api'
+import { esc } from '@/lib/html'
 import {
   Plus, X, Trash2, Printer, Search, ClipboardCheck,
   ChevronDown, CheckCircle, Calendar, Truck, Eye,
@@ -356,7 +357,7 @@ function printInspection(insp) {
 <html>
 <head>
 <meta charset="utf-8">
-<title>Vehicle Inspection — ${insp.plate}</title>
+<title>Vehicle Inspection — ${esc(insp.plate)}</title>
 <style>
   * { box-sizing:border-box; margin:0; padding:0 }
   @page { size:A4; margin:14mm 14mm }
@@ -401,23 +402,23 @@ function printInspection(insp) {
 <div class="info-section">
   <h2>Vehicle Information</h2>
   <div class="info-grid">
-    <div class="info-row"><span class="info-label">License Plate</span><span class="info-val">${insp.plate || ''}</span></div>
-    <div class="info-row"><span class="info-label">Make</span><span class="info-val">${insp.make || ''}</span></div>
-    <div class="info-row"><span class="info-label">Model</span><span class="info-val">${insp.model || ''}</span></div>
-    <div class="info-row"><span class="info-label">Year</span><span class="info-val">${insp.year || ''}</span></div>
+    <div class="info-row"><span class="info-label">License Plate</span><span class="info-val">${esc(insp.plate || '')}</span></div>
+    <div class="info-row"><span class="info-label">Make</span><span class="info-val">${esc(insp.make || '')}</span></div>
+    <div class="info-row"><span class="info-label">Model</span><span class="info-val">${esc(insp.model || '')}</span></div>
+    <div class="info-row"><span class="info-label">Year</span><span class="info-val">${esc(insp.year || '')}</span></div>
     <div class="info-row"><span class="info-label">Date of Inspection</span><span class="info-val">${fmt(insp.inspection_date)}</span></div>
-    <div class="info-row"><span class="info-label">Inspector Name</span><span class="info-val">${insp.inspector_name || ''}</span></div>
+    <div class="info-row"><span class="info-label">Inspector Name</span><span class="info-val">${esc(insp.inspector_name || '')}</span></div>
   </div>
 </div>
 
 ${sectionsHtml}
 
-${insp.additional_notes ? `<div class="addl-title">Additional Notes / Observations</div><div class="addl-box">${insp.additional_notes}</div>` : ''}
+${insp.additional_notes ? `<div class="addl-title">Additional Notes / Observations</div><div class="addl-box">${esc(insp.additional_notes)}</div>` : ''}
 
 <div class="sign-block" style="max-width:420px;margin-top:12px">
   <h3>Statement of Inspection</h3>
   <p class="statement">I hereby certify that I have conducted the above vehicle inspection and that the vehicle has been thoroughly inspected for safety and compliance. Any identified issues have been documented, and necessary corrective actions have been recommended.</p>
-  <div class="sign-row"><span class="sign-label">Inspector's Name</span><span class="sign-line">${insp.inspector_name || ''}</span></div>
+  <div class="sign-row"><span class="sign-label">Inspector's Name</span><span class="sign-line">${esc(insp.inspector_name || '')}</span></div>
   <div class="sign-row"><span class="sign-label">Date</span><span class="sign-line">${fmt(insp.inspection_date)}</span></div>
   <div class="sign-row"><span class="sign-label">Signature</span><div class="sign-box"></div></div>
 </div>
