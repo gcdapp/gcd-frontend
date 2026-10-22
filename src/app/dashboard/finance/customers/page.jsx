@@ -3,11 +3,12 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '@/lib/auth'
 import { customerApi, customerInvoiceApi, customerReceiptApi, customerLedgerApi } from '@/lib/api'
+import { exportInvoicesXlsx } from '@/lib/invoiceExport'
 import {
   Building2, Plus, Search, Pencil, Trash2, X, ChevronLeft, ChevronRight,
   Hash, MapPin, FileText, DollarSign, Tag, Receipt,
   RefreshCw, AlertCircle, FileSpreadsheet, ArrowDownLeft,
-  TrendingUp, TrendingDown, CheckCircle2, BookOpen, Printer, Clock, Layers,
+  TrendingUp, TrendingDown, CheckCircle2, BookOpen, Printer, Clock, Layers, Download, ChevronDown,
 } from 'lucide-react'
 
 const TYPE_META = {
@@ -374,6 +375,25 @@ const CSS = `
 
   /* ── All Invoices & Receipts view ── */
   .txn-toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+  .txn-export { position: relative; flex-shrink: 0; }
+  .txn-export-btn {
+    display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: 24px;
+    background: #1F6F5C; color: white; border: none; cursor: pointer;
+    font-family: Poppins, sans-serif; font-size: 12.5px; font-weight: 700;
+  }
+  .txn-export-btn:disabled { opacity: 0.6; cursor: wait; }
+  .txn-export-menu {
+    position: absolute; right: 0; top: calc(100% + 6px); z-index: 50; min-width: 230px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 6px; display: flex; flex-direction: column;
+  }
+  .txn-export-item {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: left;
+    padding: 9px 10px; border: none; background: none; border-radius: 8px; cursor: pointer;
+    font-family: Poppins, sans-serif; font-size: 12.5px; font-weight: 600; color: var(--text);
+  }
+  .txn-export-item:hover { background: var(--bg-alt); }
+  .txn-export-item span { font-size: 11px; font-weight: 500; color: var(--text-muted); }
   .txn-month-nav {
     display: flex; align-items: center; gap: 2px; flex-shrink: 0;
     background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 4px 6px;
@@ -1521,6 +1541,8 @@ function AllTransactionsView() {
   const [err,      setErr]      = useState('')
   const [search,   setSearch]   = useState('')
   const [selectedMonth, setSelectedMonth] = useState(null)
+  const [exportOpen, setExportOpen] = useState(false)
+  const [exporting,  setExporting]  = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true); setErr('')
@@ -1585,6 +1607,22 @@ function AllTransactionsView() {
     return { entries: list, totalInvoiced, totalReceived, invCount, recCount }
   }, [allEntries, activeMonth, search])
 
+  // Exports the selected month in full — the search box only narrows what's on screen.
+  const monthCounts = useMemo(() => {
+    const inMonth = invoices.filter(i => (i.invoice_date || '').slice(0, 7) === activeMonth)
+    return {
+      sale:     inMonth.filter(i => i.customer_type === 'sale_invoice').length,
+      purchase: inMonth.filter(i => i.customer_type === 'purchase_invoice').length,
+    }
+  }, [invoices, activeMonth])
+
+  async function runExport(kinds) {
+    setExportOpen(false); setExporting(true); setErr('')
+    try { await exportInvoicesXlsx(invoices, activeMonth, kinds) }
+    catch(e) { setErr(`Export failed: ${e.message}`) }
+    finally { setExporting(false) }
+  }
+
   const net = totalInvoiced - totalReceived
   const ratioTotal = totalInvoiced + totalReceived
   const invoicedPct = ratioTotal > 0 ? (totalInvoiced / ratioTotal) * 100 : 50
@@ -1625,6 +1663,24 @@ function AllTransactionsView() {
             {monthKeys.map(k => <option key={k} value={k}>{fmtMonthTitle(k)}</option>)}
           </select>
           <button className="txn-month-nav-btn" onClick={goNewer} disabled={!canGoNewer} title="Newer month"><ChevronRight size={15}/></button>
+        </div>
+        <div className="txn-export" onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) setExportOpen(false) }}>
+          <button className="txn-export-btn" onClick={() => setExportOpen(o => !o)} disabled={exporting || !activeMonth}>
+            <Download size={14}/> {exporting ? 'Preparing…' : 'Export Excel'} <ChevronDown size={13}/>
+          </button>
+          {exportOpen && (
+            <div className="txn-export-menu">
+              <button className="txn-export-item" onClick={() => runExport(['sale'])}>
+                Sale Invoices <span>{monthCounts.sale} in {fmtMonthTitle(activeMonth)}</span>
+              </button>
+              <button className="txn-export-item" onClick={() => runExport(['purchase'])}>
+                Purchase Invoices <span>{monthCounts.purchase} in {fmtMonthTitle(activeMonth)}</span>
+              </button>
+              <button className="txn-export-item" onClick={() => runExport(['sale', 'purchase'])}>
+                Both <span>one file, two sheets</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

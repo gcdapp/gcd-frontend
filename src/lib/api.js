@@ -13,16 +13,26 @@ function getToken() {
   return localStorage.getItem('gcd_token')
 }
 
-async function request(method, path, body) {
+// timeoutMs is opt-in (most callers pass nothing and wait as long as it takes — bulk
+// uploads legitimately run for a while). Where it is set, a server that never answers
+// turns into a normal thrown error the caller can show, instead of a spinner forever.
+async function request(method, path, body, timeoutMs) {
   const token = getToken()
-  const res   = await fetch(`${BASE}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  })
+  let res
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+      ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
+    })
+  } catch (e) {
+    if (e.name === 'TimeoutError' || e.name === 'AbortError') throw new Error('The server took too long to respond — please try again')
+    throw e
+  }
 
   if (res.status === 401) {
     if (typeof window !== 'undefined') {
@@ -33,14 +43,16 @@ async function request(method, path, body) {
     throw new Error('Unauthorized')
   }
 
-  const data = await res.json()
+  // A gateway error page (e.g. during a redeploy) isn't JSON — don't let the parse
+  // failure hide the real status.
+  const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
   return data
 }
 
 export const api = {
   get:    (path)        => request('GET',    path),
-  post:   (path, body)  => request('POST',   path, body),
+  post:   (path, body, timeoutMs) => request('POST', path, body, timeoutMs),
   put:    (path, body)  => request('PUT',    path, body),
   patch:  (path, body)  => request('PATCH',  path, body),
   delete: (path)        => request('DELETE', path),
@@ -71,7 +83,7 @@ export const payrollApi = {
   addDeduction:   (data)        => api.post('/api/payroll/deductions', data),
   removeDeduction:(id)          => api.delete(`/api/payroll/deductions/${id}`),
   addBonus:       (data)        => api.post('/api/payroll/bonuses', data),
-  markPaid:       (emp_id, month) => api.post('/api/payroll/mark-paid',   { emp_id, month }),
+  markPaid:       (emp_id, month) => api.post('/api/payroll/mark-paid',   { emp_id, month }, 30000),
   markUnpaid:     (emp_id, month) => api.post('/api/payroll/mark-unpaid', { emp_id, month }),
   addUnits:       (data)        => api.post('/api/payroll/units', data),
   addUnitsBulk:   (month, records, project_type) => api.post('/api/payroll/units/bulk', { month, records, project_type }),

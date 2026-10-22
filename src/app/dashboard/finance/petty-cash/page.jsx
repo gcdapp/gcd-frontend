@@ -1109,6 +1109,27 @@ export default function PettyCashPage() {
     return myMonthFilter === 'all' ? recs : recs.filter(r => monthKey(r.date) === myMonthFilter)
   }, [myData?.records, myMonthFilter])
 
+  // Exports exactly what the Transaction History list is showing (respects the
+  // month filter) — the user's own records only, nothing they can't already see.
+  function downloadMyRecords() {
+    const csv = Papa.unparse(myFilteredRecords.map(r => ({
+      Date:        String(r.date || '').slice(0, 10),
+      Type:        r.type === 'allocation' ? 'Cash Received' : 'Expense',
+      Category:    r.expense_type || '',
+      Amount:      Number(r.amount || 0).toFixed(2),
+      Note:        r.note || '',
+      Project:     ALL_PROJECT_LABELS[r.project_type] || r.project_type || '',
+      'DA ID':     r.emp_id || '',
+      'DA Name':   r.emp_name || '',
+      'Entered By': r.created_by_name || '',
+    })))
+    // BOM so Excel opens it as UTF-8
+    const url = URL.createObjectURL(new Blob(['﻿' + csv], { type:'text/csv;charset=utf-8' }))
+    const a = document.createElement('a')
+    a.href = url; a.download = `petty_cash_${(user?.name || 'records').replace(/\s+/g, '_')}_${myMonthFilter === 'all' ? 'all' : myMonthFilter}.csv`
+    a.click(); URL.revokeObjectURL(url)
+  }
+
   const recentMonthOptions = useMemo(
     () => recentMonths.map(k => ({ key: k, label: monthKeyLabel(k) })),
     [recentMonths]
@@ -1367,6 +1388,12 @@ export default function PettyCashPage() {
                     <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>{myFilteredRecords.length} records</span>
                   )}
                   <MonthFilterSelect months={myMonths} value={myMonthFilter} onChange={setMyMonthFilter}/>
+                  {myFilteredRecords.length > 0 && (
+                    <button onClick={downloadMyRecords}
+                      style={{ display:'flex', alignItems:'center', gap:5, fontSize:11.5, fontWeight:700, color:'#2E7D52', background:'none', border:'none', cursor:'pointer', fontFamily:'inherit' }}>
+                      <Download size={12}/> Download CSV
+                    </button>
+                  )}
                   {canDelete && myFilteredRecords.length > 0 && (
                     <button onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
                       style={{ fontSize:11.5, fontWeight:700, color: selectMode?'var(--text-muted)':'#DC2626', background:'none', border:'none', cursor:'pointer', fontFamily:'inherit' }}>

@@ -1670,7 +1670,7 @@ export default function PayrollPage() {
       onConfirm:async()=>{
         setConfirmDlg(null)
         setMarkingPaid(s=>new Set(s).add(slip.id))
-        try{await payrollApi.markPaid(slip.id,month);load()}catch(e){console.error(e)}
+        try{await payrollApi.markPaid(slip.id,month);load()}catch(e){console.error(e);alert(`Could not mark ${slip.name} as paid: ${e.message}`)}
         finally{setMarkingPaid(s=>{const n=new Set(s);n.delete(slip.id);return n})}
       },
     })
@@ -1697,9 +1697,16 @@ export default function PayrollPage() {
         setConfirmDlg(null)
         const ids=unpaid.map(s=>s.id)
         setMarkingPaid(new Set(ids))
-        await Promise.all(unpaid.map(s=>payrollApi.markPaid(s.id,month)))
-        setMarkingPaid(new Set())
-        load()
+        // allSettled + finally: one failed employee used to reject the whole Promise.all
+        // and skip the reset below, leaving every card stuck on "Saving…" forever.
+        try {
+          const results=await Promise.allSettled(unpaid.map(s=>payrollApi.markPaid(s.id,month)))
+          const failed=results.map((r,i)=>r.status==='rejected'?`${unpaid[i].name}: ${r.reason?.message||'failed'}`:null).filter(Boolean)
+          if (failed.length) alert(`${unpaid.length-failed.length} marked paid, ${failed.length} failed:\n`+failed.join('\n'))
+        } finally {
+          setMarkingPaid(new Set())
+          load()
+        }
       },
     })
   }

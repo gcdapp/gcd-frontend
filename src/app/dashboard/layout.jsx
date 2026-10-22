@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth'
 import { AlertsProvider } from '@/lib/AlertsContext'
 import Sidebar from '@/components/layout/Sidebar'
 import Topbar from '@/components/layout/Topbar'
+import UpdatePopup from '@/components/layout/UpdatePopup'
 import Link from 'next/link'
 import { LayoutDashboard, Users, DollarSign, Radio, X } from 'lucide-react'
 
@@ -83,6 +84,7 @@ export default function DashboardLayout({ children }) {
 <ErrorBoundary>{children}</ErrorBoundary>
         </main>
       </div>
+      <UpdatePopup/>
 
     </div>
     </AlertsProvider>
