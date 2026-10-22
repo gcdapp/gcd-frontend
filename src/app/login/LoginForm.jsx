@@ -76,15 +76,15 @@ export default function LoginPage() {
           justify-content: center;
           gap: 8px;
           transition: all var(--t-base);
-          background: linear-gradient(135deg, #B8860B 0%, #D4A017 100%);
+          background: var(--gold);
           color: #fff;
           box-shadow: var(--shadow-gold);
         }
         .sign-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
+          background: var(--gold-hover);
           box-shadow: var(--shadow-gold-lg);
         }
-        .sign-btn:active:not(:disabled) { transform: translateY(0); }
+        .sign-btn:active:not(:disabled) { transform: translateY(1px); }
         .sign-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
         @media (max-width: 768px) {
@@ -150,7 +150,7 @@ export default function LoginPage() {
             {/* Heading */}
             <div style={{ marginBottom:36 }}>
               <h1 style={{ fontWeight:800, fontSize:28, color:'var(--text)', margin:'0 0 8px', letterSpacing:'-0.03em' }}>
-                Welcome back 👋
+                Welcome back
               </h1>
               <p style={{ fontSize:14, color:'var(--text-muted)', margin:0, lineHeight:1.5 }}>
                 Sign in to your GCD Operations Dashboard to continue.

@@ -7,12 +7,12 @@ import { API } from '@/lib/api'
 
 export const DOC_TYPES = [
   { v:'passport',    l:'Passport',          e:'🛂', c:'#1D6FA4', bg:'#EFF6FF' },
-  { v:'emirates_id', l:'Emirates ID',        e:'🪪', c:'#B8860B', bg:'#FDF6E3' },
+  { v:'emirates_id', l:'Emirates ID',        e:'🪪', c:'#8F6807', bg:'#FDF6E3' },
   { v:'visa',        l:'Visa Copy',          e:'✈️', c:'#7C3AED', bg:'#F5F3FF' },
   { v:'license',     l:'Driving License',    e:'🚗', c:'#2E7D52', bg:'#ECFDF5' },
   { v:'iloe',        l:'ILOE Certificate',   e:'📋', c:'#B45309', bg:'#FFFBEB' },
   { v:'national_id', l:'National ID',        e:'🪪', c:'#6B5D4A', bg:'#F5F4F1' },
-  { v:'other',       l:'Other Document',     e:'📎', c:'#A89880', bg:'#FAFAF8' },
+  { v:'other',       l:'Other Document',     e:'📎', c:'#78716C', bg:'#FAFAF8' },
 ]
 
 function hdr() { return { 'Content-Type':'application/json', Authorization:`Bearer ${localStorage.getItem('gcd_token')}` } }
@@ -86,7 +86,7 @@ export default function DocModal({ emp, employees, editDoc, onSave, onClose }) {
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
             <div>
               <h3 style={{ fontWeight:900, fontSize:17, color:'#1A1612' }}>{isEdit?'Edit':'Add'} Document</h3>
-              <p style={{ fontSize:12, color:'#A89880', marginTop:2 }}>{isEdit?editDoc.emp_name:emp?.name||'Select employee below'}</p>
+              <p style={{ fontSize:12, color:'#78716C', marginTop:2 }}>{isEdit?editDoc.emp_name:emp?.name||'Select employee below'}</p>
             </div>
             <button onClick={onClose} style={{ width:30, height:30, borderRadius:'50%', background:'rgba(0,0,0,0.06)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}><X size={14}/></button>
           </div>
@@ -96,7 +96,7 @@ export default function DocModal({ emp, employees, editDoc, onSave, onClose }) {
               <button key={t.v} onClick={()=>setDocType(t.v)} type="button"
                 style={{ padding:'8px 12px', borderRadius:20, border:`2px solid ${docType===t.v?t.c:'#EAE6DE'}`, background:docType===t.v?t.bg:'#FFF', cursor:'pointer', whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:5, transition:'all 0.18s', flexShrink:0 }}>
                 <span style={{ fontSize:14 }}>{t.e}</span>
-                <span style={{ fontSize:11.5, fontWeight:docType===t.v?700:500, color:docType===t.v?t.c:'#A89880' }}>{t.l}</span>
+                <span style={{ fontSize:11.5, fontWeight:docType===t.v?700:500, color:docType===t.v?t.c:'#78716C' }}>{t.l}</span>
               </button>
             ))}
           </div>
@@ -126,7 +126,7 @@ export default function DocModal({ emp, employees, editDoc, onSave, onClose }) {
               const TI = t.I
               return (
                 <button key={t.v} type="button" onClick={()=>setMode(t.v)}
-                  style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'9px', borderRadius:10, border:`2px solid ${mode===t.v?'#B8860B':'#EAE6DE'}`, background:mode===t.v?'#FDF6E3':'#FFF', color:mode===t.v?'#B8860B':'#A89880', fontWeight:mode===t.v?700:500, fontSize:12.5, cursor:'pointer' }}>
+                  style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'9px', borderRadius:10, border:`2px solid ${mode===t.v?'#8F6807':'#EAE6DE'}`, background:mode===t.v?'#FDF6E3':'#FFF', color:mode===t.v?'#8F6807':'#78716C', fontWeight:mode===t.v?700:500, fontSize:12.5, cursor:'pointer' }}>
                   <TI size={13}/> {t.l}
                 </button>
               )
@@ -137,7 +137,7 @@ export default function DocModal({ emp, employees, editDoc, onSave, onClose }) {
             <div>
               <label className="input-label">File *</label>
               <label style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', borderRadius:10, border:'1.5px dashed #D4A017', background:'#FDF6E3', cursor:'pointer' }}>
-                <UploadCloud size={16} color="#B8860B"/>
+                <UploadCloud size={16} color="#8F6807"/>
                 <span style={{ fontSize:12.5, color:'#6B5D4A', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                   {file ? file.name : editDoc?.file_url ? 'Replace uploaded file…' : 'Click to choose a file (max 10MB)'}
                 </span>
@@ -165,7 +165,7 @@ export default function DocModal({ emp, employees, editDoc, onSave, onClose }) {
                   style={{ borderRadius:10, paddingRight:40 }}/>
                 {driveLink && (
                   <a href={driveLink} target="_blank" rel="noopener noreferrer"
-                    style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', color:'#B8860B', display:'flex' }}>
+                    style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', color:'#8F6807', display:'flex' }}>
                     <ExternalLink size={15}/>
                   </a>
                 )}
@@ -192,7 +192,7 @@ export default function DocModal({ emp, employees, editDoc, onSave, onClose }) {
           <div style={{ display:'flex', gap:10, marginTop:4 }}>
             <button onClick={onClose} className="btn btn-secondary" style={{ flex:1, justifyContent:'center' }}>Cancel</button>
             <button onClick={handleSave} disabled={saving}
-              style={{ flex:2, display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'11px', borderRadius:100, background:`linear-gradient(135deg,${selectedType?.c||'#B8860B'},${selectedType?.c||'#B8860B'}cc)`, color:'white', fontWeight:700, fontSize:13, border:'none', cursor:'pointer', opacity:saving?0.6:1 }}>
+              style={{ flex:2, display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'11px', borderRadius:100, background:`linear-gradient(135deg,${selectedType?.c||'#8F6807'},${selectedType?.c||'#8F6807'}cc)`, color:'white', fontWeight:700, fontSize:13, border:'none', cursor:'pointer', opacity:saving?0.6:1 }}>
               {saving ? <><span style={{ width:14, height:14, border:'2px solid rgba(255,255,255,0.4)', borderTopColor:'white', borderRadius:'50%', animation:'spin 0.8s linear infinite', display:'inline-block' }}/> Saving…</> : isEdit ? 'Save Changes' : 'Add Document'}
             </button>
           </div>

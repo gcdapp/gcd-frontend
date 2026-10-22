@@ -12,7 +12,7 @@ function insStatus(expiry) {
   return             { label:'Active',        cls:'badge-success', color:'#2E7D52', bc:'#A7F3D0' }
 }
 const FINE_STATUS = { paid:{l:'Paid',c:'badge-success'}, pending:{l:'Pending',c:'badge-warning'}, disputed:{l:'Disputed',c:'badge-info'} }
-const SRC_COLORS  = { Amazon:'#FF9900', iMile:'#E85C4C', Noon:'#B8860B', Internal:'#6B5D4A', Traffic:'#7C3AED' }
+const SRC_COLORS  = { Amazon:'#FF9900', iMile:'#E85C4C', Noon:'#8F6807', Internal:'#6B5D4A', Traffic:'#7C3AED' }
 
 function StatPill({ label, value, color, bg, bc, delay }) {
   return (
@@ -55,7 +55,7 @@ export default function CompliancePage() {
   const filteredFines = fineFilter==='All' ? fines : fines.filter(f=>f.status===fineFilter.toLowerCase())
   const pendingCount  = fines.filter(f=>f.status==='pending').length
 
-  if (loading) return <div style={{ padding:60, textAlign:'center', color:'#A89880' }}>Loading…</div>
+  if (loading) return <div style={{ padding:60, textAlign:'center', color:'#78716C' }}>Loading…</div>
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:20, animation:'slideUp 0.35s ease' }}>
@@ -88,7 +88,7 @@ export default function CompliancePage() {
             <StatPill label="Active"         value={insActive}                      color="#2E7D52" bg="#ECFDF5" bc="#A7F3D0" delay={0.05}/>
             <StatPill label="Expiring Soon"  value={insExpiring}                    color="#B45309" bg="#FFFBEB" bc="#FCD34D" delay={0.10}/>
             <StatPill label="Expired"        value={insExpired}                     color="#C0392B" bg="#FEF2F2" bc="#FCA5A5" delay={0.15}/>
-            <StatPill label="Annual Premium" value={`AED ${insTotal.toLocaleString()}`} color="#B8860B" bg="#FDF6E3" bc="#F0D78C" delay={0.20}/>
+            <StatPill label="Annual Premium" value={`AED ${insTotal.toLocaleString()}`} color="#8F6807" bg="#FDF6E3" bc="#F0D78C" delay={0.20}/>
           </div>
           {(insExpired+insExpiring)>0 && (
             <div style={{ background:'#FEF2F2', border:'1px solid #FCA5A5', borderRadius:12, padding:'14px 18px', display:'flex', gap:12, alignItems:'center' }}>
@@ -105,7 +105,7 @@ export default function CompliancePage() {
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
                     <div>
                       <div style={{ fontWeight:700, fontSize:14, color:'#1A1612' }}>{p.type} Insurance</div>
-                      <div style={{ fontSize:11.5, color:'#A89880', marginTop:2 }}>{p.provider}</div>
+                      <div style={{ fontSize:11.5, color:'#78716C', marginTop:2 }}>{p.provider}</div>
                     </div>
                     <span className={`badge ${st.cls}`}>{st.label}</span>
                   </div>
@@ -167,7 +167,7 @@ export default function CompliancePage() {
                         <span className={`badge ${FINE_STATUS[fine.status]?.c}`}>{FINE_STATUS[fine.status]?.l}</span>
                       </div>
                       <div style={{ fontSize:13, color:'#6B5D4A', fontWeight:500, marginBottom:5 }}>{fine.violation}</div>
-                      <div style={{ display:'flex', gap:12, flexWrap:'wrap', fontSize:11.5, color:'#A89880' }}>
+                      <div style={{ display:'flex', gap:12, flexWrap:'wrap', fontSize:11.5, color:'#78716C' }}>
                         <span>📅 {fine.date?.slice(0,10)}</span>
                         {fine.reference&&<span style={{ fontFamily:'inherit' }}>Ref: {fine.reference}</span>}
                         {fine.paid_on&&<span style={{ color:'#2E7D52' }}>✓ Settled {fine.paid_on?.slice(0,10)}</span>}

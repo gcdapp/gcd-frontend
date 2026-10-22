@@ -49,7 +49,7 @@ const BON_TYPES = [
   {v:'performance',   l:'Performance',           c:'#10B981'},
   {v:'kpi',           l:'KPI Bonus',             c:'#3B82F6'},
   {v:'reimbursement', l:'Expense Reimbursement', c:'#0EA5E9'},
-  {v:'other',         l:'Other',                 c:'#B8860B'},
+  {v:'other',         l:'Other',                 c:'#8F6807'},
 ]
 const ROLE_CFG = {
   admin:           {l:'Admin',    c:'#7C3AED', bg:'rgba(124,58,237,0.1)'},
@@ -57,7 +57,7 @@ const ROLE_CFG = {
   general_manager: {l:'GM',       c:'#0F766E', bg:'rgba(15,118,110,0.1)'},
   hr:              {l:'HR',       c:'#B45309', bg:'rgba(180,83,9,0.1)'},
   accountant:      {l:'Acct',     c:'#2E7D52', bg:'rgba(46,125,82,0.1)'},
-  poc:             {l:'POC',      c:'#B8860B', bg:'rgba(184,134,11,0.1)'},
+  poc:             {l:'POC',      c:'#8F6807', bg:'rgba(184,134,11,0.1)'},
   driver:          {l:'DA',       c:'#64748B', bg:'rgba(100,116,139,0.1)'},
   packer:          {l:'Packer',   c:'#64748B', bg:'rgba(100,116,139,0.1)'},
 }
@@ -77,7 +77,7 @@ function fmt(n) { return Number(n||0).toLocaleString('en-AE',{minimumFractionDig
 const GlassTip = ({active,payload,label}) => {
   if (!active||!payload?.length) return null
   return (
-    <div style={{background:'rgba(255,255,255,0.97)',backdropFilter:'blur(12px)',border:'1px solid rgba(0,0,0,0.08)',borderRadius:10,padding:'8px 12px',boxShadow:'0 4px 16px rgba(0,0,0,0.1)',fontFamily:'Poppins,sans-serif',fontSize:11.5}}>
+    <div style={{background:'rgba(255,255,255,0.97)',backdropFilter:'blur(12px)',border:'1px solid rgba(0,0,0,0.08)',borderRadius:10,padding:'8px 12px',boxShadow:'0 4px 16px rgba(0,0,0,0.1)',fontFamily:'inherit',fontSize:11.5}}>
       <div style={{fontWeight:700,color:'#6B5D4A',marginBottom:4}}>{label}</div>
       {payload.map(p=>(
         <div key={p.name} style={{color:p.color||p.fill,fontWeight:600,display:'flex',gap:10,justifyContent:'space-between'}}>
@@ -102,7 +102,7 @@ function KpiSpark({color}) {
 // unlike random) — gives each row visual identity instead of one flat gold circle
 // repeated 84 times. Palette stays within the app's existing token colors.
 const AVATAR_PALETTE = [
-  {c:'#B8860B', bg:'rgba(184,134,11,0.12)', bd:'rgba(184,134,11,0.28)'},
+  {c:'#8F6807', bg:'rgba(184,134,11,0.12)', bd:'rgba(184,134,11,0.28)'},
   {c:'#10B981', bg:'rgba(16,185,129,0.12)', bd:'rgba(16,185,129,0.28)'},
   {c:'#3B82F6', bg:'rgba(59,130,246,0.12)', bd:'rgba(59,130,246,0.28)'},
   {c:'#7C3AED', bg:'rgba(124,58,237,0.12)', bd:'rgba(124,58,237,0.28)'},
@@ -450,7 +450,7 @@ function BonusModal({employees, month, onSave, onClose}) {
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:7}}>
             {BON_TYPES.map(t=>(
               <button key={t.v} onClick={()=>setType(t.v)} type="button"
-                style={{padding:'8px',borderRadius:100,border:`2px solid ${type===t.v?t.c:'rgba(0,0,0,0.1)'}`,background:type===t.v?`${t.c}15`:'transparent',cursor:'pointer',transition:'all 0.15s',fontFamily:'Poppins,sans-serif'}}>
+                style={{padding:'8px',borderRadius:100,border:`2px solid ${type===t.v?t.c:'rgba(0,0,0,0.1)'}`,background:type===t.v?`${t.c}15`:'transparent',cursor:'pointer',transition:'all 0.15s',fontFamily:'inherit'}}>
                 <div style={{fontSize:11,fontWeight:700,color:type===t.v?t.c:'var(--text-muted)'}}>{t.l}</div>
               </button>
             ))}
@@ -459,8 +459,8 @@ function BonusModal({employees, month, onSave, onClose}) {
         <div style={{padding:'16px 22px 20px',display:'flex',flexDirection:'column',gap:12}}>
           {err&&<div style={{background:'#FEF2F2',border:'1px solid #FCA5A5',borderRadius:9,padding:'8px 12px',fontSize:12,color:'#EF4444',display:'flex',gap:6,alignItems:'center'}}><AlertCircle size={12}/>{err}</div>}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-            <button onClick={()=>{setBulk(false);setEmpId('')}} style={{padding:'9px',borderRadius:100,border:`2px solid ${!bulk?'#10B981':'rgba(0,0,0,0.1)'}`,background:!bulk?'rgba(16,185,129,0.1)':'transparent',color:!bulk?'#10B981':'var(--text-muted)',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'Poppins,sans-serif'}}>Single</button>
-            <button onClick={()=>setBulk(true)} style={{padding:'9px',borderRadius:100,border:`2px solid ${bulk?'#10B981':'rgba(0,0,0,0.1)'}`,background:bulk?'rgba(16,185,129,0.1)':'transparent',color:bulk?'#10B981':'var(--text-muted)',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'Poppins,sans-serif'}}>All ({employees.length})</button>
+            <button onClick={()=>{setBulk(false);setEmpId('')}} style={{padding:'9px',borderRadius:100,border:`2px solid ${!bulk?'#10B981':'rgba(0,0,0,0.1)'}`,background:!bulk?'rgba(16,185,129,0.1)':'transparent',color:!bulk?'#10B981':'var(--text-muted)',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>Single</button>
+            <button onClick={()=>setBulk(true)} style={{padding:'9px',borderRadius:100,border:`2px solid ${bulk?'#10B981':'rgba(0,0,0,0.1)'}`,background:bulk?'rgba(16,185,129,0.1)':'transparent',color:bulk?'#10B981':'var(--text-muted)',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>All ({employees.length})</button>
           </div>
           {!bulk&&<div><label className="input-label">Employee</label>
             <select className="input" value={empId} onChange={e=>setEmpId(e.target.value)}>
@@ -475,7 +475,7 @@ function BonusModal({employees, month, onSave, onClose}) {
             <input className="input" value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Reason for bonus"/></div>
           <div style={{display:'flex',gap:10,marginTop:4}}>
             <button onClick={onClose} className="btn btn-secondary" style={{flex:1,justifyContent:'center'}}>Cancel</button>
-            <button onClick={handleSave} disabled={saving} style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'11px',borderRadius:100,background:'linear-gradient(135deg,#10B981,#22C55E)',color:'white',fontWeight:700,fontSize:13,border:'none',cursor:'pointer',fontFamily:'Poppins,sans-serif',opacity:saving?0.7:1}}>
+            <button onClick={handleSave} disabled={saving} style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'11px',borderRadius:100,background:'linear-gradient(135deg,#10B981,#22C55E)',color:'white',fontWeight:700,fontSize:13,border:'none',cursor:'pointer',fontFamily:'inherit',opacity:saving?0.7:1}}>
               {saving?'Saving…':bulk?`Add to All`:'Add Bonus'}
             </button>
           </div>
@@ -509,7 +509,7 @@ function DeductionModal({employees, month, onSave, onClose}) {
           <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
             {DED_TYPES.map(t=>(
               <button key={t.v} onClick={()=>set('type',t.v)} type="button"
-                style={{padding:'5px 11px',borderRadius:20,border:`2px solid ${form.type===t.v?t.c:'rgba(0,0,0,0.1)'}`,background:form.type===t.v?`${t.c}12`:'transparent',cursor:'pointer',fontFamily:'Poppins,sans-serif'}}>
+                style={{padding:'5px 11px',borderRadius:20,border:`2px solid ${form.type===t.v?t.c:'rgba(0,0,0,0.1)'}`,background:form.type===t.v?`${t.c}12`:'transparent',cursor:'pointer',fontFamily:'inherit'}}>
                 <span style={{fontSize:11,fontWeight:700,color:form.type===t.v?t.c:'var(--text-muted)'}}>{t.l}</span>
               </button>
             ))}
@@ -536,7 +536,7 @@ function DeductionModal({employees, month, onSave, onClose}) {
           </div>
           <div style={{display:'flex',gap:10,marginTop:4}}>
             <button onClick={onClose} className="btn btn-secondary" style={{flex:1,justifyContent:'center'}}>Cancel</button>
-            <button onClick={handleSave} disabled={saving} style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'11px',borderRadius:100,background:'linear-gradient(135deg,#EF4444,#F87171)',color:'white',fontWeight:700,fontSize:13,border:'none',cursor:'pointer',fontFamily:'Poppins,sans-serif',opacity:saving?0.7:1}}>
+            <button onClick={handleSave} disabled={saving} style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'11px',borderRadius:100,background:'linear-gradient(135deg,#EF4444,#F87171)',color:'white',fontWeight:700,fontSize:13,border:'none',cursor:'pointer',fontFamily:'inherit',opacity:saving?0.7:1}}>
               {saving?'Saving…':'Add Deduction'}
             </button>
           </div>
@@ -869,7 +869,7 @@ function GenericUnitsModal({employees, month, projectType, initialEmpId, subType
 
           <div style={{display:'flex',gap:10,marginTop:4}}>
             <button onClick={onClose} className="btn btn-secondary" style={{flex:1,justifyContent:'center'}}>Cancel</button>
-            <button onClick={handleSave} disabled={saving} style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'11px',borderRadius:100,background:'linear-gradient(135deg,#B8860B,#D4A017)',color:'white',fontWeight:700,fontSize:13,border:'none',cursor:'pointer',fontFamily:'Poppins,sans-serif',opacity:saving?0.7:1}}>
+            <button onClick={handleSave} disabled={saving} style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'11px',borderRadius:100,background:'linear-gradient(135deg,#8F6807,#D4A017)',color:'white',fontWeight:700,fontSize:13,border:'none',cursor:'pointer',fontFamily:'inherit',opacity:saving?0.7:1}}>
               {saving?'Saving…':'Save'}
             </button>
           </div>
@@ -1146,7 +1146,7 @@ function BulkUnitsModal({month, projectType, employees, onSave, onClose}) {
                   style={{display:'flex',alignItems:'center',gap:6,padding:'9px 14px',borderRadius:10,border:'1px solid var(--border)',background:'var(--bg-alt)',color:'var(--text)',fontWeight:600,fontSize:12.5,cursor:'pointer',fontFamily:'inherit'}}>
                   <Download size={13}/> Download Template
                 </button>
-                <label style={{display:'flex',alignItems:'center',gap:6,padding:'9px 14px',borderRadius:10,border:'1px solid rgba(184,134,11,0.5)',background:'rgba(184,134,11,0.15)',color:'#B8860B',fontWeight:700,fontSize:12.5,cursor:'pointer'}}>
+                <label style={{display:'flex',alignItems:'center',gap:6,padding:'9px 14px',borderRadius:10,border:'1px solid rgba(184,134,11,0.5)',background:'rgba(184,134,11,0.15)',color:'#8F6807',fontWeight:700,fontSize:12.5,cursor:'pointer'}}>
                   <UploadCloud size={13}/> Choose CSV File
                   <input type="file" accept=".csv" onChange={handleFile} style={{display:'none'}}/>
                 </label>
@@ -1174,7 +1174,7 @@ function BulkUnitsModal({month, projectType, employees, onSave, onClose}) {
               )}
 
               <button onClick={handleUpload} disabled={uploading||!validRows.length}
-                style={{padding:'13px',borderRadius:12,border:'none',cursor:(uploading||!validRows.length)?'not-allowed':'pointer',background:(uploading||!validRows.length)?'var(--border)':'linear-gradient(135deg,#B8860B,#D4A017)',color:(uploading||!validRows.length)?'var(--text-muted)':'white',fontWeight:700,fontSize:14,fontFamily:'Poppins,sans-serif',marginTop:4,transition:'all 0.2s'}}>
+                style={{padding:'13px',borderRadius:12,border:'none',cursor:(uploading||!validRows.length)?'not-allowed':'pointer',background:(uploading||!validRows.length)?'var(--border)':'linear-gradient(135deg,#8F6807,#D4A017)',color:(uploading||!validRows.length)?'var(--text-muted)':'white',fontWeight:700,fontSize:14,fontFamily:'inherit',marginTop:4,transition:'all 0.2s'}}>
                 {uploading?'Uploading…':validRows.length?`Upload ${validRows.length} Record${validRows.length!==1?'s':''}`:'Choose a file to continue'}
               </button>
             </>
@@ -1197,7 +1197,7 @@ const PAY_CSS = `
   .py-header-icon { width:44px; height:44px; border-radius:12px; background:var(--gold-pale); border:1px solid var(--gold-border); display:flex; align-items:center; justify-content:center; color:var(--gold); flex-shrink:0; }
   .py-header-title { font-size:20px; font-weight:800; color:var(--text); margin:0; }
   .py-header-sub   { font-size:11.5px; color:var(--text-muted); margin-top:3px; }
-  .py-month-sel  { margin-left:auto; padding:8px 14px; border-radius:20px; border:1.5px solid var(--border-med); background:var(--card); color:var(--text); font-size:13px; font-weight:600; cursor:pointer; outline:none; font-family:Poppins,sans-serif; }
+  .py-month-sel  { margin-left:auto; padding:8px 14px; border-radius:20px; border:1.5px solid var(--border-med); background:var(--card); color:var(--text); font-size:13px; font-weight:600; cursor:pointer; outline:none; font-family: inherit; }
 
   /* KPI cards */
   .py-kpi-cards    { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
@@ -1217,9 +1217,9 @@ const PAY_CSS = `
   .py-toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .py-search-wrap { flex:1 1 180px; position:relative; }
   .py-search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); pointer-events:none; }
-  .py-search { width:100%; padding:8px 12px 8px 34px; border-radius:20px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-size:12.5px; font-family:Poppins,sans-serif; outline:none; box-sizing:border-box; transition:border-color var(--t-fast),box-shadow var(--t-fast); }
+  .py-search { width:100%; padding:8px 12px 8px 34px; border-radius:20px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-size:12.5px; font-family: inherit; outline:none; box-sizing:border-box; transition:border-color var(--t-fast),box-shadow var(--t-fast); }
   .py-search:focus { border-color:var(--gold-border); box-shadow:0 0 0 3px var(--gold-pale); }
-  .py-tbtn { display:flex; align-items:center; gap:5px; padding:8px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; font-family:Poppins,sans-serif; white-space:nowrap; transition:opacity 0.15s,transform 0.1s; }
+  .py-tbtn { display:flex; align-items:center; gap:5px; padding:8px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; font-family: inherit; white-space:nowrap; transition:opacity 0.15s,transform 0.1s; }
   .py-tbtn:hover:not(:disabled) { opacity:0.82; transform:translateY(-1px); }
   .py-tbtn:active:not(:disabled) { opacity:0.7; transform:translateY(0) scale(0.96); }
   .py-tbtn:disabled { opacity:0.45; cursor:not-allowed; }
@@ -1227,14 +1227,14 @@ const PAY_CSS = `
   .py-tbtn-slip  { background:rgba(29,111,164,0.1); border:1.5px solid rgba(29,111,164,0.3); color:#1D6FA4; }
   .py-tbtn-bonus { background:rgba(16,185,129,0.1); border:1.5px solid rgba(16,185,129,0.3); color:#10B981; }
   .py-tbtn-ded   { background:rgba(239,68,68,0.08); border:1.5px solid rgba(239,68,68,0.25); color:#EF4444; }
-  .py-tbtn-all   { background:linear-gradient(135deg,#B8860B,#D4A017); border:none; color:white; box-shadow:var(--shadow-gold); }
+  .py-tbtn-all   { background:linear-gradient(135deg,#8F6807,#D4A017); border:none; color:white; box-shadow:var(--shadow-gold); }
   .py-tbtn-all:hover { box-shadow:var(--shadow-gold-lg); }
 
   /* Section header */
   .py-sec-hdr { display:flex; align-items:center; justify-content:space-between; padding:12px 0 8px; border-bottom:1.5px solid var(--border); margin-top:4px; }
   .py-sec-title { display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:800; color:var(--text); text-transform:uppercase; letter-spacing:0.07em; }
-  .py-sec-count { background:rgba(184,134,11,0.12); color:#B8860B; border:1px solid rgba(184,134,11,0.25); border-radius:20px; padding:1px 9px; font-size:10px; font-weight:700; letter-spacing:0; text-transform:none; }
-  .py-sec-mark { display:flex; align-items:center; gap:4px; padding:5px 12px; border-radius:20px; border:1px solid rgba(16,185,129,0.3); background:rgba(16,185,129,0.07); color:#10B981; font-size:11px; font-weight:700; cursor:pointer; font-family:Poppins,sans-serif; transition:opacity 0.15s; }
+  .py-sec-count { background:rgba(184,134,11,0.12); color:#8F6807; border:1px solid rgba(184,134,11,0.25); border-radius:20px; padding:1px 9px; font-size:10px; font-weight:700; letter-spacing:0; text-transform:none; }
+  .py-sec-mark { display:flex; align-items:center; gap:4px; padding:5px 12px; border-radius:20px; border:1px solid rgba(16,185,129,0.3); background:rgba(16,185,129,0.07); color:#10B981; font-size:11px; font-weight:700; cursor:pointer; font-family: inherit; transition:opacity 0.15s; }
   .py-sec-mark:hover { opacity:0.8; }
 
   /* Employee row */
@@ -1244,7 +1244,7 @@ const PAY_CSS = `
   .py-row-pend  { border-color:rgba(184,134,11,0.28); }
   .py-row-top   { height:3px; flex-shrink:0; }
   .py-row-paid  .py-row-top { background:linear-gradient(90deg,#34D399,#10B981); }
-  .py-row-pend  .py-row-top { background:linear-gradient(90deg,#B8860B,#D4A017); }
+  .py-row-pend  .py-row-top { background:linear-gradient(90deg,#8F6807,#D4A017); }
   .py-row-inner { display:flex; align-items:center; gap:14px; padding:14px 18px; cursor:pointer; user-select:none; }
   .py-avatar { width:42px; height:42px; border-radius:50%; border:1.5px solid; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:900; flex-shrink:0; transition:transform var(--t-base); }
   .py-row:hover .py-avatar { transform:scale(1.06); }
@@ -1259,12 +1259,12 @@ const PAY_CSS = `
   .py-col-lbl { font-size:9.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:var(--text-muted); margin-bottom:3px; opacity:0.8; }
   .py-col-val { font-weight:700; font-size:13.5px; color:var(--text); letter-spacing:-0.02em; }
   .py-col-val-ded { color:#EF4444; }
-  .py-col-net .py-col-val { font-weight:900; font-size:17px; color:#B8860B; letter-spacing:-0.03em; }
+  .py-col-net .py-col-val { font-weight:900; font-size:17px; color:#8F6807; letter-spacing:-0.03em; }
   .py-col-net .py-col-val.py-net-paid { color:#10B981; }
 
   /* Badges */
   .py-badge { font-size:9.5px; font-weight:700; border-radius:20px; padding:3px 9px; border:1px solid transparent; white-space:nowrap; letter-spacing:0.02em; }
-  .py-badge-sta { color:#B8860B; background:rgba(184,134,11,0.1); border-color:rgba(184,134,11,0.18); }
+  .py-badge-sta { color:#8F6807; background:rgba(184,134,11,0.1); border-color:rgba(184,134,11,0.18); }
   .py-badge-prj { color:#7C3AED; background:rgba(124,58,237,0.08); border-color:rgba(124,58,237,0.16); }
   .py-status { font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap; border:1px solid transparent; }
   .py-status-paid { color:#10B981; background:rgba(16,185,129,0.1); border-color:rgba(16,185,129,0.2); }
@@ -1278,14 +1278,14 @@ const PAY_CSS = `
   .py-expand-inner { overflow:hidden; min-height:0; }
   .py-expanded { border-top:1px solid var(--border); }
   .py-actions { display:flex; align-items:center; gap:6px; padding:9px 14px; background:var(--bg-alt); flex-wrap:wrap; }
-  .py-act { display:flex; align-items:center; gap:4px; padding:5px 11px; border-radius:8px; background:var(--card); border:1px solid var(--border); color:var(--text); font-size:11.5px; font-weight:600; cursor:pointer; font-family:Poppins,sans-serif; transition:opacity 0.15s; white-space:nowrap; }
+  .py-act { display:flex; align-items:center; gap:4px; padding:5px 11px; border-radius:8px; background:var(--card); border:1px solid var(--border); color:var(--text); font-size:11.5px; font-weight:600; cursor:pointer; font-family: inherit; transition:opacity 0.15s; white-space:nowrap; }
   .py-act:hover { opacity:0.75; }
   .py-act-blue  { border-color:rgba(29,111,164,0.3); color:#1D6FA4; }
   .py-act-green { border-color:rgba(16,185,129,0.3); color:#10B981; }
   .py-spacer { flex:1; }
-  .py-pay-btn { display:flex; align-items:center; gap:5px; padding:6px 14px; border-radius:8px; background:linear-gradient(135deg,#10B981,#22C55E); border:none; color:white; font-size:11.5px; font-weight:700; cursor:pointer; font-family:Poppins,sans-serif; white-space:nowrap; transition:opacity 0.15s; }
+  .py-pay-btn { display:flex; align-items:center; gap:5px; padding:6px 14px; border-radius:8px; background:linear-gradient(135deg,#10B981,#22C55E); border:none; color:white; font-size:11.5px; font-weight:700; cursor:pointer; font-family: inherit; white-space:nowrap; transition:opacity 0.15s; }
   .py-pay-btn:disabled { opacity:0.55; cursor:not-allowed; }
-  .py-unpay-btn { display:flex; align-items:center; gap:5px; padding:6px 14px; border-radius:8px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); color:#EF4444; font-size:11.5px; font-weight:600; cursor:pointer; font-family:Poppins,sans-serif; white-space:nowrap; transition:opacity 0.15s; }
+  .py-unpay-btn { display:flex; align-items:center; gap:5px; padding:6px 14px; border-radius:8px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); color:#EF4444; font-size:11.5px; font-weight:600; cursor:pointer; font-family: inherit; white-space:nowrap; transition:opacity 0.15s; }
   .py-unpay-btn:hover { opacity:0.8; }
 
   /* Bonus / deduction items */
@@ -1313,10 +1313,10 @@ const PAY_CSS = `
 
   /* Driver tabs */
   .py-driver-tabs { display:flex; align-items:center; gap:4px; padding:4px; background:var(--bg-alt); border:1px solid var(--border); border-radius:12px; margin-bottom:10px; flex-wrap:wrap; }
-  .py-driver-tab { display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:9px; border:none; background:transparent; color:var(--text-muted); font-weight:700; font-size:12.5px; cursor:pointer; font-family:Poppins,sans-serif; transition:all 0.15s; }
+  .py-driver-tab { display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:9px; border:none; background:transparent; color:var(--text-muted); font-weight:700; font-size:12.5px; cursor:pointer; font-family: inherit; transition:all 0.15s; }
   .py-driver-tab:hover:not(.active) { color:var(--text); }
   .py-driver-tab:active { transform:scale(0.96); }
-  .py-driver-tab.active { background:var(--card); color:#B8860B; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+  .py-driver-tab.active { background:var(--card); color:#8F6807; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
   .py-driver-tab-count { font-size:10px; font-weight:700; background:rgba(0,0,0,0.06); color:inherit; border-radius:20px; padding:1px 7px; }
   .py-driver-tab.active .py-driver-tab-count { background:rgba(184,134,11,0.15); }
   .py-driver-tab-actions { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
@@ -1329,12 +1329,12 @@ const PAY_CSS = `
   .py-page-arrow:disabled { opacity:0.35; cursor:not-allowed; }
   .py-page-arrow:not(:disabled):hover { opacity:0.75; }
   .py-page-arrow:not(:disabled):active { transform:scale(0.92); }
-  .py-page-num { min-width:28px; height:28px; padding:0 6px; border-radius:8px; border:1.5px solid transparent; background:transparent; color:var(--text-muted); font-weight:700; font-size:12px; cursor:pointer; font-family:Poppins,sans-serif; transition:all var(--t-fast); }
+  .py-page-num { min-width:28px; height:28px; padding:0 6px; border-radius:8px; border:1.5px solid transparent; background:transparent; color:var(--text-muted); font-weight:700; font-size:12px; cursor:pointer; font-family: inherit; transition:all var(--t-fast); }
   .py-page-num:hover { background:var(--bg-alt); color:var(--text); }
   .py-page-num:active { transform:scale(0.92); }
-  .py-page-num.active { background:linear-gradient(135deg,#B8860B,#D4A017); border-color:transparent; color:white; box-shadow:var(--shadow-gold); }
+  .py-page-num.active { background:linear-gradient(135deg,#8F6807,#D4A017); border-color:transparent; color:white; box-shadow:var(--shadow-gold); }
   .py-page-dots { color:var(--text-muted); font-size:12px; padding:0 2px; }
-  .py-page-size { padding:6px 10px; border-radius:8px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-weight:600; font-size:11.5px; cursor:pointer; font-family:Poppins,sans-serif; outline:none; }
+  .py-page-size { padding:6px 10px; border-radius:8px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-weight:600; font-size:11.5px; cursor:pointer; font-family: inherit; outline:none; }
 
   /* Responsive */
   @media(max-width:640px) {
@@ -1428,7 +1428,7 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
             <div style={canGeneratePayslip?{display:'flex',alignItems:'center',gap:0,border:'1px solid rgba(29,111,164,0.3)',borderRadius:8,overflow:'hidden',background:'rgba(29,111,164,0.05)'}
               :{display:'flex',alignItems:'center',gap:0,border:'1px solid var(--border)',borderRadius:8,overflow:'hidden',background:'var(--bg-alt)',opacity:0.55}}>
               <select value={payMethod} onChange={e=>setPayMethod(e.target.value)} disabled={!canGeneratePayslip}
-                style={{padding:'5px 6px',border:'none',background:'transparent',color:canGeneratePayslip?'#1D6FA4':'var(--text-muted)',fontWeight:700,fontSize:10.5,fontFamily:'Poppins,sans-serif',cursor:canGeneratePayslip?'pointer':'not-allowed',outline:'none',appearance:'none',WebkitAppearance:'none'}}>
+                style={{padding:'5px 6px',border:'none',background:'transparent',color:canGeneratePayslip?'#1D6FA4':'var(--text-muted)',fontWeight:700,fontSize:10.5,fontFamily:'inherit',cursor:canGeneratePayslip?'pointer':'not-allowed',outline:'none',appearance:'none',WebkitAppearance:'none'}}>
                 <option value="bank">Bank</option>
                 <option value="cash">Cash</option>
               </select>
@@ -1875,7 +1875,7 @@ export default function PayrollPage() {
     const totalAbsNet = Math.abs(amazon.net)+Math.abs(external.net)
     return {amazon, external, amazonPct: totalAbsNet ? Math.round(Math.abs(amazon.net)/totalAbsNet*100) : 50}
   }, [pulserSlips, cretSlips, externalSlips])
-  const pieData = [{name:'Earned',value:totalEarned,color:'#B8860B'},{name:'Bonus',value:totalBonus,color:'#10B981'},{name:'Deductions',value:totalDed,color:'#EF4444'}].filter(d=>d.value>0)
+  const pieData = [{name:'Earned',value:totalEarned,color:'#8F6807'},{name:'Bonus',value:totalBonus,color:'#10B981'},{name:'Deductions',value:totalDed,color:'#EF4444'}].filter(d=>d.value>0)
 
   const cardProps = {month, onMarkPaid:markPaidSlip, onMarkUnpaid:markUnpaidSlip, onEditSalary:s=>setModal({type:'salary',emp:s}), onRemoveDed:removeDed, onRemoveBonus:removeBonus, onEditEntry:editEntry, onDeleteEntry:deleteEntry, canEditEntries, canMarkPaid}
 
@@ -1990,7 +1990,7 @@ export default function PayrollPage() {
           <button onClick={()=>exportCSV(payroll,month)} className="py-tbtn py-tbtn-csv"><Download size={13}/> Export CSV</button>
           <div style={{display:'flex',border:'1px solid rgba(109,60,219,0.3)',borderRadius:8,overflow:'hidden'}}>
             <select value={bulkMethod} onChange={e=>setBulkMethod(e.target.value)}
-              style={{padding:'0 8px',fontSize:11,fontWeight:600,border:'none',borderRight:'1px solid rgba(109,60,219,0.3)',background:'rgba(109,60,219,0.06)',color:'#6D3CDB',cursor:'pointer',fontFamily:'Poppins,sans-serif',outline:'none'}}>
+              style={{padding:'0 8px',fontSize:11,fontWeight:600,border:'none',borderRight:'1px solid rgba(109,60,219,0.3)',background:'rgba(109,60,219,0.06)',color:'#6D3CDB',cursor:'pointer',fontFamily:'inherit',outline:'none'}}>
               <option value="bank">Bank</option>
               <option value="cash">Cash</option>
             </select>

@@ -78,7 +78,7 @@ export default function SettingsPage() {
         <div style={{ position:'absolute', right:-30, top:-30, width:120, height:120, borderRadius:'50%', background:'rgba(184,134,11,0.15)' }}/>
         <div style={{ position:'absolute', right:40, bottom:-40, width:80, height:80, borderRadius:'50%', background:'rgba(184,134,11,0.1)' }}/>
         <div style={{ position:'relative', zIndex:1, display:'flex', alignItems:'center', gap:14 }}>
-          <div style={{ width:52, height:52, borderRadius:16, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow:'0 4px 14px rgba(184,134,11,0.4)' }}>
+          <div style={{ width:52, height:52, borderRadius:16, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow:'0 4px 14px rgba(184,134,11,0.4)' }}>
             <ShieldCheck size={26} color="white"/>
           </div>
           <div>
@@ -96,7 +96,7 @@ export default function SettingsPage() {
         {/* Card title row */}
         <div style={{ padding:'18px 22px 16px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:10 }}>
           <div style={{ width:34, height:34, borderRadius:10, background:'linear-gradient(135deg,#FDF6E3,#FEF3D0)', border:'1px solid #F0D78C', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <KeyRound size={16} color="#B8860B"/>
+            <KeyRound size={16} color="#8F6807"/>
           </div>
           <div>
             <div style={{ fontWeight:700, fontSize:14.5, color:'var(--text)' }}>Change Password</div>
@@ -195,9 +195,9 @@ export default function SettingsPage() {
             disabled={!canSubmit}
             style={{
               marginTop:4, padding:'13px 24px', borderRadius:14, border:'none', cursor: canSubmit ? 'pointer' : 'not-allowed',
-              background: canSubmit ? 'linear-gradient(135deg,#B8860B,#D4A017)' : 'var(--border)',
+              background: canSubmit ? 'linear-gradient(135deg,#8F6807,#D4A017)' : 'var(--border)',
               color: canSubmit ? 'white' : 'var(--text-muted)',
-              fontWeight:700, fontSize:14, fontFamily:'Poppins,sans-serif',
+              fontWeight:700, fontSize:14, fontFamily:'inherit',
               display:'flex', alignItems:'center', justifyContent:'center', gap:8,
               transition:'all 0.2s', boxShadow: canSubmit ? '0 4px 14px rgba(184,134,11,0.35)' : 'none',
             }}>
@@ -220,7 +220,7 @@ export default function SettingsPage() {
             'Avoid using your name or common words',
           ].map((tip, i) => (
             <div key={i} style={{ display:'flex', alignItems:'center', gap:8, fontSize:12.5, color:'var(--text-sub)' }}>
-              <div style={{ width:5, height:5, borderRadius:'50%', background:'#B8860B', flexShrink:0 }}/>
+              <div style={{ width:5, height:5, borderRadius:'50%', background:'#8F6807', flexShrink:0 }}/>
               {tip}
             </div>
           ))}

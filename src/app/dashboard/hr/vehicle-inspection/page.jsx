@@ -159,7 +159,7 @@ function SectionBlock({ section, data, onChange }) {
           <div style={{ display: 'flex', gap: 14, flexShrink: 0, marginTop: 2 }}>
             <Radio value="yes" current={data.items?.[idx] || ''} onChange={v => set(idx, v)} label="Yes" color="#2E7D52"/>
             <Radio value="no"  current={data.items?.[idx] || ''} onChange={v => set(idx, v)} label="No"  color="#C0392B"/>
-            <Radio value="na"  current={data.items?.[idx] || ''} onChange={v => set(idx, v)} label="NA"  color="#A89880"/>
+            <Radio value="na"  current={data.items?.[idx] || ''} onChange={v => set(idx, v)} label="NA"  color="#78716C"/>
           </div>
         </div>
       ))}
@@ -463,7 +463,7 @@ function ViewModal({ inspection, onClose, onEdit, onDelete }) {
               <div style={{ display:'flex', gap:8, marginTop:8, flexWrap:'wrap' }}>
                 {badge(yes, 'Yes', '#2E7D52', '#ECFDF5')}
                 {badge(no,  'No',  '#C0392B', '#FEF2F2')}
-                {badge(na,  'NA',  '#A89880', '#F5F4F1')}
+                {badge(na,  'NA',  '#78716C', '#F5F4F1')}
               </div>
             </div>
             <div style={{ display:'flex', gap:8, alignItems:'center' }}>
@@ -498,7 +498,7 @@ function ViewModal({ inspection, onClose, onEdit, onDelete }) {
                 </div>
                 {section.items.map((item, idx) => {
                   const val = data.items?.[idx] || ''
-                  const color = val==='yes' ? '#2E7D52' : val==='no' ? '#C0392B' : '#A89880'
+                  const color = val==='yes' ? '#2E7D52' : val==='no' ? '#C0392B' : '#78716C'
                   const bg    = val==='yes' ? '#ECFDF5' : val==='no' ? '#FEF2F2' : '#F5F4F1'
                   return (
                     <div key={idx} style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'7px 0', borderBottom:'1px solid var(--border)' }}>
@@ -767,7 +767,7 @@ export default function VehicleInspectionPage() {
                       <span style={{ fontSize:12, color:'var(--text-muted)' }}>
                         <span style={{ color:'#2E7D52', fontWeight:700 }}>{yes} ✓</span>{' '}
                         {no > 0 && <span style={{ color:'#C0392B', fontWeight:700 }}>{no} ✗ </span>}
-                        {na > 0 && <span style={{ color:'#A89880' }}>{na} N/A</span>}
+                        {na > 0 && <span style={{ color:'#78716C' }}>{na} N/A</span>}
                       </span>
                     )}
                     {insp.station_code && (

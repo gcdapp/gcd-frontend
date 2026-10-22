@@ -11,7 +11,7 @@ function hdr() { return { Authorization: `Bearer ${localStorage.getItem('gcd_tok
 
 function fmt(n) { return Number(n || 0).toLocaleString() }
 
-function SectionTitle({ icon: Icon, title, subtitle, color = '#B8860B' }) {
+function SectionTitle({ icon: Icon, title, subtitle, color = '#8F6807' }) {
   return (
     <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18 }}>
       <div style={{ width:40, height:40, borderRadius:12, background:`${color}15`, border:`1.5px solid ${color}30`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
@@ -19,7 +19,7 @@ function SectionTitle({ icon: Icon, title, subtitle, color = '#B8860B' }) {
       </div>
       <div>
         <div style={{ fontWeight:800, fontSize:15, color:'#1A1612', lineHeight:1 }}>{title}</div>
-        {subtitle && <div style={{ fontSize:11.5, color:'#A89880', marginTop:3 }}>{subtitle}</div>}
+        {subtitle && <div style={{ fontSize:11.5, color:'#78716C', marginTop:3 }}>{subtitle}</div>}
       </div>
     </div>
   )
@@ -73,17 +73,17 @@ function DownloadCard() {
       <StatusBanner status={status}/>
 
       <div style={{ display:'flex', alignItems:'center', gap:12, padding:'14px', borderRadius:12, background:'#FAFAF8', border:'1px solid #F0EDE6', marginBottom:20 }}>
-        <HardDrive size={20} color="#B8860B"/>
+        <HardDrive size={20} color="#8F6807"/>
         <div style={{ flex:1 }}>
           <div style={{ fontSize:13, fontWeight:600, color:'#1A1612' }}>What gets backed up</div>
-          <div style={{ fontSize:11.5, color:'#A89880', marginTop:2 }}>
+          <div style={{ fontSize:11.5, color:'#78716C', marginTop:2 }}>
             Everything — Employees · Payroll · Petty Cash · Vehicles · SIMs · Handovers · Inspections · Customers · Tasks · Documents · Compliance, and 30+ other tables. Only login sessions (which regenerate automatically) are excluded.
           </div>
         </div>
       </div>
 
       <button onClick={runBackup} disabled={loading}
-        style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'11px 24px', borderRadius:24, background:loading?'#C4A882':'linear-gradient(135deg,#B8860B,#D4A017)', color:'#FFF', fontWeight:700, fontSize:13.5, border:'none', cursor:loading?'not-allowed':'pointer', fontFamily:'Poppins,sans-serif', boxShadow:loading?'none':'0 4px 16px rgba(184,134,11,0.3)', transition:'all 0.2s' }}>
+        style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'11px 24px', borderRadius:24, background:loading?'#C4A882':'linear-gradient(135deg,#8F6807,#D4A017)', color:'#FFF', fontWeight:700, fontSize:13.5, border:'none', cursor:loading?'not-allowed':'pointer', fontFamily:'inherit', boxShadow:loading?'none':'0 4px 16px rgba(184,134,11,0.3)', transition:'all 0.2s' }}>
         {loading
           ? <><RefreshCw size={15} style={{ animation:'spin 1s linear infinite' }}/> Creating backup…</>
           : <><Download size={15}/> Download Backup</>}
@@ -193,23 +193,23 @@ function RestoreCard() {
       {!file ? (
         <button
           onClick={() => fileRef.current?.click()}
-          style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, width:'100%', padding:'32px 20px', borderRadius:14, border:'2px dashed #D9B96E', background:'#FFFDF5', cursor:'pointer', fontFamily:'Poppins,sans-serif', transition:'all 0.2s' }}
-          onMouseEnter={e => { e.currentTarget.style.background='#FFF8E7'; e.currentTarget.style.borderColor='#B8860B' }}
+          style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, width:'100%', padding:'32px 20px', borderRadius:14, border:'2px dashed #D9B96E', background:'#FFFDF5', cursor:'pointer', fontFamily:'inherit', transition:'all 0.2s' }}
+          onMouseEnter={e => { e.currentTarget.style.background='#FFF8E7'; e.currentTarget.style.borderColor='#8F6807' }}
           onMouseLeave={e => { e.currentTarget.style.background='#FFFDF5'; e.currentTarget.style.borderColor='#D9B96E' }}>
-          <FileJson size={28} color="#B8860B"/>
+          <FileJson size={28} color="#8F6807"/>
           <div style={{ textAlign:'left' }}>
             <div style={{ fontWeight:700, fontSize:13.5, color:'#1A1612' }}>Choose backup file</div>
-            <div style={{ fontSize:11.5, color:'#A89880', marginTop:2 }}>Select a .json backup exported from this system</div>
+            <div style={{ fontSize:11.5, color:'#78716C', marginTop:2 }}>Select a .json backup exported from this system</div>
           </div>
         </button>
       ) : (
         <div>
           {/* Selected file preview */}
           <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', borderRadius:12, background:'#F9F7F4', border:'1px solid #E8E3DC', marginBottom:14 }}>
-            <FileJson size={20} color="#B8860B" style={{ flexShrink:0 }}/>
+            <FileJson size={20} color="#8F6807" style={{ flexShrink:0 }}/>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:13, fontWeight:600, color:'#1A1612', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{file.name}</div>
-              <div style={{ fontSize:11, color:'#A89880', marginTop:1 }}>{fileSizeLabel}</div>
+              <div style={{ fontSize:11, color:'#78716C', marginTop:1 }}>{fileSizeLabel}</div>
             </div>
             <button onClick={clearFile} style={{ background:'none', border:'none', cursor:'pointer', color:'#9CA3AF', padding:4, display:'flex' }}>
               <X size={16}/>
@@ -219,7 +219,7 @@ function RestoreCard() {
           {/* Confirm step */}
           {!confirming ? (
             <button onClick={() => setConfirming(true)} disabled={uploading}
-              style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, width:'100%', padding:'12px', borderRadius:12, background:'linear-gradient(135deg,#C0392B,#E74C3C)', color:'#FFF', fontWeight:700, fontSize:13.5, border:'none', cursor:'pointer', fontFamily:'Poppins,sans-serif', boxShadow:'0 4px 16px rgba(192,57,43,0.3)' }}>
+              style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, width:'100%', padding:'12px', borderRadius:12, background:'linear-gradient(135deg,#C0392B,#E74C3C)', color:'#FFF', fontWeight:700, fontSize:13.5, border:'none', cursor:'pointer', fontFamily:'inherit', boxShadow:'0 4px 16px rgba(192,57,43,0.3)' }}>
               <Upload size={15}/> Restore from this file
             </button>
           ) : (
@@ -232,11 +232,11 @@ function RestoreCard() {
               </div>
               <div style={{ display:'flex', gap:10 }}>
                 <button onClick={() => setConfirming(false)} disabled={uploading}
-                  style={{ flex:1, padding:'10px', borderRadius:10, background:'#F3F4F6', border:'none', cursor:'pointer', fontWeight:600, fontSize:13, fontFamily:'Poppins,sans-serif', color:'#374151' }}>
+                  style={{ flex:1, padding:'10px', borderRadius:10, background:'#F3F4F6', border:'none', cursor:'pointer', fontWeight:600, fontSize:13, fontFamily:'inherit', color:'#374151' }}>
                   Cancel
                 </button>
                 <button onClick={doRestore} disabled={uploading}
-                  style={{ flex:2, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'10px', borderRadius:10, background: uploading ? '#9CA3AF' : '#C0392B', color:'#FFF', border:'none', cursor: uploading ? 'not-allowed' : 'pointer', fontWeight:700, fontSize:13, fontFamily:'Poppins,sans-serif' }}>
+                  style={{ flex:2, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'10px', borderRadius:10, background: uploading ? '#9CA3AF' : '#C0392B', color:'#FFF', border:'none', cursor: uploading ? 'not-allowed' : 'pointer', fontWeight:700, fontSize:13, fontFamily:'inherit' }}>
                   {uploading
                     ? <><RefreshCw size={14} style={{ animation:'spin 1s linear infinite' }}/> Restoring…</>
                     : <><ShieldCheck size={14}/> Yes, restore now</>}
@@ -264,7 +264,7 @@ export default function BackupPage() {
     <div style={{ display:'flex', flexDirection:'column', gap:20, animation:'slideUp 0.35s ease' }}>
       <div>
         <h1 style={{ fontWeight:900, fontSize:22, color:'#1A1612', letterSpacing:'-0.03em', margin:0 }}>Backup & Restore</h1>
-        <p style={{ fontSize:12, color:'#A89880', marginTop:4 }}>Download a full database snapshot or restore from a previous backup</p>
+        <p style={{ fontSize:12, color:'#78716C', marginTop:4 }}>Download a full database snapshot or restore from a previous backup</p>
       </div>
 
       <DownloadCard/>

@@ -7,12 +7,12 @@ import { Search, Plus, X, Pencil, Trash2, ChevronRight, Shield, Clock, Phone, Gl
 import { differenceInDays, parseISO } from 'date-fns'
 
 const STATIONS = ['All','DDB7','DDB6','DSH6','DXD3']
-const STATION_COLORS = { DDB7:'#B8860B', DDB6:'#1D6FA4', DSH6:'#2E7D52', DXD3:'#7C3AED' }
+const STATION_COLORS = { DDB7:'#8F6807', DDB6:'#1D6FA4', DSH6:'#2E7D52', DXD3:'#7C3AED' }
 const STATION_BG     = { DDB7:'#FDF6E3', DDB6:'#EFF6FF', DSH6:'#ECFDF5', DXD3:'#F5F3FF' }
 const STATUS_CFG = {
   active:   { l:'Active',   c:'#2E7D52', bg:'#ECFDF5', bc:'#A7F3D0', dot:'#22C55E' },
   on_leave: { l:'On Leave', c:'#B45309', bg:'#FFFBEB', bc:'#FCD34D', dot:'#F59E0B' },
-  inactive: { l:'Inactive', c:'#6B5D4A', bg:'#F5F4F1', bc:'#EAE6DE', dot:'#A89880' },
+  inactive: { l:'Inactive', c:'#6B5D4A', bg:'#F5F4F1', bc:'#EAE6DE', dot:'#78716C' },
 }
 const EMPTY = {
   id:'', name:'', role:'Driver', dept:'Operations', status:'active',
@@ -103,7 +103,7 @@ function EmpModal({ emp, onSave, onClose, mode }) {
   function inp(label, k, type='text', hint, placeholder='') {
     return (
       <div key={k} style={{ display:'flex', flexDirection:'column', gap:5 }}>
-        <label style={{ fontSize:11, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:'#A89880' }}>
+        <label style={{ fontSize:11, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:'#78716C' }}>
           {label}{hint && <span style={{ color:'#C4B49A', fontWeight:400, textTransform:'none', letterSpacing:0, marginLeft:5, fontSize:10 }}>{hint}</span>}
         </label>
         <input className="input" type={type} value={form[k]||''} autoComplete="off" spellCheck={false}
@@ -115,7 +115,7 @@ function EmpModal({ emp, onSave, onClose, mode }) {
   function sel(label, k, options) {
     return (
       <div key={k} style={{ display:'flex', flexDirection:'column', gap:5 }}>
-        <label style={{ fontSize:11, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:'#A89880' }}>{label}</label>
+        <label style={{ fontSize:11, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:'#78716C' }}>{label}</label>
         <select className="input" value={form[k]||''} onChange={e => set(k, e.target.value)} style={{ borderRadius:10 }}>
           {options.map(o => <option key={o.v||o} value={o.v||o}>{o.l||o}</option>)}
         </select>
@@ -140,7 +140,7 @@ function EmpModal({ emp, onSave, onClose, mode }) {
               <h2 style={{ fontWeight:900, fontSize:18, color:'#1A1612', letterSpacing:'-0.03em' }}>
                 {mode==='add' ? '+ New Employee' : 'Edit Employee'}
               </h2>
-              <p style={{ fontSize:12, color:'#A89880', marginTop:3 }}>
+              <p style={{ fontSize:12, color:'#78716C', marginTop:3 }}>
                 {mode==='add' ? 'Add a new employee' : `Editing ${emp?.name}`}
               </p>
             </div>
@@ -153,7 +153,7 @@ function EmpModal({ emp, onSave, onClose, mode }) {
           <div style={{ display:'flex', gap:2, borderBottom:'2px solid #EAE6DE', marginBottom:0 }}>
             {TABS.map(t => (
               <button key={t.id} onClick={()=>setTab(t.id)}
-                style={{ padding:'9px 16px', fontSize:12, fontWeight:tab===t.id?700:500, color:tab===t.id?'#B8860B':'#A89880', background:'none', border:'none', cursor:'pointer', borderBottom:`2px solid ${tab===t.id?'#B8860B':'transparent'}`, marginBottom:-2, transition:'all 0.2s', display:'flex', alignItems:'center', gap:5 }}>
+                style={{ padding:'9px 16px', fontSize:12, fontWeight:tab===t.id?700:500, color:tab===t.id?'#8F6807':'#78716C', background:'none', border:'none', cursor:'pointer', borderBottom:`2px solid ${tab===t.id?'#8F6807':'transparent'}`, marginBottom:-2, transition:'all 0.2s', display:'flex', alignItems:'center', gap:5 }}>
                 <span style={{ fontSize:14 }}>{t.icon}</span>{t.label}
               </button>
             ))}
@@ -171,7 +171,7 @@ function EmpModal({ emp, onSave, onClose, mode }) {
           {tab==='identity' && (
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
               <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-                <label style={{ fontSize:11, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:'#A89880' }}>Employee ID *</label>
+                <label style={{ fontSize:11, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:'#78716C' }}>Employee ID *</label>
                 <input className="input" type="text" value={form.id||''} autoComplete="off" spellCheck={false}
                   placeholder={idTouched ? 'DA001' : 'Generating…'}
                   onChange={e=>{ setIdTouched(true); set('id', e.target.value) }}
@@ -245,7 +245,7 @@ function EmpModal({ emp, onSave, onClose, mode }) {
 // ── Detail Drawer ─────────────────────────────────────────────
 function DetailDrawer({ emp, onEdit, onDelete, onClose }) {
   const s  = STATUS_CFG[emp.status] || STATUS_CFG.inactive
-  const sc = STATION_COLORS[emp.station_code] || '#B8860B'
+  const sc = STATION_COLORS[emp.station_code] || '#8F6807'
   const sb = STATION_BG[emp.station_code]     || '#FDF6E3'
 
   return (
@@ -288,7 +288,7 @@ function DetailDrawer({ emp, onEdit, onDelete, onClose }) {
           ].map(row => (
             <div key={row.label} style={{ display:'flex', alignItems:'center', gap:10, padding:'7px 0', borderBottom:'1px solid #F5F4F1' }}>
               <span style={{ fontSize:14, width:20, textAlign:'center', flexShrink:0 }}>{row.icon}</span>
-              <span style={{ fontSize:11.5, color:'#A89880', flex:1 }}>{row.label}</span>
+              <span style={{ fontSize:11.5, color:'#78716C', flex:1 }}>{row.label}</span>
               <span style={{ fontSize:12, color:'#1A1612', fontWeight:600, fontFamily:'inherit', textAlign:'right', maxWidth:130, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.value}</span>
             </div>
           ))}
@@ -303,7 +303,7 @@ function DetailDrawer({ emp, onEdit, onDelete, onClose }) {
                   <div key={l} style={{ textAlign:'center', padding:'10px 6px', borderRadius:12, background:info?.bg||'#FAFAF8', border:`1px solid ${info?info.color+'30':'#EAE6DE'}` }}>
                     <div style={{ fontSize:16, marginBottom:4 }}>{info?.icon||'—'}</div>
                     <div style={{ fontSize:10, fontWeight:700, color:info?.color||'#C4B49A', marginBottom:2 }}>{l}</div>
-                    <div style={{ fontSize:10, color:info?.color||'#A89880', fontWeight:600 }}>{info?.label||'N/A'}</div>
+                    <div style={{ fontSize:10, color:info?.color||'#78716C', fontWeight:600 }}>{info?.label||'N/A'}</div>
                   </div>
                 )
               })}
@@ -328,7 +328,7 @@ function DetailDrawer({ emp, onEdit, onDelete, onClose }) {
 // ── Employee Card (mobile) ────────────────────────────────────
 function EmpCard({ emp, onClick, onEdit, onDelete, index }) {
   const s  = STATUS_CFG[emp.status] || STATUS_CFG.inactive
-  const sc = STATION_COLORS[emp.station_code] || '#B8860B'
+  const sc = STATION_COLORS[emp.station_code] || '#8F6807'
   const visaInfo = expiryInfo(emp.visa_expiry)
   const hasAlert = visaInfo && (visaInfo.label==='Expired' || parseInt(visaInfo.label) <= 60)
 
@@ -361,7 +361,7 @@ function EmpCard({ emp, onClick, onEdit, onDelete, index }) {
             <span style={{ fontWeight:700, fontSize:14, color:'#1A1612', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{emp.name}</span>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
-            <span style={{ fontSize:10.5, color:'#A89880', fontFamily:'inherit' }}>{emp.id}</span>
+            <span style={{ fontSize:10.5, color:'#78716C', fontFamily:'inherit' }}>{emp.id}</span>
             {emp.amazon_id && <span style={{ fontSize:10.5, color:'#C4B49A' }}>·</span>}
             {emp.amazon_id && <span style={{ fontSize:10.5, color:'#6B5D4A', fontFamily:'inherit' }}>{emp.amazon_id}</span>}
           </div>
@@ -370,7 +370,7 @@ function EmpCard({ emp, onClick, onEdit, onDelete, index }) {
         {/* Station + Rate */}
         <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4, flexShrink:0 }}>
           <span style={{ fontSize:11, fontWeight:800, color:sc, background:STATION_BG[emp.station_code]||'#FDF6E3', border:`1px solid ${sc}30`, borderRadius:8, padding:'2px 9px' }}>{emp.station_code||'DDB7'}</span>
-          <span style={{ fontSize:10.5, color:'#A89880' }}>AED {emp.hourly_rate||3.85}/hr</span>
+          <span style={{ fontSize:10.5, color:'#78716C' }}>AED {emp.hourly_rate||3.85}/hr</span>
         </div>
       </div>
 
@@ -448,7 +448,7 @@ export default function EmployeesPage() {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
           <div>
             <h1 style={{ fontWeight:900, fontSize:20, color:'#1A1612', letterSpacing:'-0.03em', lineHeight:1.2 }}>Employees</h1>
-            <p style={{ fontSize:12, color:'#A89880', marginTop:3 }}>{total} employees · {active} active</p>
+            <p style={{ fontSize:12, color:'#78716C', marginTop:3 }}>{total} employees · {active} active</p>
           </div>
           <button className="btn btn-primary" onClick={()=>setModal({mode:'add',emp:null})} style={{ borderRadius:24, padding:'10px 20px', gap:7 }}>
             <Plus size={15}/> Add Employee
@@ -485,7 +485,7 @@ export default function EmployeesPage() {
               style={{ paddingLeft:38, borderRadius:24 }}
             />
             {search && (
-              <button onClick={()=>setSearch('')} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#A89880', padding:0, display:'flex' }}>
+              <button onClick={()=>setSearch('')} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#78716C', padding:0, display:'flex' }}>
                 <X size={13}/>
               </button>
             )}
@@ -502,7 +502,7 @@ export default function EmployeesPage() {
                     padding:'7px 14px', borderRadius:20, fontSize:12, fontWeight:isOn?700:500, cursor:'pointer',
                     border:`1.5px solid ${isOn?color:'#EAE6DE'}`,
                     background: isOn ? (STATION_BG[s]||'#FDF6E3') : '#FFF',
-                    color: isOn ? color : '#A89880',
+                    color: isOn ? color : '#78716C',
                     transition:'all 0.18s ease',
                     boxShadow: isOn ? `0 3px 10px ${color}20` : 'none',
                     transform: isOn ? 'scale(1.03)' : 'scale(1)',
@@ -521,7 +521,7 @@ export default function EmployeesPage() {
             {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height:90, borderRadius:16 }}/>)}
           </div>
         ) : employees.length === 0 ? (
-          <div style={{ textAlign:'center', padding:'60px 20px', color:'#A89880' }}>
+          <div style={{ textAlign:'center', padding:'60px 20px', color:'#78716C' }}>
             <div style={{ fontSize:48, marginBottom:12 }}>🔍</div>
             <div style={{ fontWeight:600, fontSize:15, color:'#6B5D4A', marginBottom:6 }}>{search ? `No results for "${search}"` : 'No employees found'}</div>
             <div style={{ fontSize:13 }}>{search ? 'Try a different search term' : 'Add your first employee using the button above'}</div>

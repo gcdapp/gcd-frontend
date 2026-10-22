@@ -45,7 +45,7 @@ function buildVerificationBlock(l, origin, size = 96) {
   return `
     <div style="position:absolute;right:40px;bottom:104px;width:116px;text-align:center;font-family:Arial,sans-serif;color:#444;z-index:3">
       <img src="${qrUrl}" style="width:${size}px;height:${size}px;display:block;margin:0 auto 5px;background:#fff;padding:4px;border:1px solid #ddd" alt="Document verification QR"/>
-      <div style="font-size:8px;letter-spacing:0.8px;text-transform:uppercase;font-weight:700;color:#B8860B;margin-bottom:2px">Verify Document</div>
+      <div style="font-size:8px;letter-spacing:0.8px;text-transform:uppercase;font-weight:700;color:#8F6807;margin-bottom:2px">Verify Document</div>
     </div>`
 }
 
@@ -59,10 +59,10 @@ function buildLetterHTML(l, origin) {
     background-image:url('${origin}/watermark.png');background-repeat:repeat;background-size:90px auto;
     transform:rotate(-18deg);opacity:0.045"></div>
   <div style="position:relative;z-index:1">
-  <div style="padding:28px 40px 16px;display:flex;align-items:center;gap:18px;border-bottom:2.5px solid #B8860B">
+  <div style="padding:28px 40px 16px;display:flex;align-items:center;gap:18px;border-bottom:2.5px solid #8F6807">
     <img src="${origin}/logo.webp" style="height:58px;object-fit:contain" alt="" onerror="this.style.display='none'"/>
     <div style="font-size:26px;font-weight:700;font-family:Georgia,serif;font-style:italic;letter-spacing:0.2px">
-      <span style="color:#B8860B">Golden Crescent</span> Delivery Services LLC
+      <span style="color:#8F6807">Golden Crescent</span> Delivery Services LLC
     </div>
   </div>
   <div style="padding:28px 40px 0">
@@ -71,7 +71,7 @@ function buildLetterHTML(l, origin) {
       <span>${fmtDate(l.date)}</span>
     </div>
     <p style="margin:0 0 14px;font-weight:700;font-size:13.5px">${(l.to_name || 'To Whom It May Concern').replace(/\n/g, '<br/>')}</p>
-    ${l.subject ? `<div style="margin-bottom:18px"><p style="margin:0 0 6px;font-size:16px;font-weight:700">Re: ${l.subject}</p><div style="height:2px;width:240px;background:#B8860B;border-radius:1px"></div></div>` : ''}
+    ${l.subject ? `<div style="margin-bottom:18px"><p style="margin:0 0 6px;font-size:16px;font-weight:700">Re: ${l.subject}</p><div style="height:2px;width:240px;background:#8F6807;border-radius:1px"></div></div>` : ''}
     <p style="margin:0 0 16px">${l.greeting || 'Dear Sir / Madam,'}</p>
     <div style="margin-bottom:44px">${bodyHtml}</div>
     <p style="margin:0 0 26px">With warm regards,</p>
@@ -87,13 +87,13 @@ function buildLetterHTML(l, origin) {
   </div>
   </div>
   ${verifyBlock}
-  <div style="position:absolute;bottom:0;left:0;right:0;width:100%;padding:16px 40px;background:#f0ede6;border-top:2px solid #B8860B;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;box-sizing:border-box">
+  <div style="position:absolute;bottom:0;left:0;right:0;width:100%;padding:16px 40px;background:#f0ede6;border-top:2px solid #8F6807;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;box-sizing:border-box">
     <div>
-      <div style="font-size:8px;letter-spacing:2.5px;font-weight:700;color:#B8860B;font-family:Arial,sans-serif;text-transform:uppercase;margin-bottom:5px">ADDRESS</div>
+      <div style="font-size:8px;letter-spacing:2.5px;font-weight:700;color:#8F6807;font-family:Arial,sans-serif;text-transform:uppercase;margin-bottom:5px">ADDRESS</div>
       <div style="font-size:10.5px;color:#444;line-height:1.55;font-family:Arial,sans-serif">Office 68, 18th Floor<br>Burjuman Business Tower, Dubai</div>
     </div>
     <div>
-      <div style="font-size:8px;letter-spacing:2.5px;font-weight:700;color:#B8860B;font-family:Arial,sans-serif;text-transform:uppercase;margin-bottom:5px">CONTACT</div>
+      <div style="font-size:8px;letter-spacing:2.5px;font-weight:700;color:#8F6807;font-family:Arial,sans-serif;text-transform:uppercase;margin-bottom:5px">CONTACT</div>
       <div style="font-size:10.5px;color:#444;line-height:1.55;font-family:Arial,sans-serif">Landline · 042 59 291<br>Mobile · +971 52 220 1435</div>
     </div>
     <div>
@@ -216,7 +216,7 @@ function openPrint(letter) {
 const inputStyle = {
   width:'100%', padding:'8px 11px', borderRadius:8,
   border:'1px solid var(--border)', background:'var(--card)', color:'var(--text)',
-  fontSize:12.5, fontFamily:'Poppins,sans-serif', boxSizing:'border-box', outline:'none',
+  fontSize:12.5, fontFamily:'inherit', boxSizing:'border-box', outline:'none',
 }
 const labelStyle = {
   fontSize:10.5, fontWeight:700, color:'var(--text-muted)',
@@ -229,7 +229,7 @@ function Toggle({ checked, onChange, label }) {
       <div style={{ position:'relative', width:36, height:20, flexShrink:0 }}>
         <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)}
           style={{ opacity:0, width:0, height:0, position:'absolute' }}/>
-        <div style={{ position:'absolute', inset:0, borderRadius:20, background: checked ? '#B8860B' : '#CBD5E1', transition:'background 0.2s' }}/>
+        <div style={{ position:'absolute', inset:0, borderRadius:20, background: checked ? '#8F6807' : '#CBD5E1', transition:'background 0.2s' }}/>
         <div style={{ position:'absolute', top:2, left: checked ? 18 : 2, width:16, height:16, borderRadius:'50%', background:'white', boxShadow:'0 1px 3px rgba(0,0,0,0.2)', transition:'left 0.2s' }}/>
       </div>
       <span style={{ fontSize:12, fontWeight:600, color:'var(--text)' }}>{label}</span>
@@ -360,7 +360,7 @@ const PAGE_CSS = `
     background: rgba(184,134,11,0.15);
     border: 1px solid rgba(184,134,11,0.3);
     display: flex; align-items: center; justify-content: center;
-    color: #B8860B;
+    color: #8F6807;
     flex-shrink: 0;
   }
   .ltr-hero-title { font-size: 20px; font-weight: 800; color: white; margin: 0; }
@@ -369,9 +369,9 @@ const PAGE_CSS = `
     margin-left: auto;
     display: flex; align-items: center; gap: 7px;
     padding: 10px 20px; border-radius: 10px;
-    border: none; background: #B8860B; color: white;
+    border: none; background: #8F6807; color: white;
     font-weight: 700; font-size: 13px; cursor: pointer;
-    font-family: Poppins, sans-serif; white-space: nowrap;
+    font-family: inherit; white-space: nowrap;
     transition: background 0.15s;
   }
   .ltr-new-btn:hover { background: #9a7209; }
@@ -420,7 +420,7 @@ const PAGE_CSS = `
   }
   .ltr-card-info { min-width: 0; }
   .ltr-ref {
-    font-size: 12px; font-weight: 800; color: #B8860B;
+    font-size: 12px; font-weight: 800; color: #8F6807;
     font-family: monospace; letter-spacing: 0.03em;
   }
   .ltr-subject {
@@ -443,7 +443,7 @@ const PAGE_CSS = `
     display: inline-flex; align-items: center; gap: 5px;
     padding: 6px 12px; border-radius: 8px;
     font-size: 11.5px; font-weight: 600; cursor: pointer;
-    font-family: Poppins, sans-serif; white-space: nowrap;
+    font-family: inherit; white-space: nowrap;
     transition: opacity 0.15s, transform 0.1s;
     border: 1px solid transparent;
   }
@@ -451,7 +451,7 @@ const PAGE_CSS = `
   .ltr-btn:active { transform: translateY(0); }
   .ltr-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
   .ltr-btn-approve { border-color: #FDE68A; background: #FFFBEB; color: #92400E; }
-  .ltr-btn-dl      { border-color: #B8860B; background: #FEF9EE; color: #92400E; }
+  .ltr-btn-dl      { border-color: #8F6807; background: #FEF9EE; color: #92400E; }
   .ltr-btn-edit    { border-color: #93C5FD; background: #EFF6FF; color: #2563EB; }
   .ltr-btn-del     { border-color: #FCA5A5; background: #FEF2F2; color: #EF4444; padding: 6px 10px; }
 
@@ -481,7 +481,7 @@ const PAGE_CSS = `
     display: flex; align-items: center; gap: 5px;
     padding: 7px 12px; border-radius: 8px;
     border: 1px solid var(--border); background: var(--card); color: var(--text);
-    font-size: 12px; cursor: pointer; font-family: Poppins, sans-serif;
+    font-size: 12px; cursor: pointer; font-family: inherit;
   }
   .cmp-title { font-size: 14px; font-weight: 700; color: var(--text); }
   .cmp-approval-badge {
@@ -491,20 +491,20 @@ const PAGE_CSS = `
   .cmp-dl-btn {
     display: flex; align-items: center; gap: 7px;
     padding: 8px 16px; border-radius: 9px;
-    border: 1px solid #B8860B; background: white; color: #B8860B;
-    font-weight: 700; font-size: 13px; cursor: pointer; font-family: Poppins, sans-serif;
+    border: 1px solid #8F6807; background: white; color: #8F6807;
+    font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit;
   }
   .cmp-save-btn {
     display: flex; align-items: center; gap: 7px;
     padding: 8px 20px; border-radius: 9px;
     border: none; color: white;
-    font-weight: 700; font-size: 13px; cursor: pointer; font-family: Poppins, sans-serif;
+    font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit;
   }
   .cmp-preview-btn {
     display: none; align-items: center; gap: 5px;
     padding: 7px 13px; border-radius: 8px;
     border: 1px solid var(--border); background: var(--card); color: var(--text);
-    font-size: 12px; cursor: pointer; font-family: Poppins, sans-serif; font-weight: 600;
+    font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 600;
   }
   .cmp-body {
     display: grid; grid-template-columns: 320px 1fr;
@@ -771,14 +771,14 @@ export default function LettersPage() {
       <style>{PAGE_CSS}</style>
       <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, padding:'80px 20px', textAlign:'center' }}>
         <div style={{ width:72, height:72, borderRadius:'50%', background:'#FFFBEB', border:'2px solid #FDE68A', display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <CheckCircle size={34} color="#B8860B"/>
+          <CheckCircle size={34} color="#8F6807"/>
         </div>
         <div style={{ fontWeight:800, fontSize:18, color:'var(--text)' }}>Submitted for Approval</div>
         <div style={{ fontSize:13, color:'var(--text-muted)', maxWidth:320 }}>
           Your letter has been saved and sent to the admin for approval. Once approved, it can be printed.
         </div>
         <button onClick={() => { setView('list'); resetForm() }}
-          style={{ marginTop:8, padding:'10px 28px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+          style={{ marginTop:8, padding:'10px 28px', borderRadius:10, border:'none', background:'#8F6807', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
           Back to Letters
         </button>
       </div>
@@ -817,7 +817,7 @@ export default function LettersPage() {
             onClick={handleSave}
             disabled={isBodyEmpty(body) || saving}
             className="cmp-save-btn"
-            style={{ background: isAdmin ? '#B8860B' : '#6366F1', opacity:(isBodyEmpty(body) || saving) ? 0.55 : 1 }}>
+            style={{ background: isAdmin ? '#8F6807' : '#6366F1', opacity:(isBodyEmpty(body) || saving) ? 0.55 : 1 }}>
             {isAdmin ? <Download size={14}/> : <Send size={14}/>}
             {saving
               ? (isAdmin ? (editingId ? 'Updating…' : 'Saving…') : 'Submitting…')
@@ -839,7 +839,7 @@ export default function LettersPage() {
               <textarea value={toName} onChange={e => setToName(e.target.value)}
                 placeholder={"e.g. The Manager\nABC Company LLC"}
                 rows={3}
-                style={{ ...inputStyle, resize:'vertical', lineHeight:1.55, fontFamily:'Poppins,sans-serif' }}/>
+                style={{ ...inputStyle, resize:'vertical', lineHeight:1.55, fontFamily:'inherit' }}/>
               <div style={{ fontSize:10, color:'var(--text-muted)', marginTop:3 }}>Leave blank → "To Whom It May Concern" · Press Enter for new line</div>
             </div>
             <div>
@@ -877,7 +877,7 @@ export default function LettersPage() {
                 <div>
                   <label style={labelStyle}>Signature Image</label>
                   <input type="file" accept="image/*" onChange={handleSignatureUpload}
-                    style={{ fontSize:11.5, color:'var(--text)', fontFamily:'Poppins,sans-serif' }}/>
+                    style={{ fontSize:11.5, color:'var(--text)', fontFamily:'inherit' }}/>
                   {signatureData && (
                     <div style={{ marginTop:8, background:'white', border:'1px solid var(--border)', borderRadius:6, padding:6, display:'inline-block' }}>
                       <img src={signatureData} style={{ height:56, display:'block' }} alt="Signature preview"/>
@@ -929,7 +929,7 @@ export default function LettersPage() {
 
         <div className="ltr-kpi-grid">
           <div className="ltr-kpi">
-            <div className="ltr-kpi-val" style={{ color:'#B8860B' }}>{letters.length}</div>
+            <div className="ltr-kpi-val" style={{ color:'#8F6807' }}>{letters.length}</div>
             <div className="ltr-kpi-label">Total Letters</div>
           </div>
           <div className="ltr-kpi">
@@ -958,7 +958,7 @@ export default function LettersPage() {
           <div style={{ fontWeight:700, fontSize:15, color:'var(--text)', marginBottom:6 }}>No letters yet</div>
           <div style={{ fontSize:13, marginBottom:20 }}>Create your first official letter using the button above.</div>
           <button onClick={() => { resetForm(); setView('compose') }}
-            style={{ padding:'10px 24px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+            style={{ padding:'10px 24px', borderRadius:10, border:'none', background:'#8F6807', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
             <Plus size={13} style={{ display:'inline', marginRight:6, verticalAlign:'middle' }}/>
             New Letter
           </button>
@@ -969,7 +969,7 @@ export default function LettersPage() {
             const isPending = l.status === 'pending'
             return (
               <div key={l.id} className={`ltr-card${isPending ? ' ltr-card-pending' : ''}`}>
-                <div className="ltr-card-accent" style={{ background: isPending ? '#F59E0B' : '#B8860B' }}/>
+                <div className="ltr-card-accent" style={{ background: isPending ? '#F59E0B' : '#8F6807' }}/>
                 <div className="ltr-card-body">
 
                   {/* Top row: ref+subject / badge */}

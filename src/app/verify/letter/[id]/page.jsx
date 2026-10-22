@@ -37,7 +37,7 @@ export default async function LetterVerificationPage({ params }) {
   const message = data?.message || fetchError || 'This document could not be verified.'
 
   return (
-    <main style={{ minHeight:'100vh', background:'#F8F7F4', display:'flex', alignItems:'center', justifyContent:'center', padding:20, fontFamily:'Poppins, Arial, sans-serif' }}>
+    <main style={{ minHeight:'100vh', background:'#F8F7F4', display:'flex', alignItems:'center', justifyContent:'center', padding:20, fontFamily:'inherit' }}>
       <section style={{ width:'100%', maxWidth:520, background:'#fff', border:'1px solid #E7E2D8', borderRadius:16, boxShadow:'0 16px 50px rgba(0,0,0,0.08)', overflow:'hidden' }}>
 
         <div style={{ padding:'26px 28px', borderBottom:'1px solid #E7E2D8', display:'flex', alignItems:'center', gap:14 }}>
@@ -45,7 +45,7 @@ export default async function LetterVerificationPage({ params }) {
           <img src="/logo.webp" alt="Golden Crescent" style={{ width:52, height:52, objectFit:'contain', borderRadius:10 }}/>
           <div>
             <div style={{ fontSize:16, fontWeight:800, color:'#1A1612' }}>Golden Crescent</div>
-            <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color:'#B8860B' }}>Document Verification</div>
+            <div style={{ fontSize:11, fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', color:'#8F6807' }}>Document Verification</div>
           </div>
         </div>
 

@@ -19,7 +19,7 @@ import { stripRefTag } from '@/lib/employees'
 import { differenceInDays, parseISO } from 'date-fns'
 
 // ── Helpers ──────────────────────────────────────────────────────
-const TYPE_COLORS = { Annual:'#B8860B', Sick:'#2563EB', Emergency:'#DC2626', Unpaid:'#6B7280', Other:'#6B7280' }
+const TYPE_COLORS = { Annual:'#8F6807', Sick:'#2563EB', Emergency:'#DC2626', Unpaid:'#6B7280', Other:'#6B7280' }
 const DED_LABELS  = { traffic_fine:'Traffic Fine', iloe_fee:'ILOE Fee', iloe_fine:'ILOE Fine', cash_variance:'Cash Variance', cash_advance:'Cash Advance', absent_days:'Absent Days', other:'Other' }
 const EXP_STATUS_COLORS = {
   approved: { c:'#16A34A', bg:'#F0FDF4', bc:'#BBF7D0' },
@@ -123,7 +123,7 @@ function LeaveModal({ empId, onClose, onSave }) {
         <div style={{ display:'flex', gap:7, marginBottom:16, flexWrap:'wrap' }}>
           {['Annual','Emergency','Unpaid'].map(t => (
             <button key={t} onClick={() => set('type', t)}
-              style={{ padding:'7px 14px', borderRadius:20, border:`1.5px solid ${form.type===t ? TYPE_COLORS[t] : '#E5E7EB'}`, background:form.type===t ? `${TYPE_COLORS[t]}12` : '#FFF', color:form.type===t ? TYPE_COLORS[t] : '#6B7280', fontWeight:600, fontSize:12.5, cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>{t}</button>
+              style={{ padding:'7px 14px', borderRadius:20, border:`1.5px solid ${form.type===t ? TYPE_COLORS[t] : '#E5E7EB'}`, background:form.type===t ? `${TYPE_COLORS[t]}12` : '#FFF', color:form.type===t ? TYPE_COLORS[t] : '#6B7280', fontWeight:600, fontSize:12.5, cursor:'pointer', fontFamily:'inherit' }}>{t}</button>
           ))}
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:12 }}>
@@ -131,19 +131,19 @@ function LeaveModal({ empId, onClose, onSave }) {
             <div key={k}>
               <label style={{ fontSize:11, fontWeight:600, color:'#6B7280', display:'block', marginBottom:5 }}>{l}</label>
               <input type="date" value={form[k]} onChange={e => set(k, e.target.value)}
-                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E5E7EB', fontSize:13, fontFamily:'Poppins,sans-serif', outline:'none', boxSizing:'border-box', background:'#F9FAFB' }}/>
+                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E5E7EB', fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box', background:'#F9FAFB' }}/>
             </div>
           ))}
         </div>
         {days > 0 && (
-          <div style={{ textAlign:'center', fontSize:13, fontWeight:600, color:'#B8860B', background:'#FFFBEB', borderRadius:10, padding:'8px', marginBottom:12 }}>
+          <div style={{ textAlign:'center', fontSize:13, fontWeight:600, color:'#8F6807', background:'#FFFBEB', borderRadius:10, padding:'8px', marginBottom:12 }}>
             {days} day{days > 1 ? 's' : ''}
           </div>
         )}
         <input value={form.reason} onChange={e => set('reason', e.target.value)} placeholder="Reason (optional)"
-          style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E5E7EB', fontSize:13, fontFamily:'Poppins,sans-serif', outline:'none', boxSizing:'border-box', background:'#F9FAFB', marginBottom:14 }}/>
+          style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E5E7EB', fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box', background:'#F9FAFB', marginBottom:14 }}/>
         <button onClick={submit} disabled={saving || !form.from_date || !form.to_date}
-          style={{ width:'100%', padding:'13px', borderRadius:12, background:'#111', color:'#FFF', fontWeight:700, fontSize:14, border:'none', cursor:'pointer', fontFamily:'Poppins,sans-serif', opacity: saving || !form.from_date || !form.to_date ? 0.6 : 1 }}>
+          style={{ width:'100%', padding:'13px', borderRadius:12, background:'#111', color:'#FFF', fontWeight:700, fontSize:14, border:'none', cursor:'pointer', fontFamily:'inherit', opacity: saving || !form.from_date || !form.to_date ? 0.6 : 1 }}>
           {saving ? 'Submitting…' : 'Submit Request'}
         </button>
       </div>
@@ -223,7 +223,7 @@ function DriverPhotoSlot({ index, file, onSelect, onRemove }) {
   const ref = useRef(null)
   const url = file ? URL.createObjectURL(file) : null
   return (
-    <div style={{ position:'relative', aspectRatio:'1', borderRadius:10, overflow:'hidden', border:`2px dashed ${file?'#B8860B':'#D1D5DB'}`, background:file?'#000':'#F9FAFB', cursor:'pointer' }}
+    <div style={{ position:'relative', aspectRatio:'1', borderRadius:10, overflow:'hidden', border:`2px dashed ${file?'#8F6807':'#D1D5DB'}`, background:file?'#000':'#F9FAFB', cursor:'pointer' }}
       onClick={()=>!file && ref.current?.click()}>
       <input ref={ref} type="file" accept="image/*" capture="environment" style={{ display:'none' }}
         onChange={e=>{ if(e.target.files[0]) onSelect(index, e.target.files[0]) }}/>
@@ -315,7 +315,7 @@ function CompleteHandoverSheet({ handover, onClose, onDone }) {
               <div style={{ display:'flex', gap:5 }}>
                 {FUEL_LEVELS_DRIVER.map(f=>(
                   <button key={f.v} onClick={()=>setFuel(f.v)} type="button"
-                    style={{ flex:1, padding:'7px 3px', borderRadius:9, border:`2px solid ${fuel===f.v?'#111':'#E5E7EB'}`, background:fuel===f.v?'#111':'#F9FAFB', cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+                    style={{ flex:1, padding:'7px 3px', borderRadius:9, border:`2px solid ${fuel===f.v?'#111':'#E5E7EB'}`, background:fuel===f.v?'#111':'#F9FAFB', cursor:'pointer', fontFamily:'inherit' }}>
                     <div style={{ fontSize:10, fontWeight:700, color:fuel===f.v?'#FFF':'#9CA3AF' }}>{f.l}</div>
                   </button>
                 ))}
@@ -327,15 +327,15 @@ function CompleteHandoverSheet({ handover, onClose, onDone }) {
             <div style={{ marginBottom:14 }}>
               <div style={{ fontSize:11, fontWeight:700, color:'#374151', marginBottom:6 }}>Odometer (km) *</div>
               <input type="number" value={odometer} onChange={e=>setOdometer(e.target.value)} placeholder="e.g. 45230"
-                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E5E7EB', fontSize:13, fontFamily:'Poppins,sans-serif', outline:'none', boxSizing:'border-box', background:'#F9FAFB' }}/>
+                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E5E7EB', fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box', background:'#F9FAFB' }}/>
             </div>
             <div style={{ marginBottom:18 }}>
               <div style={{ fontSize:11, fontWeight:700, color:'#374151', marginBottom:6 }}>Condition Notes <span style={{ fontWeight:400, color:'#9CA3AF' }}>(optional)</span></div>
               <textarea value={note} onChange={e=>setNote(e.target.value)} rows={2} placeholder="Any damage, issues, or notes…"
-                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E5E7EB', fontSize:13, fontFamily:'Poppins,sans-serif', outline:'none', boxSizing:'border-box', background:'#F9FAFB', resize:'vertical' }}/>
+                style={{ width:'100%', padding:'10px 12px', borderRadius:10, border:'1.5px solid #E5E7EB', fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box', background:'#F9FAFB', resize:'vertical' }}/>
             </div>
             <button onClick={submit} disabled={saving}
-              style={{ width:'100%', padding:'13px', borderRadius:12, background:'#111', color:'#FFF', fontWeight:700, fontSize:14, border:'none', cursor:'pointer', fontFamily:'Poppins,sans-serif', opacity:saving?0.7:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+              style={{ width:'100%', padding:'13px', borderRadius:12, background:'#111', color:'#FFF', fontWeight:700, fontSize:14, border:'none', cursor:'pointer', fontFamily:'inherit', opacity:saving?0.7:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
               {saving ? <><span style={{ width:14, height:14, border:'2px solid rgba(255,255,255,0.4)', borderTopColor:'white', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/> Saving…</> : 'Complete Handover'}
             </button>
           </>
@@ -384,11 +384,11 @@ function InsuranceTab({ profile }) {
       {/* Action buttons */}
       <div style={{ display:'flex', gap:10 }}>
         <button onClick={() => setZoomed(true)}
-          style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'12px', borderRadius:14, background:'#2563EB', color:'#FFF', fontWeight:700, fontSize:13, border:'none', cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+          style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'12px', borderRadius:14, background:'#2563EB', color:'#FFF', fontWeight:700, fontSize:13, border:'none', cursor:'pointer', fontFamily:'inherit' }}>
           <Maximize2 size={15}/> Full Screen
         </button>
         <a href={profile?.insurance_url} target="_blank" rel="noreferrer"
-          style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'12px', borderRadius:14, background:'#F59E0B', color:'#FFF', fontWeight:700, fontSize:13, textDecoration:'none', fontFamily:'Poppins,sans-serif' }}>
+          style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'12px', borderRadius:14, background:'#F59E0B', color:'#FFF', fontWeight:700, fontSize:13, textDecoration:'none', fontFamily:'inherit' }}>
           <Download size={15}/> Download/Export
         </a>
       </div>
@@ -466,7 +466,7 @@ function SettingsModal({ onClose }) {
 
   const inputStyle = {
     width:'100%', padding:'11px 40px 11px 12px', borderRadius:10,
-    border:'1.5px solid #E5E7EB', fontSize:13.5, fontFamily:'Poppins,sans-serif',
+    border:'1.5px solid #E5E7EB', fontSize:13.5, fontFamily:'inherit',
     outline:'none', boxSizing:'border-box', background:'#F9FAFB',
   }
 
@@ -528,7 +528,7 @@ function SettingsModal({ onClose }) {
         )}
 
         <button onClick={submit} disabled={saving}
-          style={{ width:'100%', padding:'13px', borderRadius:12, background: saving ? '#9CA3AF' : '#111', color:'#FFF', fontWeight:700, fontSize:14, border:'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily:'Poppins,sans-serif', transition:'background 0.2s' }}>
+          style={{ width:'100%', padding:'13px', borderRadius:12, background: saving ? '#9CA3AF' : '#111', color:'#FFF', fontWeight:700, fontSize:14, border:'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily:'inherit', transition:'background 0.2s' }}>
           {saving ? 'Saving…' : 'Update Password'}
         </button>
       </div>
@@ -778,7 +778,7 @@ export default function DriverPortal() {
   const effectiveTodayAsgn = (vehicle || hasPendingReturn) ? null : todayAsgn
 
   return (
-    <div style={{ minHeight:'100vh', background:'#F0F1F5', fontFamily:'Poppins,sans-serif', paddingBottom:'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
+    <div style={{ minHeight:'100vh', background:'#F0F1F5', fontFamily:'inherit', paddingBottom:'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
 
       {/* ── TOAST ── */}
       {toast && (
@@ -819,11 +819,11 @@ export default function DriverPortal() {
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
                   <button onClick={() => setSettingsOpen(true)}
-                    style={{ display:'flex', alignItems:'center', justifyContent:'center', width:32, height:32, borderRadius:20, background:'#F3F4F6', border:'1px solid #E5E7EB', color:'#6B7280', cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+                    style={{ display:'flex', alignItems:'center', justifyContent:'center', width:32, height:32, borderRadius:20, background:'#F3F4F6', border:'1px solid #E5E7EB', color:'#6B7280', cursor:'pointer', fontFamily:'inherit' }}>
                     <Settings size={14}/>
                   </button>
                   <button onClick={signOut}
-                    style={{ display:'flex', alignItems:'center', gap:4, padding:'7px 12px', borderRadius:20, background:'#FEF2F2', border:'1px solid #FECACA', color:'#EF4444', fontWeight:600, fontSize:11.5, cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+                    style={{ display:'flex', alignItems:'center', gap:4, padding:'7px 12px', borderRadius:20, background:'#FEF2F2', border:'1px solid #FECACA', color:'#EF4444', fontWeight:600, fontSize:11.5, cursor:'pointer', fontFamily:'inherit' }}>
                     <LogOut size={12}/> Out
                   </button>
                 </div>
@@ -874,7 +874,7 @@ export default function DriverPortal() {
                   const Icon = a.icon
                   return (
                     <button key={a.l} onClick={a.action}
-                      style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 12px', borderRadius:16, background:'#FFF', border:'1px solid #EBEBEB', cursor:'pointer', fontFamily:'Poppins,sans-serif', textAlign:'left', width:'100%', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
+                      style={{ display:'flex', alignItems:'center', gap:10, padding:'14px 12px', borderRadius:16, background:'#FFF', border:'1px solid #EBEBEB', cursor:'pointer', fontFamily:'inherit', textAlign:'left', width:'100%', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
                       <div style={{ width:36, height:36, borderRadius:10, background:a.bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                         <Icon size={16} color={a.c}/>
                       </div>
@@ -944,7 +944,7 @@ export default function DriverPortal() {
                       </div>
                     </div>
                     <button onClick={() => setHvModal('returned')}
-                      style={{ width:'100%', padding:'11px', borderRadius:12, background:'#FEF2F2', border:'1.5px solid #FECACA', color:'#DC2626', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+                      style={{ width:'100%', padding:'11px', borderRadius:12, background:'#FEF2F2', border:'1.5px solid #FECACA', color:'#DC2626', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
                       Return Vehicle
                     </button>
                   </Card>
@@ -960,7 +960,7 @@ export default function DriverPortal() {
                       </div>
                     </div>
                     <button onClick={() => setHvModal('returned')}
-                      style={{ width:'100%', padding:'11px', borderRadius:12, background:'#FEF2F2', border:'1.5px solid #FECACA', color:'#DC2626', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+                      style={{ width:'100%', padding:'11px', borderRadius:12, background:'#FEF2F2', border:'1.5px solid #FECACA', color:'#DC2626', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
                       Return Vehicle
                     </button>
                   </Card>
@@ -1027,7 +1027,7 @@ export default function DriverPortal() {
                               refreshPending()
                             } catch(e) { alert(e.message) }
                           }}
-                          style={{ flex:1, padding:'10px', borderRadius:12, background:'#FEF2F2', color:'#DC2626', fontWeight:700, fontSize:13, border:'1.5px solid #FCA5A5', cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+                          style={{ flex:1, padding:'10px', borderRadius:12, background:'#FEF2F2', color:'#DC2626', fontWeight:700, fontSize:13, border:'1.5px solid #FCA5A5', cursor:'pointer', fontFamily:'inherit' }}>
                           Reject
                         </button>
                         <button onClick={async () => {
@@ -1037,14 +1037,14 @@ export default function DriverPortal() {
                               refreshPending()
                             } catch(e) { alert(e.message) }
                           }}
-                          style={{ flex:2, padding:'10px', borderRadius:12, background:'#D97706', color:'#FFF', fontWeight:700, fontSize:13, border:'none', cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+                          style={{ flex:2, padding:'10px', borderRadius:12, background:'#D97706', color:'#FFF', fontWeight:700, fontSize:13, border:'none', cursor:'pointer', fontFamily:'inherit' }}>
                           Accept Handover
                         </button>
                       </div>
                     )}
                     {isAccepted && (
                       <button onClick={() => setCompletingHandover(ph)}
-                        style={{ width:'100%', padding:'10px', borderRadius:12, background:'#16A34A', color:'#FFF', fontWeight:700, fontSize:13, border:'none', cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+                        style={{ width:'100%', padding:'10px', borderRadius:12, background:'#16A34A', color:'#FFF', fontWeight:700, fontSize:13, border:'none', cursor:'pointer', fontFamily:'inherit' }}>
                         Upload Photos &amp; Complete
                       </button>
                     )}
@@ -1127,7 +1127,7 @@ export default function DriverPortal() {
                   ))}
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'13px 16px', background:'#FFFBEB', borderRadius:12, marginTop:10, border:'1px solid #FDE68A' }}>
                     <span style={{ fontWeight:700, fontSize:14, color:'#92400E' }}>Net Total</span>
-                    <span style={{ fontWeight:900, fontSize:18, color:'#B8860B' }}>{fmtA(payslipNet)}</span>
+                    <span style={{ fontWeight:900, fontSize:18, color:'#8F6807' }}>{fmtA(payslipNet)}</span>
                   </div>
                 </Card>
 
@@ -1230,7 +1230,7 @@ export default function DriverPortal() {
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
               <h2 style={{ fontWeight:800, fontSize:22, color:'#111', margin:0 }}>My Leaves</h2>
               <button onClick={()=>setLeaveModal(true)}
-                style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 14px', borderRadius:20, background:'transparent', color:'#111', fontWeight:600, fontSize:12.5, border:'1.5px solid #D1D5DB', cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+                style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 14px', borderRadius:20, background:'transparent', color:'#111', fontWeight:600, fontSize:12.5, border:'1.5px solid #D1D5DB', cursor:'pointer', fontFamily:'inherit' }}>
                 Apply Leave <Plus size={13}/>
               </button>
             </div>
@@ -1289,7 +1289,7 @@ export default function DriverPortal() {
             <h2 style={{ fontWeight:800, fontSize:22, color:'#111', margin:0 }}>Performance</h2>
             <Card style={{ textAlign:'center', padding:'52px 24px' }}>
               <div style={{ width:72, height:72, borderRadius:20, background:'linear-gradient(135deg,#FDF6E3,#FEF3D0)', border:'1px solid #F0D78C', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px' }}>
-                <BarChart2 size={30} color="#B8860B"/>
+                <BarChart2 size={30} color="#8F6807"/>
               </div>
               <div style={{ fontWeight:800, fontSize:18, color:'#111', marginBottom:8 }}>Coming Soon</div>
               <div style={{ fontSize:13, color:'#9CA3AF', lineHeight:1.6 }}>Performance tracking is being set up.<br/>Check back soon.</div>
@@ -1399,7 +1399,7 @@ export default function DriverPortal() {
                     </div>
                   </div>
                   <button onClick={() => setHvModal('returned')}
-                    style={{ width:'100%', padding:'12px', borderRadius:12, background:'#2563EB', color:'#FFF', fontWeight:700, fontSize:14, border:'none', cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+                    style={{ width:'100%', padding:'12px', borderRadius:12, background:'#2563EB', color:'#FFF', fontWeight:700, fontSize:14, border:'none', cursor:'pointer', fontFamily:'inherit' }}>
                     Report Issue / Return Vehicle
                   </button>
                 </Card>
@@ -1497,7 +1497,7 @@ export default function DriverPortal() {
           const active = tab === t.id
           return (
             <button key={t.id} onClick={() => setTab(t.id)}
-              style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'9px 1px 10px', border:'none', background:'none', cursor:'pointer', fontFamily:'Poppins,sans-serif', minWidth:0, position:'relative' }}>
+              style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'9px 1px 10px', border:'none', background:'none', cursor:'pointer', fontFamily:'inherit', minWidth:0, position:'relative' }}>
               {active && <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:24, height:3, background:'#111', borderRadius:'0 0 4px 4px' }}/>}
               <Icon size={19} color={active ? '#111' : '#9CA3AF'} strokeWidth={active ? 2.5 : 1.8}/>
               <span className="dp-nav-label" style={{ fontWeight: active ? 700 : 500, color: active ? '#111' : '#9CA3AF', marginTop:3, fontSize:9.5, lineHeight:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'100%', padding:'0 1px' }}>

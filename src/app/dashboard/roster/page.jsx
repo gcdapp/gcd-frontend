@@ -8,7 +8,7 @@ function hdr() { return { 'Content-Type':'application/json', Authorization:`Bear
 const SHIFT_CFG = {
   regular: { l:'Regular',  c:'#2E7D52', bg:'#ECFDF5', bc:'#A7F3D0', icon:'🚗' },
   rescue:  { l:'Rescue',   c:'#C0392B', bg:'#FEF2F2', bc:'#FCA5A5', icon:'🆘' },
-  off:     { l:'Day Off',  c:'#A89880', bg:'#F5F4F1', bc:'#EAE6DE', icon:'🛌' },
+  off:     { l:'Day Off',  c:'#78716C', bg:'#F5F4F1', bc:'#EAE6DE', icon:'🛌' },
   leave:   { l:'On Leave', c:'#B45309', bg:'#FFFBEB', bc:'#FCD34D', icon:'🏖' },
 }
 const CYCLES = ['A','B','C','D','E','E1','F']
@@ -74,28 +74,28 @@ function ShiftCell({ shift, empId, date, station, onAssign }) {
         <div style={{position:'fixed',zIndex:200,background:'#FFF',border:'1.5px solid #EAE6DE',borderRadius:14,padding:14,boxShadow:'0 8px 32px rgba(0,0,0,0.15)',width:200}} onClick={e=>e.stopPropagation()}>
           <div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}>
             <span style={{fontSize:12,fontWeight:700,color:'#1A1612'}}>{date}</span>
-            <button onClick={()=>setOpen(false)} style={{border:'none',background:'none',cursor:'pointer',color:'#A89880',fontSize:16}}>×</button>
+            <button onClick={()=>setOpen(false)} style={{border:'none',background:'none',cursor:'pointer',color:'#78716C',fontSize:16}}>×</button>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}}>
             {Object.entries(SHIFT_CFG).map(([k,v])=>(
-              <button key={k} onClick={()=>setType(k)} style={{padding:'7px 4px',borderRadius:8,border:`2px solid ${type===k?v.c:'#EAE6DE'}`,background:type===k?v.bg:'#FFF',cursor:'pointer',fontFamily:'Poppins,sans-serif',textAlign:'center',fontSize:10,fontWeight:700,color:type===k?v.c:'#A89880',transition:'all 0.15s'}}>
+              <button key={k} onClick={()=>setType(k)} style={{padding:'7px 4px',borderRadius:8,border:`2px solid ${type===k?v.c:'#EAE6DE'}`,background:type===k?v.bg:'#FFF',cursor:'pointer',fontFamily:'inherit',textAlign:'center',fontSize:10,fontWeight:700,color:type===k?v.c:'#78716C',transition:'all 0.15s'}}>
                 {v.icon} {v.l}
               </button>
             ))}
           </div>
           {type==='regular'&&<>
-            <label style={{fontSize:10,fontWeight:700,color:'#A89880',textTransform:'uppercase',letterSpacing:'0.06em',display:'block',marginBottom:5}}>Cycle</label>
+            <label style={{fontSize:10,fontWeight:700,color:'#78716C',textTransform:'uppercase',letterSpacing:'0.06em',display:'block',marginBottom:5}}>Cycle</label>
             <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:10}}>
               {CYCLES.map(c=>(
-                <button key={c} onClick={()=>setCycle(cycle===c?'':c)} style={{padding:'4px 9px',borderRadius:7,border:`1.5px solid ${cycle===c?'#B8860B':'#EAE6DE'}`,background:cycle===c?'#FDF6E3':'#FFF',color:cycle===c?'#B8860B':'#A89880',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'Poppins,sans-serif'}}>
+                <button key={c} onClick={()=>setCycle(cycle===c?'':c)} style={{padding:'4px 9px',borderRadius:7,border:`1.5px solid ${cycle===c?'#8F6807':'#EAE6DE'}`,background:cycle===c?'#FDF6E3':'#FFF',color:cycle===c?'#8F6807':'#78716C',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
                   {c}
                 </button>
               ))}
             </div>
           </>}
           <div style={{display:'flex',gap:6}}>
-            {shift&&<button onClick={clear} style={{flex:1,padding:'7px',borderRadius:100,background:'#FEF2F2',border:'1px solid #FCA5A5',color:'#C0392B',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'Poppins,sans-serif'}}>Clear</button>}
-            <button onClick={save} disabled={saving} style={{flex:2,padding:'7px',borderRadius:100,background:'linear-gradient(135deg,#B8860B,#D4A017)',border:'none',color:'white',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'Poppins,sans-serif'}}>
+            {shift&&<button onClick={clear} style={{flex:1,padding:'7px',borderRadius:100,background:'#FEF2F2',border:'1px solid #FCA5A5',color:'#C0392B',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>Clear</button>}
+            <button onClick={save} disabled={saving} style={{flex:2,padding:'7px',borderRadius:100,background:'linear-gradient(135deg,#8F6807,#D4A017)',border:'none',color:'white',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
               {saving?'Saving…':'Save'}
             </button>
           </div>
@@ -173,13 +173,13 @@ export default function RosterPage() {
       <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
         <div>
           <h1 style={{fontWeight:900,fontSize:22,color:'#1A1612',letterSpacing:'-0.03em',display:'flex',alignItems:'center',gap:10}}>
-            <Calendar size={22} color="#B8860B"/> Weekly Roster
+            <Calendar size={22} color="#8F6807"/> Weekly Roster
           </h1>
-          <p style={{fontSize:12,color:'#A89880',marginTop:3}}>Plan and assign shifts for the week</p>
+          <p style={{fontSize:12,color:'#78716C',marginTop:3}}>Plan and assign shifts for the week</p>
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           {STATIONS.map(s=>(
-            <button key={s} onClick={()=>setStation(s)} style={{padding:'7px 16px',borderRadius:20,border:`1.5px solid ${station===s?'#B8860B':'#EAE6DE'}`,background:station===s?'#FDF6E3':'#FFF',color:station===s?'#B8860B':'#A89880',fontWeight:station===s?700:500,fontSize:12,cursor:'pointer',fontFamily:'Poppins,sans-serif'}}>
+            <button key={s} onClick={()=>setStation(s)} style={{padding:'7px 16px',borderRadius:20,border:`1.5px solid ${station===s?'#8F6807':'#EAE6DE'}`,background:station===s?'#FDF6E3':'#FFF',color:station===s?'#8F6807':'#78716C',fontWeight:station===s?700:500,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>
               {s}
             </button>
           ))}
@@ -191,11 +191,11 @@ export default function RosterPage() {
         <button onClick={prevWeek} style={{width:32,height:32,borderRadius:'50%',background:'#F5F4F1',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><ChevronLeft size={15}/></button>
         <div style={{flex:1,textAlign:'center'}}>
           <div style={{fontWeight:800,fontSize:14,color:'#1A1612'}}>{weekDates[0]} — {weekDates[6]}</div>
-          <div style={{fontSize:11,color:'#A89880',marginTop:2}}>{employees.length} DAs · {station}</div>
+          <div style={{fontSize:11,color:'#78716C',marginTop:2}}>{employees.length} DAs · {station}</div>
         </div>
         <button onClick={nextWeek} style={{width:32,height:32,borderRadius:'50%',background:'#F5F4F1',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><ChevronRight size={15}/></button>
-        <button onClick={()=>setWeekStart(getMonday())} style={{padding:'6px 14px',borderRadius:100,background:'#FDF6E3',border:'1px solid #F0D78C',color:'#B8860B',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'Poppins,sans-serif'}}>Today</button>
-        <button onClick={copyLastWeek} disabled={copying} style={{padding:'6px 14px',borderRadius:100,background:'var(--bg-alt)',border:'1px solid var(--border-med)',color:'var(--text-sub)',fontWeight:600,fontSize:11,cursor:'pointer',fontFamily:'Poppins,sans-serif',display:'flex',alignItems:'center',gap:5}}>
+        <button onClick={()=>setWeekStart(getMonday())} style={{padding:'6px 14px',borderRadius:100,background:'#FDF6E3',border:'1px solid #F0D78C',color:'#8F6807',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>Today</button>
+        <button onClick={copyLastWeek} disabled={copying} style={{padding:'6px 14px',borderRadius:100,background:'var(--bg-alt)',border:'1px solid var(--border-med)',color:'var(--text-sub)',fontWeight:600,fontSize:11,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:5}}>
           <Copy size={12}/>{copying?'Copying…':'Copy Last Week'}
         </button>
       </div>
@@ -206,9 +206,9 @@ export default function RosterPage() {
           const isToday = d.date===today
           return (
             <div key={d.date} style={{textAlign:'center',padding:'8px 4px',borderRadius:10,background:isToday?'#FDF6E3':'#FAFAF8',border:`1px solid ${isToday?'#F0D78C':'#EAE6DE'}`}}>
-              <div style={{fontSize:10,fontWeight:700,color:isToday?'#B8860B':'#A89880'}}>{DAYS[i]}</div>
+              <div style={{fontSize:10,fontWeight:700,color:isToday?'#8F6807':'#78716C'}}>{DAYS[i]}</div>
               <div style={{fontSize:11,fontWeight:800,color:'#2E7D52',marginTop:3}}>{d.regular} 🚗</div>
-              {d.off>0&&<div style={{fontSize:10,color:'#A89880'}}>{d.off} off</div>}
+              {d.off>0&&<div style={{fontSize:10,color:'#78716C'}}>{d.off} off</div>}
             </div>
           )
         })}
@@ -218,7 +218,7 @@ export default function RosterPage() {
       {loading ? (
         <div className="skeleton" style={{height:300,borderRadius:16}}/>
       ) : employees.length===0 ? (
-        <div style={{textAlign:'center',padding:60,color:'#A89880'}}>
+        <div style={{textAlign:'center',padding:60,color:'#78716C'}}>
           <Users size={40} style={{margin:'0 auto 12px',display:'block',opacity:0.2}}/>
           <div style={{fontWeight:600,color:'#6B5D4A'}}>No active DAs found for {station}</div>
         </div>
@@ -232,8 +232,8 @@ export default function RosterPage() {
                 const isToday = d===today
                 return (
                   <div key={d} style={{textAlign:'center',padding:'8px 4px',borderRadius:10,background:isToday?'linear-gradient(135deg,#FDF6E3,#FEF9F0)':'transparent',border:isToday?'1px solid #F0D78C':'1px solid transparent'}}>
-                    <div style={{fontWeight:800,fontSize:11,color:isToday?'#B8860B':'#6B5D4A'}}>{DAYS[i]}</div>
-                    <div style={{fontSize:10,color:isToday?'#B8860B':'#A89880',marginTop:1}}>{d.slice(5)}</div>
+                    <div style={{fontWeight:800,fontSize:11,color:isToday?'#8F6807':'#6B5D4A'}}>{DAYS[i]}</div>
+                    <div style={{fontSize:10,color:isToday?'#8F6807':'#78716C',marginTop:1}}>{d.slice(5)}</div>
                   </div>
                 )
               })}
@@ -242,12 +242,12 @@ export default function RosterPage() {
             {employees.map((emp,ei)=>(
               <div key={emp.id} style={{display:'grid',gridTemplateColumns:'180px repeat(7,1fr)',gap:6,marginBottom:6,animation:`slideUp 0.3s ${ei*0.03}s ease both`}}>
                 <div style={{display:'flex',alignItems:'center',gap:8,padding:'6px 10px',background:'#FFF',borderRadius:10,border:'1px solid #EAE6DE'}}>
-                  <div style={{width:34,height:34,borderRadius:10,background:'linear-gradient(135deg,#FDF6E3,#FEF3D0)',border:'1px solid #F0D78C',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:900,color:'#B8860B',flexShrink:0}}>
+                  <div style={{width:34,height:34,borderRadius:10,background:'linear-gradient(135deg,#FDF6E3,#FEF3D0)',border:'1px solid #F0D78C',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:900,color:'#8F6807',flexShrink:0}}>
                     {emp.name?.slice(0,2).toUpperCase()}
                   </div>
                   <div style={{minWidth:0}}>
                     <div style={{fontWeight:700,fontSize:12,color:'#1A1612',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{emp.name}</div>
-                    <div style={{fontSize:10,color:'#A89880',marginTop:1,fontFamily:'inherit'}}>{emp.id}</div>
+                    <div style={{fontSize:10,color:'#78716C',marginTop:1,fontFamily:'inherit'}}>{emp.id}</div>
                   </div>
                 </div>
                 {weekDates.map(date=>(

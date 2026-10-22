@@ -47,15 +47,15 @@ const CSS = `
   .cust-hero-icon {
     width: 44px; height: 44px; border-radius: 12px;
     background: rgba(184,134,11,0.15); border: 1px solid rgba(184,134,11,0.3);
-    display: flex; align-items: center; justify-content: center; color: #B8860B; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; color: #8F6807; flex-shrink: 0;
   }
   .cust-hero-title { font-size: 20px; font-weight: 800; color: white; margin: 0; }
   .cust-hero-sub   { font-size: 12px; color: rgba(255,255,255,0.5); margin: 3px 0 0; }
   .cust-add-btn {
     margin-left: auto; display: flex; align-items: center; gap: 7px;
     padding: 10px 20px; border-radius: 10px; border: none;
-    background: #B8860B; color: white; font-weight: 700; font-size: 13px;
-    cursor: pointer; font-family: Poppins, sans-serif; white-space: nowrap; transition: background 0.15s;
+    background: #8F6807; color: white; font-weight: 700; font-size: 13px;
+    cursor: pointer; font-family: inherit; white-space: nowrap; transition: background 0.15s;
   }
   .cust-add-btn:hover { background: #9a7209; }
   .cust-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
@@ -73,11 +73,11 @@ const CSS = `
   }
   .cust-search-input {
     flex: 1; border: none; outline: none; background: transparent; color: var(--text);
-    font-family: Poppins, sans-serif; font-size: 13px; padding: 9px 0;
+    font-family: inherit; font-size: 13px; padding: 9px 0;
   }
   .cust-filter-sel {
     padding: 9px 14px; border-radius: 10px; border: 1px solid var(--border);
-    background: var(--card); color: var(--text); font-family: Poppins, sans-serif;
+    background: var(--card); color: var(--text); font-family: inherit;
     font-size: 13px; outline: none; cursor: pointer;
   }
 
@@ -90,7 +90,7 @@ const CSS = `
   .cust-card-header { display: flex; align-items: center; gap: 12px; padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
   .cust-avatar {
     width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
-    background: linear-gradient(135deg, #B8860B, #D4A017);
+    background: linear-gradient(135deg, #8F6807, #D4A017);
     display: flex; align-items: center; justify-content: center;
     font-weight: 800; font-size: 15px; color: white; letter-spacing: 0.03em;
   }
@@ -130,7 +130,7 @@ const CSS = `
   .cust-btn {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 6px 13px; border-radius: 8px; font-size: 12px; font-weight: 600;
-    cursor: pointer; font-family: Poppins, sans-serif; white-space: nowrap;
+    cursor: pointer; font-family: inherit; white-space: nowrap;
     transition: opacity 0.15s; border: 1px solid transparent;
   }
   .cust-btn:hover { opacity: 0.82; }
@@ -160,7 +160,7 @@ const CSS = `
   .cust-modal-body   { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; max-height: 70vh; }
   .cust-section-label {
     font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
-    color: #B8860B; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    color: #8F6807; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
   }
   .cust-section-label::after { content:''; flex:1; height:1px; background: rgba(184,134,11,0.2); }
   .cust-form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -172,10 +172,10 @@ const CSS = `
   .cust-input {
     width: 100%; padding: 8px 11px; border-radius: 8px;
     border: 1px solid var(--border); background: var(--bg-alt); color: var(--text);
-    font-size: 12.5px; font-family: Poppins, sans-serif; outline: none; box-sizing: border-box;
+    font-size: 12.5px; font-family: inherit; outline: none; box-sizing: border-box;
     transition: border-color 0.15s;
   }
-  .cust-input:focus { border-color: #B8860B; }
+  .cust-input:focus { border-color: #8F6807; }
   .cust-input-prefix { display: flex; }
   .cust-input-prefix span {
     padding: 8px 10px; background: var(--card); border: 1px solid var(--border);
@@ -190,18 +190,18 @@ const CSS = `
     border: 2px solid var(--border); background: var(--bg-alt);
     transition: all 0.15s; text-align: center;
   }
-  .cust-type-opt.active { border-color: #B8860B; background: #FFFBEB; }
+  .cust-type-opt.active { border-color: #8F6807; background: #FFFBEB; }
   .cust-type-opt span   { font-size: 11px; font-weight: 700; color: var(--text); }
   .cust-modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); }
   .cust-btn-cancel {
     padding: 9px 20px; border-radius: 9px; border: 1px solid var(--border);
     background: var(--bg-alt); color: var(--text); font-weight: 600; font-size: 13px;
-    cursor: pointer; font-family: Poppins, sans-serif;
+    cursor: pointer; font-family: inherit;
   }
   .cust-btn-save {
     padding: 9px 24px; border-radius: 9px; border: none;
-    background: #B8860B; color: white; font-weight: 700; font-size: 13px;
-    cursor: pointer; font-family: Poppins, sans-serif; transition: background 0.15s;
+    background: #8F6807; color: white; font-weight: 700; font-size: 13px;
+    cursor: pointer; font-family: inherit; transition: background 0.15s;
   }
   .cust-btn-save:hover    { background: #9a7209; }
   .cust-btn-save:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -216,12 +216,12 @@ const CSS = `
     background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
     color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 600;
     padding: 6px 12px; border-radius: 8px; cursor: pointer;
-    font-family: Poppins, sans-serif; margin-bottom: 18px;
+    font-family: inherit; margin-bottom: 18px;
   }
   .det-hero-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
   .det-avatar {
     width: 50px; height: 50px; border-radius: 14px; flex-shrink: 0;
-    background: linear-gradient(135deg, #B8860B, #D4A017);
+    background: linear-gradient(135deg, #8F6807, #D4A017);
     display: flex; align-items: center; justify-content: center;
     font-weight: 800; font-size: 16px; color: white;
     box-shadow: 0 4px 12px rgba(184,134,11,0.3);
@@ -240,15 +240,15 @@ const CSS = `
   .det-tab {
     background: none; border: none; border-bottom: 2px solid transparent; padding: 12px 18px;
     font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer;
-    font-family: Poppins, sans-serif; transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+    font-family: inherit; transition: all 0.15s; display: flex; align-items: center; gap: 6px;
   }
-  .det-tab.active { color: #B8860B; font-weight: 700; border-bottom-color: #B8860B; }
+  .det-tab.active { color: #8F6807; font-weight: 700; border-bottom-color: #8F6807; }
   .det-tab:hover:not(.active) { color: var(--text); background: var(--bg-alt); }
   .det-tab-count {
     font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px;
     background: var(--bg-alt); color: var(--text-muted); min-width: 18px; text-align: center;
   }
-  .det-tab.active .det-tab-count { background: rgba(184,134,11,0.15); color: #B8860B; }
+  .det-tab.active .det-tab-count { background: rgba(184,134,11,0.15); color: #8F6807; }
 
   /* ── Table ── */
   .det-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
@@ -314,14 +314,14 @@ const CSS = `
   .ldg-year-sel {
     padding: 7px 12px; border-radius: 9px; border: 1px solid var(--border);
     background: var(--bg-alt); color: var(--text);
-    font-family: Poppins, sans-serif; font-size: 13px; font-weight: 600; outline: none; cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 600; outline: none; cursor: pointer;
   }
   .ldg-print-btn {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 14px; border-radius: 9px;
     border: 1px solid var(--border); background: var(--bg-alt);
     color: var(--text); font-size: 12px; font-weight: 600;
-    cursor: pointer; font-family: Poppins, sans-serif; transition: opacity 0.15s;
+    cursor: pointer; font-family: inherit; transition: opacity 0.15s;
   }
   .ldg-print-btn:hover { opacity: 0.75; }
   .ldg-bal-chip {
@@ -368,10 +368,10 @@ const CSS = `
     display: flex; align-items: center; gap: 6px;
     padding: 8px 16px; border-radius: 9px; border: none; background: transparent;
     color: rgba(255,255,255,0.55); font-size: 12.5px; font-weight: 700;
-    cursor: pointer; font-family: Poppins, sans-serif; white-space: nowrap; transition: all 0.15s;
+    cursor: pointer; font-family: inherit; white-space: nowrap; transition: all 0.15s;
   }
   .cust-view-btn:hover:not(.active) { color: rgba(255,255,255,0.85); }
-  .cust-view-btn.active { background: #B8860B; color: white; box-shadow: 0 2px 10px rgba(184,134,11,0.45); }
+  .cust-view-btn.active { background: #8F6807; color: white; box-shadow: 0 2px 10px rgba(184,134,11,0.45); }
 
   /* ── All Invoices & Receipts view ── */
   .txn-toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
@@ -379,7 +379,7 @@ const CSS = `
   .txn-export-btn {
     display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: 24px;
     background: #1F6F5C; color: white; border: none; cursor: pointer;
-    font-family: Poppins, sans-serif; font-size: 12.5px; font-weight: 700;
+    font-family: inherit; font-size: 12.5px; font-weight: 700;
   }
   .txn-export-btn:disabled { opacity: 0.6; cursor: wait; }
   .txn-export-menu {
@@ -390,7 +390,7 @@ const CSS = `
   .txn-export-item {
     display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: left;
     padding: 9px 10px; border: none; background: none; border-radius: 8px; cursor: pointer;
-    font-family: Poppins, sans-serif; font-size: 12.5px; font-weight: 600; color: var(--text);
+    font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--text);
   }
   .txn-export-item:hover { background: var(--bg-alt); }
   .txn-export-item span { font-size: 11px; font-weight: 500; color: var(--text-muted); }
@@ -403,11 +403,11 @@ const CSS = `
     display: flex; align-items: center; justify-content: center; cursor: pointer;
     color: var(--text-muted); transition: all 0.15s; flex-shrink: 0;
   }
-  .txn-month-nav-btn:hover:not(:disabled) { background: var(--bg-alt); color: #B8860B; }
+  .txn-month-nav-btn:hover:not(:disabled) { background: var(--bg-alt); color: #8F6807; }
   .txn-month-nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
   .txn-month-select {
     border: none; background: transparent; outline: none; cursor: pointer;
-    font-family: Poppins, sans-serif; font-size: 13.5px; font-weight: 800; color: var(--text);
+    font-family: inherit; font-size: 13.5px; font-weight: 800; color: var(--text);
     padding: 0 4px; text-align: center; appearance: none; -webkit-appearance: none; -moz-appearance: none;
     min-width: 118px; text-align: center;
   }
@@ -424,7 +424,7 @@ const CSS = `
     display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
   }
   .txn-stat-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 6px; }
-  .txn-stat-val   { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; font-family: Poppins, sans-serif; line-height: 1; }
+  .txn-stat-val   { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; font-family: inherit; line-height: 1; }
   .txn-stat-sub   { font-size: 11px; color: var(--text-muted); margin-top: 8px; font-weight: 600; }
   .txn-ratio-bar  { height: 6px; border-radius: 20px; background: var(--bg-alt); overflow: hidden; display: flex; margin-top: 10px; }
   .txn-ratio-fill { height: 100%; transition: width 0.4s ease; }
@@ -443,7 +443,7 @@ const CSS = `
   .txn-row-cust { font-weight: 700; color: var(--text); min-width: 170px; flex-shrink: 0; }
   .txn-row-desc { color: var(--text-muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .txn-row-date { color: var(--text-muted); font-size: 11.5px; flex-shrink: 0; white-space: nowrap; width: 82px; }
-  .txn-row-amt  { font-weight: 800; font-family: Poppins, sans-serif; flex-shrink: 0; white-space: nowrap; text-align: right; min-width: 110px; font-size: 13.5px; }
+  .txn-row-amt  { font-weight: 800; font-family: inherit; flex-shrink: 0; white-space: nowrap; text-align: right; min-width: 110px; font-size: 13.5px; }
   .txn-empty { text-align: center; padding: 70px 20px; color: var(--text-muted); }
 
   @media print {
@@ -600,7 +600,7 @@ function EntryModal({ type, customer, entry, onSave, onClose }) {
   const iconBg   = isInvoice ? 'rgba(184,134,11,0.2)'  : 'rgba(34,197,94,0.2)'
   const iconBdr  = isInvoice ? 'rgba(184,134,11,0.4)'  : 'rgba(34,197,94,0.4)'
   const iconColor= isInvoice ? '#D4A017' : '#22C55E'
-  const btnBg    = isInvoice ? 'linear-gradient(135deg,#B8860B,#D4A017)' : 'linear-gradient(135deg,#15803D,#22C55E)'
+  const btnBg    = isInvoice ? 'linear-gradient(135deg,#8F6807,#D4A017)' : 'linear-gradient(135deg,#15803D,#22C55E)'
   const btnShadow= isInvoice ? '0 3px 12px rgba(184,134,11,0.35)' : '0 3px 12px rgba(34,197,94,0.3)'
 
   return createPortal(
@@ -705,7 +705,7 @@ function EntryModal({ type, customer, entry, onSave, onClose }) {
           )}
 
           <button onClick={handleSubmit} disabled={saving}
-            style={{ padding:'13px', borderRadius:12, border:'none', cursor:saving?'not-allowed':'pointer', background:saving?'var(--border)':btnBg, color:saving?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'Poppins,sans-serif', marginTop:4, transition:'all 0.2s', boxShadow:saving?'none':btnShadow }}>
+            style={{ padding:'13px', borderRadius:12, border:'none', cursor:saving?'not-allowed':'pointer', background:saving?'var(--border)':btnBg, color:saving?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'inherit', marginTop:4, transition:'all 0.2s', boxShadow:saving?'none':btnShadow }}>
             {saving ? (isEdit ? 'Saving…' : 'Adding…') : (isEdit ? 'Save Changes' : isInvoice ? 'Add Invoice' : 'Add Payment Receipt')}
           </button>
         </div>
@@ -1136,11 +1136,11 @@ function CustomerDetailView({ customer, isAdmin, onBack }) {
               <RefreshCw size={14} color="rgba(255,255,255,0.6)" className={refreshing ? 'pc-spin' : ''}/>
             </button>
             <button onClick={() => setModal({ type:'receipt', entry:null })}
-              style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer', background:'linear-gradient(135deg,#15803D,#22C55E)', color:'white', fontWeight:700, fontSize:13, fontFamily:'Poppins,sans-serif', boxShadow:'0 2px 10px rgba(34,197,94,0.35)', whiteSpace:'nowrap' }}>
+              style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer', background:'linear-gradient(135deg,#15803D,#22C55E)', color:'white', fontWeight:700, fontSize:13, fontFamily:'inherit', boxShadow:'0 2px 10px rgba(34,197,94,0.35)', whiteSpace:'nowrap' }}>
               <ArrowDownLeft size={14}/> Add Receipt
             </button>
             <button onClick={() => setModal({ type:'invoice', entry:null })}
-              style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer', background:'linear-gradient(135deg,#B8860B,#D4A017)', color:'white', fontWeight:700, fontSize:13, fontFamily:'Poppins,sans-serif', boxShadow:'0 2px 10px rgba(184,134,11,0.4)', whiteSpace:'nowrap' }}>
+              style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer', background:'linear-gradient(135deg,#8F6807,#D4A017)', color:'white', fontWeight:700, fontSize:13, fontFamily:'inherit', boxShadow:'0 2px 10px rgba(184,134,11,0.4)', whiteSpace:'nowrap' }}>
               <Plus size={14}/> Add Invoice
             </button>
           </div>
@@ -1197,7 +1197,7 @@ function CustomerDetailView({ customer, isAdmin, onBack }) {
             <Search size={14} style={{ position:'absolute', left:28, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)', pointerEvents:'none' }}/>
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder={`Search ${tab}…`}
-              style={{ width:'100%', padding:'8px 12px 8px 36px', borderRadius:9, border:'1px solid var(--border)', background:'var(--bg-alt)', color:'var(--text)', fontSize:13, fontFamily:'Poppins,sans-serif', outline:'none', boxSizing:'border-box' }}/>
+              style={{ width:'100%', padding:'8px 12px 8px 36px', borderRadius:9, border:'1px solid var(--border)', background:'var(--bg-alt)', color:'var(--text)', fontSize:13, fontFamily:'inherit', outline:'none', boxSizing:'border-box' }}/>
           </div>
         )}
 
@@ -1235,7 +1235,7 @@ function CustomerDetailView({ customer, isAdmin, onBack }) {
                       <td className="col-grand">{fmtAed(inv.grand_total)}</td>
                       <td className="col-act">
                         <button onClick={() => setModal({ type:'invoice', entry:inv })}
-                          style={{ background:'#EFF6FF', border:'1px solid #93C5FD', color:'#2563EB', borderRadius:7, padding:'4px 10px', fontSize:11.5, fontWeight:600, cursor:'pointer', fontFamily:'Poppins,sans-serif', marginRight:6 }}>
+                          style={{ background:'#EFF6FF', border:'1px solid #93C5FD', color:'#2563EB', borderRadius:7, padding:'4px 10px', fontSize:11.5, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginRight:6 }}>
                           <Pencil size={10} style={{ display:'inline', marginRight:4 }}/>Edit
                         </button>
                         {isAdmin && (
@@ -1283,7 +1283,7 @@ function CustomerDetailView({ customer, isAdmin, onBack }) {
                       <td className="col-credit">{fmtAed(rec.credit)}</td>
                       <td className="col-act">
                         <button onClick={() => setModal({ type:'receipt', entry:rec })}
-                          style={{ background:'#ECFDF5', border:'1px solid #6EE7B7', color:'#059669', borderRadius:7, padding:'4px 10px', fontSize:11.5, fontWeight:600, cursor:'pointer', fontFamily:'Poppins,sans-serif', marginRight:6 }}>
+                          style={{ background:'#ECFDF5', border:'1px solid #6EE7B7', color:'#059669', borderRadius:7, padding:'4px 10px', fontSize:11.5, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginRight:6 }}>
                           <Pencil size={10} style={{ display:'inline', marginRight:4 }}/>Edit
                         </button>
                         {isAdmin && (
@@ -1424,7 +1424,7 @@ function CustomerModal({ customer, onSave, onClose }) {
     <div className="cust-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="cust-modal">
         <div className="cust-modal-header">
-          <div style={{ width:36, height:36, borderRadius:10, background:'rgba(184,134,11,0.12)', border:'1px solid rgba(184,134,11,0.25)', display:'flex', alignItems:'center', justifyContent:'center', color:'#B8860B' }}>
+          <div style={{ width:36, height:36, borderRadius:10, background:'rgba(184,134,11,0.12)', border:'1px solid rgba(184,134,11,0.25)', display:'flex', alignItems:'center', justifyContent:'center', color:'#8F6807' }}>
             <Building2 size={18}/>
           </div>
           <div className="cust-modal-title">{isEdit ? 'Edit Customer' : 'Add New Customer'}</div>
@@ -1829,7 +1829,7 @@ export default function CustomersPage() {
           )}
         </div>
         <div className="cust-kpi-grid">
-          <div className="cust-kpi"><div className="cust-kpi-val" style={{ color:'#B8860B' }}>{customers.length}</div><div className="cust-kpi-label">Total</div></div>
+          <div className="cust-kpi"><div className="cust-kpi-val" style={{ color:'#8F6807' }}>{customers.length}</div><div className="cust-kpi-label">Total</div></div>
           <div className="cust-kpi"><div className="cust-kpi-val" style={{ color:'#3B82F6' }}>{totalSale}</div><div className="cust-kpi-label">Sale Invoice</div></div>
           <div className="cust-kpi"><div className="cust-kpi-val" style={{ color:'#8B5CF6' }}>{totalPur}</div><div className="cust-kpi-label">Purchase Invoice</div></div>
           <div className="cust-kpi"><div className="cust-kpi-val" style={{ color:'#F59E0B' }}>{totalBoth}</div><div className="cust-kpi-label">Both Types</div></div>
@@ -1869,7 +1869,7 @@ export default function CustomersPage() {
           <div style={{ fontSize:13, marginBottom:20 }}>{search || typeFilter ? 'Try adjusting your filters' : 'Add your first customer to get started.'}</div>
           {!search && !typeFilter && (
             <button onClick={() => setModal('add')}
-              style={{ padding:'10px 24px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+              style={{ padding:'10px 24px', borderRadius:10, border:'none', background:'#8F6807', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
               <Plus size={13} style={{ display:'inline', marginRight:6, verticalAlign:'middle' }}/> Add Customer
             </button>
           )}

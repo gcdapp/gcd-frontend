@@ -45,7 +45,7 @@ export default function NewLeaveModal({ employees, onSave, onClose }) {
             <div><label className="input-label">From *</label><input className="input" type="date" value={form.from_date} onChange={e=>set('from_date',e.target.value)}/></div>
             <div><label className="input-label">To *</label><input className="input" type="date" value={form.to_date} onChange={e=>set('to_date',e.target.value)}/></div>
           </div>
-          {days>0 && <div style={{ background:'#FDF6E3', border:'1px solid #F0D78C', borderRadius:9, padding:'8px 12px', fontSize:13, color:'#B8860B', fontWeight:700 }}>{days} day{days>1?'s':''}</div>}
+          {days>0 && <div style={{ background:'#FDF6E3', border:'1px solid #F0D78C', borderRadius:9, padding:'8px 12px', fontSize:13, color:'#8F6807', fontWeight:700 }}>{days} day{days>1?'s':''}</div>}
           <div><label className="input-label">Reason</label><input className="input" value={form.reason} onChange={e=>set('reason',e.target.value)}/></div>
         </div>
         <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:18 }}>

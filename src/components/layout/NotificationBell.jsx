@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Bell, X, AlertTriangle, Users, Truck, RefreshCw } from 'lucide-react'
+import { Bell, X, AlertTriangle, Users, Truck, RefreshCw, AlarmClock, ClipboardList } from 'lucide-react'
 import { API } from '@/lib/api'
 
 const SEV = {
@@ -21,7 +21,7 @@ function AlertItem({ item }) {
         <div style={{ fontWeight:700, fontSize:12.5, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.name}</div>
         <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>
           {item.label} · <span style={{ fontWeight:600 }}>{item.date?.slice(0,10)}</span>
-          {item.station_code && <span style={{ marginLeft:5, color:'#B8860B', fontWeight:600 }}>{item.station_code}</span>}
+          {item.station_code && <span style={{ marginLeft:5, color:'#8F6807', fontWeight:600 }}>{item.station_code}</span>}
         </div>
       </div>
       <div style={{ textAlign:'right', flexShrink:0 }}>
@@ -53,11 +53,11 @@ function TaskNotifItem({ n }) {
         border: `1px solid ${isReminder ? '#FDE68A' : '#BFDBFE'}`,
         display:'flex', alignItems:'center', justifyContent:'center', fontSize:17,
       }}>
-        {isReminder ? '⏰' : '📋'}
+        {isReminder ? <AlarmClock size={16} color="#B45309" aria-hidden="true"/> : <ClipboardList size={16} color="#1D4ED8" aria-hidden="true"/>}
       </div>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontWeight: n.read ? 600 : 800, fontSize:12.5, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-          {n.title}
+          {isReminder ? n.title.replace(/^⏰\s*/, '') : n.title}
         </div>
         {n.body && (
           <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
@@ -179,17 +179,17 @@ export default function NotificationBell({ userRole }) {
     <button onClick={() => id === 'tasks' ? handleTaskTab() : setTab(id)} style={{
       flex:1, padding:'10px 6px', border:'none',
       background: tab === id ? 'var(--bg-alt)' : 'transparent',
-      borderBottom: `2px solid ${tab === id ? '#B8860B' : 'transparent'}`,
-      color: tab === id ? '#B8860B' : 'var(--text-muted)',
+      borderBottom: `2px solid ${tab === id ? '#8F6807' : 'transparent'}`,
+      color: tab === id ? '#8F6807' : 'var(--text-muted)',
       fontWeight:700, fontSize:11, cursor:'pointer',
-      fontFamily:'Poppins,sans-serif',
+      fontFamily:'inherit',
       display:'flex', alignItems:'center', justifyContent:'center', gap:4,
       transition:'all 0.15s',
     }}>
       {children}
       {count > 0 && (
         <span style={{
-          background: tab === id ? (urgent ? '#C0392B' : '#B8860B') : 'var(--border)',
+          background: tab === id ? (urgent ? '#C0392B' : '#8F6807') : 'var(--border)',
           color: tab === id ? 'white' : 'var(--text-muted)',
           borderRadius:20, padding:'1px 5px', fontSize:9, fontWeight:800,
         }}>{count}</span>
@@ -209,7 +209,7 @@ export default function NotificationBell({ userRole }) {
           <span style={{
             position:'absolute', top:3, right:3,
             minWidth:15, height:15, borderRadius:8,
-            background: (urgentDocs > 0 || unreadTasks > 0) ? '#C0392B' : '#B8860B',
+            background: (urgentDocs > 0 || unreadTasks > 0) ? '#C0392B' : '#8F6807',
             color:'white', fontSize:8.5, fontWeight:800,
             display:'flex', alignItems:'center', justifyContent:'center',
             padding:'0 3px', lineHeight:1, boxShadow:'0 0 0 2px var(--bg)',
@@ -231,7 +231,7 @@ export default function NotificationBell({ userRole }) {
           {/* Header */}
           <div style={{ padding:'14px 16px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <Bell size={14} color="#B8860B"/>
+              <Bell size={14} color="#8F6807"/>
               <span style={{ fontWeight:800, fontSize:14, color:'var(--text)' }}>Notifications</span>
               {totalBadge > 0 && (
                 <span style={{ fontSize:10.5, fontWeight:700, background:'#FEF2F2', color:'#C0392B', border:'1px solid #FCA5A5', borderRadius:20, padding:'1px 8px' }}>
@@ -262,7 +262,7 @@ export default function NotificationBell({ userRole }) {
               </>
             )}
             <TabBtn id="tasks" count={unreadTasks} urgent={unreadTasks > 0}>
-              📋 Tasks
+              <ClipboardList size={11} aria-hidden="true"/> Tasks
             </TabBtn>
           </div>
 
@@ -286,9 +286,9 @@ export default function NotificationBell({ userRole }) {
               return (
                 <>
                   <div style={{ display:'flex', gap:6, padding:'10px 14px', background:'var(--bg-alt)', borderBottom:'1px solid var(--border)', flexWrap:'wrap' }}>
-                    {exp  > 0 && <span style={{ fontSize:10.5, fontWeight:700, color:'#C0392B', background:'#FEF2F2', border:'1px solid #FCA5A5', borderRadius:20, padding:'2px 9px' }}>🔴 {exp} Expired</span>}
-                    {crit > 0 && <span style={{ fontSize:10.5, fontWeight:700, color:'#D97706', background:'#FFFBEB', border:'1px solid #FDE68A', borderRadius:20, padding:'2px 9px' }}>🟠 {crit} Critical</span>}
-                    {warn > 0 && <span style={{ fontSize:10.5, fontWeight:700, color:'#1D6FA4', background:'#EFF6FF', border:'1px solid #BFDBFE', borderRadius:20, padding:'2px 9px' }}>🔵 {warn} Expiring</span>}
+                    {exp  > 0 && <span style={{ fontSize:10.5, fontWeight:700, color:'#C0392B', background:'#FEF2F2', border:'1px solid #FCA5A5', borderRadius:20, padding:'2px 9px' }}>{exp} Expired</span>}
+                    {crit > 0 && <span style={{ fontSize:10.5, fontWeight:700, color:'#D97706', background:'#FFFBEB', border:'1px solid #FDE68A', borderRadius:20, padding:'2px 9px' }}>{crit} Critical</span>}
+                    {warn > 0 && <span style={{ fontSize:10.5, fontWeight:700, color:'#1D6FA4', background:'#EFF6FF', border:'1px solid #BFDBFE', borderRadius:20, padding:'2px 9px' }}>{warn} Expiring</span>}
                   </div>
                   {list.map((item, i) => <AlertItem key={i} item={item}/>)}
                 </>
@@ -301,7 +301,7 @@ export default function NotificationBell({ userRole }) {
                 <div style={{ padding:'30px 20px', textAlign:'center', color:'var(--text-muted)', fontSize:12 }}>Loading…</div>
               ) : taskNotifs.length === 0 ? (
                 <div style={{ padding:'40px 20px', textAlign:'center', color:'var(--text-muted)' }}>
-                  <div style={{ fontSize:32, marginBottom:10 }}>📋</div>
+                  <ClipboardList size={30} style={{ margin:'0 auto 10px', display:'block', opacity:0.25 }} aria-hidden="true"/>
                   <div style={{ fontWeight:700, fontSize:13, color:'var(--text-sub)' }}>No task notifications</div>
                   <div style={{ fontSize:11, marginTop:4 }}>You&apos;re all caught up</div>
                 </div>
@@ -314,14 +314,14 @@ export default function NotificationBell({ userRole }) {
           {/* Footer */}
           {tab === 'tasks' && taskNotifs.length > 0 && (
             <div style={{ padding:'10px 14px', borderTop:'1px solid var(--border)', flexShrink:0 }}>
-              <a href="/dashboard/tasks" style={{ fontSize:11.5, fontWeight:700, color:'#B8860B', textDecoration:'none', display:'flex', alignItems:'center', gap:4 }}>
+              <a href="/dashboard/tasks" style={{ fontSize:11.5, fontWeight:700, color:'#8F6807', textDecoration:'none', display:'flex', alignItems:'center', gap:4 }}>
                 View all tasks →
               </a>
             </div>
           )}
           {(tab === 'drivers' || tab === 'staff') && (docData?.total || 0) > 0 && (
             <div style={{ padding:'10px 14px', borderTop:'1px solid var(--border)', flexShrink:0 }}>
-              <a href="/dashboard/hr/compliance" style={{ fontSize:11.5, fontWeight:700, color:'#B8860B', textDecoration:'none', display:'flex', alignItems:'center', gap:4 }}>
+              <a href="/dashboard/hr/compliance" style={{ fontSize:11.5, fontWeight:700, color:'#8F6807', textDecoration:'none', display:'flex', alignItems:'center', gap:4 }}>
                 View all expiring documents →
               </a>
             </div>

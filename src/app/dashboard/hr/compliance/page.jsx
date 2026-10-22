@@ -120,7 +120,7 @@ function ExpiryRow({ item }) {
             {roleLabel(item.role)}
           </span>
           {item.station_code && (
-            <span style={{ fontSize:10.5, fontWeight:700, color:'#B8860B', background:'#FDF6E3', border:'1px solid #E8D9A8', borderRadius:6, padding:'2px 9px' }}>
+            <span style={{ fontSize:10.5, fontWeight:700, color:'#8F6807', background:'#FDF6E3', border:'1px solid #E8D9A8', borderRadius:6, padding:'2px 9px' }}>
               {item.station_code}
             </span>
           )}

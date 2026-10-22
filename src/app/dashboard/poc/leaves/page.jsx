@@ -87,7 +87,7 @@ export default function LeavesPage() {
                       <span style={{ fontSize:20 }}>{l.avatar||'👤'}</span>
                       <div>
                         <div style={{ fontWeight:700, fontSize:14, color:'var(--text)' }}>{l.name}</div>
-                        <div style={{ fontSize:11, color:'#B8860B', fontWeight:600 }}>{l.type} Leave</div>
+                        <div style={{ fontSize:11, color:'#8F6807', fontWeight:600 }}>{l.type} Leave</div>
                       </div>
                     </div>
                     {showHistory ? (

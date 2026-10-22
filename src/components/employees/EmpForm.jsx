@@ -222,7 +222,7 @@ export default function EmpForm({ emp, mode, onSaved, onCancel, maxWidth = 540 }
           <div style={{ display:'flex', gap:2 }}>
             {TABS.map(t=>(
               <button key={t.id} onClick={()=>setTab(t.id)}
-                style={{ padding:'8px 14px', fontSize:12.5, fontWeight:tab===t.id?700:500, color:tab===t.id?'var(--gold)':'var(--text-muted)', background:'none', border:'none', borderBottom:`2px solid ${tab===t.id?'var(--gold)':'transparent'}`, cursor:'pointer', fontFamily:'Poppins,sans-serif', marginBottom:-1, transition:'all 0.15s' }}>
+                style={{ padding:'8px 14px', fontSize:12.5, fontWeight:tab===t.id?700:500, color:tab===t.id?'var(--gold)':'var(--text-muted)', background:'none', border:'none', borderBottom:`2px solid ${tab===t.id?'var(--gold)':'transparent'}`, cursor:'pointer', fontFamily:'inherit', marginBottom:-1, transition:'all 0.15s' }}>
                 {t.l}
               </button>
             ))}

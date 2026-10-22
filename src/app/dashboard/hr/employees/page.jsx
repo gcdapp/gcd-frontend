@@ -106,15 +106,15 @@ function BulkUploadModal({ isProjectScoped, defaultProject, onSave, onClose }) {
         onClick={e => e.stopPropagation()}>
         <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#FDF6E3', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(184,134,11,0.3)' }}>
+            <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(184,134,11,0.3)' }}>
               <UploadCloud size={17} color="white"/>
             </div>
             <div>
               <div style={{ fontWeight:800, fontSize:15, color:'#1A1612' }}>Bulk Upload Employees</div>
-              <div style={{ fontSize:11, color:'#A89880', marginTop:1 }}>Add many employees (DAs or Packers) from a CSV file</div>
+              <div style={{ fontSize:11, color:'#78716C', marginTop:1 }}>Add many employees (DAs or Packers) from a CSV file</div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background:'rgba(184,134,11,0.1)', border:'1px solid #F0D78C', cursor:'pointer', color:'#B8860B', display:'flex', padding:6, borderRadius:'50%' }}><X size={16}/></button>
+          <button onClick={onClose} style={{ background:'rgba(184,134,11,0.1)', border:'1px solid #F0D78C', cursor:'pointer', color:'#8F6807', display:'flex', padding:6, borderRadius:'50%' }}><X size={16}/></button>
         </div>
 
         <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14, overflowY:'auto', flex:1 }}>
@@ -149,7 +149,7 @@ function BulkUploadModal({ isProjectScoped, defaultProject, onSave, onClose }) {
                   style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:10, border:'1px solid var(--border)', background:'var(--bg-alt)', color:'var(--text)', fontWeight:600, fontSize:12.5, cursor:'pointer', fontFamily:'inherit' }}>
                   <Download size={13}/> Download Template
                 </button>
-                <label style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:10, border:'1px solid rgba(184,134,11,0.5)', background:'rgba(184,134,11,0.15)', color:'#B8860B', fontWeight:700, fontSize:12.5, cursor:'pointer' }}>
+                <label style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:10, border:'1px solid rgba(184,134,11,0.5)', background:'rgba(184,134,11,0.15)', color:'#8F6807', fontWeight:700, fontSize:12.5, cursor:'pointer' }}>
                   <UploadCloud size={13}/> Choose CSV File
                   <input type="file" accept=".csv" onChange={handleFile} style={{ display:'none' }}/>
                 </label>
@@ -177,7 +177,7 @@ function BulkUploadModal({ isProjectScoped, defaultProject, onSave, onClose }) {
               )}
 
               <button onClick={handleUpload} disabled={uploading || !validRows.length}
-                style={{ padding:'13px', borderRadius:12, border:'none', cursor:(uploading||!validRows.length)?'not-allowed':'pointer', background:(uploading||!validRows.length)?'var(--border)':'linear-gradient(135deg,#B8860B,#D4A017)', color:(uploading||!validRows.length)?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'Poppins,sans-serif', marginTop:4, transition:'all 0.2s' }}>
+                style={{ padding:'13px', borderRadius:12, border:'none', cursor:(uploading||!validRows.length)?'not-allowed':'pointer', background:(uploading||!validRows.length)?'var(--border)':'linear-gradient(135deg,#8F6807,#D4A017)', color:(uploading||!validRows.length)?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'inherit', marginTop:4, transition:'all 0.2s' }}>
                 {uploading ? 'Uploading…' : validRows.length ? `Upload ${validRows.length} DA${validRows.length!==1?'s':''}` : 'Choose a file to continue'}
               </button>
             </>
@@ -192,7 +192,7 @@ function BulkUploadModal({ isProjectScoped, defaultProject, onSave, onClose }) {
 /* ── Employee Card ───────────────────────────────────────────── */
 function EmpCard({ emp, onEdit, onDelete, index, userRole, isProjectScoped }) {
   const s        = STATUS[emp.status] || STATUS.inactive
-  const sc       = SC_COLOR[emp.station_code] || '#B8860B'
+  const sc       = SC_COLOR[emp.station_code] || '#8F6807'
   const exp      = expiry(emp.visa_expiry)
   const hasAlert = exp && (exp.label === 'Expired' || parseInt(exp.label) <= 60)
   const pct      = profileCompletion(emp)
@@ -391,7 +391,7 @@ export default function EmployeesPage() {
   `
 
   const TABS = [
-    { id:'all',      label:'All',      count:stationEmps.length, activeColor:'#B8860B', activeBg:'#B8860B18' },
+    { id:'all',      label:'All',      count:stationEmps.length, activeColor:'#8F6807', activeBg:'#8F680718' },
     { id:'active',   label:'Active',   count:active,              activeColor:'#2E7D52', activeBg:'#2E7D5218' },
     { id:'on_leave', label:'On Leave', count:onLeave,             activeColor:'#B45309', activeBg:'#B4530918' },
     { id:'alerts',   label:'Alerts',   count:alerts,              activeColor:'#C0392B', activeBg:'#C0392B18' },
@@ -436,7 +436,7 @@ export default function EmployeesPage() {
           </>}>
           <div className="da-hero-kpi">
             {[
-              { label:'Total Employees', val:loading?'—':categoryEmps.length, color:'#B8860B' },
+              { label:'Total Employees', val:loading?'—':categoryEmps.length, color:'#8F6807' },
               { label:'Active',     val:loading?'—':active,              color:'#4ADE80' },
               { label:'On Leave',   val:loading?'—':onLeave,             color:'#FBBF24' },
               { label:'Alerts',     val:loading?'—':alerts,              color:alerts>0?'#F87171':'#4ADE80' },
@@ -467,9 +467,9 @@ export default function EmployeesPage() {
                 <UploadCloud size={14}/> Bulk Upload
               </button>
               <button onClick={()=>setModal({mode:'add',emp:null})}
-                style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background var(--t-fast)' }}
+                style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#8F6807', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background var(--t-fast)' }}
                 onMouseEnter={e=>e.currentTarget.style.background='#9a7209'}
-                onMouseLeave={e=>e.currentTarget.style.background='#B8860B'}>
+                onMouseLeave={e=>e.currentTarget.style.background='#8F6807'}>
                 <Plus size={14}/> Add Employee
               </button>
             </>

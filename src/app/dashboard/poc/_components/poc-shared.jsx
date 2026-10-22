@@ -12,7 +12,7 @@ import ConfirmDialog from '@/components/ConfirmDialog'
 import { API } from '@/lib/api'
 
 // ── Constants ─────────────────────────────────────────────────
-export const VSTATUS_COLORS = { active:'#2E7D52', grounded:'#C0392B', maintenance:'#B45309', sold:'#A89880' }
+export const VSTATUS_COLORS = { active:'#2E7D52', grounded:'#C0392B', maintenance:'#B45309', sold:'#78716C' }
 export const VSTATUS_BG     = { active:'#ECFDF5', grounded:'#FEF2F2', maintenance:'#FFFBEB', sold:'#F5F4F1' }
 
 export const STATIONS = ['DDB1','DXE6']
@@ -259,7 +259,7 @@ export function SimModal({ sim, emps, station, onSave, onClose }) {
     }
     doSave()
   }
-  const STATUSES = [{ v:'available',l:'Available',c:'#2E7D52' },{ v:'assigned',l:'Assigned',c:'#B8860B' },{ v:'inactive',l:'Inactive',c:'#A89880' },{ v:'damaged',l:'Damaged',c:'#C0392B' }]
+  const STATUSES = [{ v:'available',l:'Available',c:'#2E7D52' },{ v:'assigned',l:'Assigned',c:'#8F6807' },{ v:'inactive',l:'Inactive',c:'#78716C' },{ v:'damaged',l:'Damaged',c:'#C0392B' }]
   return createPortal(
     <div className="modal-overlay modal-fs" onClick={e => e.target===e.currentTarget&&onClose()}>
       <div className="modal" style={{ maxWidth:440 }}>
@@ -379,7 +379,7 @@ export function SimBulkModal({ station, emps, onClose, onSave }) {
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
           <div>
             <h3 style={{ fontWeight:900, fontSize:16, color:'var(--text)' }}>Bulk Upload SIM Cards</h3>
-            <p style={{ fontSize:11.5, color:'#A89880', marginTop:2 }}>{station} Station</p>
+            <p style={{ fontSize:11.5, color:'#78716C', marginTop:2 }}>{station} Station</p>
           </div>
           <button onClick={onClose} style={{ width:30, height:30, borderRadius:'50%', background:'var(--bg-alt)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}><X size={14}/></button>
         </div>
@@ -439,7 +439,7 @@ export function SimBulkModal({ station, emps, onClose, onSave }) {
               <div style={{ fontWeight:800, fontSize:17, color:'var(--text)', marginBottom:6 }}>Upload Complete</div>
             </div>
             <div style={{ display:'flex', gap:8 }}>
-              {[{l:'Inserted',v:result.inserted,c:'#2E7D52',bg:'#ECFDF5',bc:'#A7F3D0'},{l:'Skipped (dup)',v:result.skipped,c:'#B8860B',bg:'#FDF6E3',bc:'#F0D78C'},{l:'Errors',v:result.errors?.length||0,c:result.errors?.length?'#C0392B':'var(--text-muted)',bg:result.errors?.length?'#FEF2F2':'var(--bg-alt)',bc:result.errors?.length?'#FCA5A5':'var(--border)'}].map(s => (
+              {[{l:'Inserted',v:result.inserted,c:'#2E7D52',bg:'#ECFDF5',bc:'#A7F3D0'},{l:'Skipped (dup)',v:result.skipped,c:'#8F6807',bg:'#FDF6E3',bc:'#F0D78C'},{l:'Errors',v:result.errors?.length||0,c:result.errors?.length?'#C0392B':'var(--text-muted)',bg:result.errors?.length?'#FEF2F2':'var(--bg-alt)',bc:result.errors?.length?'#FCA5A5':'var(--border)'}].map(s => (
                 <div key={s.l} style={{ flex:1, textAlign:'center', padding:'10px 6px', borderRadius:10, background:s.bg, border:`1px solid ${s.bc}` }}>
                   <div style={{ fontWeight:900, fontSize:20, color:s.c }}>{s.v}</div>
                   <div style={{ fontSize:10.5, color:s.c, fontWeight:600, marginTop:2 }}>{s.l}</div>
@@ -460,7 +460,7 @@ export function SimSection({ sims, emps, station, onRefresh }) {
   const [modal,      setModal]      = useState(null)
   const [search,     setSearch]     = useState('')
   const [confirmDlg, setConfirmDlg] = useState(null)
-  const SC = { available:{c:'#2E7D52',bg:'#ECFDF5',bc:'#A7F3D0',l:'Available'}, assigned:{c:'#B8860B',bg:'#FDF6E3',bc:'#F0D78C',l:'Assigned'}, inactive:{c:'#A89880',bg:'var(--bg-alt)',bc:'var(--border)',l:'Inactive'}, damaged:{c:'#C0392B',bg:'#FEF2F2',bc:'#FCA5A5',l:'Damaged'} }
+  const SC = { available:{c:'#2E7D52',bg:'#ECFDF5',bc:'#A7F3D0',l:'Available'}, assigned:{c:'#8F6807',bg:'#FDF6E3',bc:'#F0D78C',l:'Assigned'}, inactive:{c:'#78716C',bg:'var(--bg-alt)',bc:'var(--border)',l:'Inactive'}, damaged:{c:'#C0392B',bg:'#FEF2F2',bc:'#FCA5A5',l:'Damaged'} }
   const filtered = sims.filter(s => !search || s.sim_number?.toLowerCase().includes(search.toLowerCase()) || s.phone_number?.toLowerCase().includes(search.toLowerCase()) || s.emp_name?.toLowerCase().includes(search.toLowerCase()))
   function handleDelete(id, simNumber) {
     setConfirmDlg({ title:'Delete SIM card?', message:`SIM ${simNumber} will be permanently removed.`, confirmLabel:'Delete', danger:true,
@@ -474,7 +474,7 @@ export function SimSection({ sims, emps, station, onRefresh }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
       <div className="r-grid-3" style={{ gap:8 }}>
-        {[{l:'Total',v:sims.length,c:'var(--text)',bg:'var(--bg-alt)',bc:'var(--border)'},{l:'In Use',v:sims.filter(s=>s.status==='assigned').length,c:'#B8860B',bg:'#FDF6E3',bc:'#F0D78C'},{l:'Free',v:sims.filter(s=>s.status==='available').length,c:'#2E7D52',bg:'#ECFDF5',bc:'#A7F3D0'}].map(s => (
+        {[{l:'Total',v:sims.length,c:'var(--text)',bg:'var(--bg-alt)',bc:'var(--border)'},{l:'In Use',v:sims.filter(s=>s.status==='assigned').length,c:'#8F6807',bg:'#FDF6E3',bc:'#F0D78C'},{l:'Free',v:sims.filter(s=>s.status==='available').length,c:'#2E7D52',bg:'#ECFDF5',bc:'#A7F3D0'}].map(s => (
           <div key={s.l} style={{ textAlign:'center', padding:'12px 8px', borderRadius:12, background:s.bg, border:`1px solid ${s.bc}` }}>
             <div style={{ fontWeight:900, fontSize:22, color:s.c, letterSpacing:'-0.03em' }}>{s.v}</div>
             <div style={{ fontSize:10.5, color:s.c, fontWeight:600, marginTop:3 }}>{s.l}</div>
@@ -551,7 +551,7 @@ export function SimSection({ sims, emps, station, onRefresh }) {
                 <div style={{ borderTop:'1px solid var(--border)', padding:'10px 14px', display:'flex', justifyContent:'space-between', alignItems:'center', background:'var(--bg)' }}>
                   {sim.emp_id ? (
                     <div style={{ display:'flex', alignItems:'center', gap:8, flex:1, minWidth:0 }}>
-                      <div style={{ width:28, height:28, borderRadius:'50%', background:'linear-gradient(135deg,#FDF6E3,#FEF3D0)', border:'1px solid #F0D78C', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:900, color:'#B8860B', flexShrink:0 }}>
+                      <div style={{ width:28, height:28, borderRadius:'50%', background:'linear-gradient(135deg,#FDF6E3,#FEF3D0)', border:'1px solid #F0D78C', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:900, color:'#8F6807', flexShrink:0 }}>
                         {sim.emp_name?.slice(0,2).toUpperCase()}
                       </div>
                       <div style={{ minWidth:0 }}>
@@ -599,7 +599,7 @@ function AssignModal({ v, asgn, emps, allAsgns, station, date, currentUser, onAs
   const availableEmps = (emps||[]).filter(e =>
     !(allAsgns||[]).some(a => a.emp_id === e.id && String(a.vehicle_id) !== String(v.id))
   )
-  const sc = VSTATUS_COLORS[v.status]||'#A89880'
+  const sc = VSTATUS_COLORS[v.status]||'#78716C'
   const sb = VSTATUS_BG[v.status]||'#F5F4F1'
   if (typeof document === 'undefined') return null
   return createPortal(
@@ -627,7 +627,7 @@ function AssignModal({ v, asgn, emps, allAsgns, station, date, currentUser, onAs
           {/* Current assignment */}
           {assignedEmp ? (
             <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:'#ECFDF5', border:'1.5px solid #A7F3D0', borderRadius:14, marginBottom:18 }}>
-              <div style={{ width:42, height:42, borderRadius:11, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:14, color:'white', flexShrink:0 }}>
+              <div style={{ width:42, height:42, borderRadius:11, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:14, color:'white', flexShrink:0 }}>
                 {assignedEmp.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
               </div>
               <div style={{ flex:1, minWidth:0 }}>
@@ -695,7 +695,7 @@ function VehicleHistoryModal({ v, onClose }) {
   const [handovs,  setHandovs]  = useState([])
   const [loading,  setLoading]  = useState(true)
   const [empModal, setEmpModal] = useState(null)
-  const sc = VSTATUS_COLORS[v.status]||'#A89880'
+  const sc = VSTATUS_COLORS[v.status]||'#78716C'
   const sb = VSTATUS_BG[v.status]||'#F5F4F1'
 
   async function openEmp(empId) {
@@ -745,7 +745,7 @@ function VehicleHistoryModal({ v, onClose }) {
               <button key={id} onClick={()=>setTab(id)} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'9px 10px', borderRadius:9, border:'none', background:tab===id?'var(--card)':'transparent', color:tab===id?'var(--text)':'var(--text-muted)', fontWeight:tab===id?700:500, fontSize:13, cursor:'pointer', boxShadow:tab===id?'0 1px 4px rgba(0,0,0,0.1)':'none', transition:'all 0.15s', fontFamily:'inherit' }}>
                 <Icon size={13}/>
                 {label}
-                <span style={{ fontSize:10, fontWeight:700, color:tab===id?'#B8860B':'var(--text-muted)', background:tab===id?'#FDF6E3':'var(--border)', borderRadius:100, padding:'1px 7px', minWidth:20, textAlign:'center' }}>{loading?'…':count}</span>
+                <span style={{ fontSize:10, fontWeight:700, color:tab===id?'#8F6807':'var(--text-muted)', background:tab===id?'#FDF6E3':'var(--border)', borderRadius:100, padding:'1px 7px', minWidth:20, textAlign:'center' }}>{loading?'…':count}</span>
               </button>
             ))}
           </div>
@@ -781,7 +781,7 @@ function VehicleHistoryModal({ v, onClose }) {
                             </div>
                             <div style={{ flex:1, minWidth:0 }}>
                               <div style={{ fontSize:10, fontWeight:700, color:accentColor, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:2 }}>{isRec?'Received':'Returned'}</div>
-                              <button onClick={()=>openEmp(h.emp_id)} style={{ fontSize:14, fontWeight:800, color:'#B8860B', background:'none', border:'none', padding:0, cursor:'pointer', fontFamily:'inherit', textAlign:'left', textDecoration:'underline', textUnderlineOffset:2, maxWidth:'100%', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', display:'block' }}>{h.emp_name||'—'}</button>
+                              <button onClick={()=>openEmp(h.emp_id)} style={{ fontSize:14, fontWeight:800, color:'#8F6807', background:'none', border:'none', padding:0, cursor:'pointer', fontFamily:'inherit', textAlign:'left', textDecoration:'underline', textUnderlineOffset:2, maxWidth:'100%', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', display:'block' }}>{h.emp_name||'—'}</button>
                             </div>
                           </div>
                           <div style={{ textAlign:'right', flexShrink:0 }}>
@@ -793,7 +793,7 @@ function VehicleHistoryModal({ v, onClose }) {
                           {h.fuel_level&&<span style={{ fontSize:11, color:'#B45309', background:'#FFFBEB', border:'1px solid #FDE68A', borderRadius:100, padding:'2px 9px', fontWeight:700 }}>⛽ {FUEL_LABEL_MAP[h.fuel_level]||h.fuel_level}</span>}
                           {h.odometer&&<span style={{ fontSize:11, color:'#1D4ED8', background:'#EFF6FF', border:'1px solid #BFDBFE', borderRadius:100, padding:'2px 9px', fontWeight:700 }}>🔢 {Number(h.odometer).toLocaleString()} km</span>}
                           {(h.handover_from||h.handover_to)&&<span style={{ fontSize:11, color:'var(--text-muted)', background:'var(--border)', borderRadius:100, padding:'2px 9px', fontWeight:600 }}>{isRec?'From':'To'}: {h.handover_from||h.handover_to}</span>}
-                          <span style={{ fontSize:11, fontWeight:700, color:h.status==='completed'?'#2E7D52':h.status==='rejected'?'#C0392B':'#B8860B', background:h.status==='completed'?'#ECFDF5':h.status==='rejected'?'#FEF2F2':'#FDF6E3', border:`1px solid ${h.status==='completed'?'#A7F3D0':h.status==='rejected'?'#FECACA':'#F0D78C'}`, borderRadius:100, padding:'2px 9px', textTransform:'capitalize' }}>{h.status}</span>
+                          <span style={{ fontSize:11, fontWeight:700, color:h.status==='completed'?'#2E7D52':h.status==='rejected'?'#C0392B':'#8F6807', background:h.status==='completed'?'#ECFDF5':h.status==='rejected'?'#FEF2F2':'#FDF6E3', border:`1px solid ${h.status==='completed'?'#A7F3D0':h.status==='rejected'?'#FECACA':'#F0D78C'}`, borderRadius:100, padding:'2px 9px', textTransform:'capitalize' }}>{h.status}</span>
                         </div>
                       </div>
                     </div>
@@ -811,17 +811,17 @@ function VehicleHistoryModal({ v, onClose }) {
               <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                 {asgns.map((a,i)=>(
                   <div key={a.id||i} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', borderRadius:14, background:'var(--bg-alt)', border:'1px solid var(--border)', animation:`slideUp 0.25s ${Math.min(i,10)*0.04}s ease both` }}>
-                    <div style={{ width:40, height:40, borderRadius:12, background:a.emp_id?'linear-gradient(135deg,#FDF6E3,#FEF3D0)':'var(--bg-alt)', border:a.emp_id?'2px solid #F0D78C':'2px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800, color:a.emp_id?'#B8860B':'var(--text-muted)', flexShrink:0 }}>
+                    <div style={{ width:40, height:40, borderRadius:12, background:a.emp_id?'linear-gradient(135deg,#FDF6E3,#FEF3D0)':'var(--bg-alt)', border:a.emp_id?'2px solid #F0D78C':'2px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800, color:a.emp_id?'#8F6807':'var(--text-muted)', flexShrink:0 }}>
                       {a.emp_id?(a.driver_name||'').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase():'—'}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       {a.emp_id
-                        ? <button onClick={()=>openEmp(a.emp_id)} style={{ fontSize:14, fontWeight:800, color:'#B8860B', background:'none', border:'none', padding:0, cursor:'pointer', fontFamily:'inherit', textDecoration:'underline', textUnderlineOffset:2, textAlign:'left', maxWidth:'100%', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', display:'block' }}>{a.driver_name}</button>
+                        ? <button onClick={()=>openEmp(a.emp_id)} style={{ fontSize:14, fontWeight:800, color:'#8F6807', background:'none', border:'none', padding:0, cursor:'pointer', fontFamily:'inherit', textDecoration:'underline', textUnderlineOffset:2, textAlign:'left', maxWidth:'100%', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', display:'block' }}>{a.driver_name}</button>
                         : <div style={{ fontSize:13, fontWeight:600, color:'var(--text-muted)' }}>— Unassigned —</div>
                       }
                       <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{a.date?.slice(0,10)}</div>
                     </div>
-                    <span style={{ fontSize:10, color:'#B8860B', background:'#FDF6E3', border:'1px solid #F0D78C', borderRadius:100, padding:'3px 9px', fontWeight:700, flexShrink:0 }}>{a.station_code}</span>
+                    <span style={{ fontSize:10, color:'#8F6807', background:'#FDF6E3', border:'1px solid #F0D78C', borderRadius:100, padding:'3px 9px', fontWeight:700, flexShrink:0 }}>{a.station_code}</span>
                   </div>
                 ))}
               </div>
@@ -899,11 +899,11 @@ export function VehicleCard({ v, asgn, currentHandover, isDown, sc, sb, date, st
           {/* ── Today's assignment pill ── */}
           {assignedEmp ? (
             <div style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', background:'#FDF6E3', border:'1px solid #F0D78C', borderRadius:10 }}>
-              <div style={{ width:28, height:28, borderRadius:8, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:11, color:'white', flexShrink:0 }}>
+              <div style={{ width:28, height:28, borderRadius:8, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:11, color:'white', flexShrink:0 }}>
                 {assignedEmp.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
               </div>
               <span style={{ fontSize:12, fontWeight:700, color:'#92400E', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{assignedEmp.name}</span>
-              <span style={{ fontSize:9.5, fontWeight:700, color:'#B8860B', background:'rgba(184,134,11,0.12)', borderRadius:100, padding:'2px 7px' }}>Assigned</span>
+              <span style={{ fontSize:9.5, fontWeight:700, color:'#8F6807', background:'rgba(184,134,11,0.12)', borderRadius:100, padding:'2px 7px' }}>Assigned</span>
             </div>
           ) : (
             <div style={{ display:'flex', alignItems:'center', gap:7, padding:'7px 10px', background:'var(--bg-alt)', border:'1px dashed var(--border-med)', borderRadius:10 }}>
@@ -954,7 +954,7 @@ export function VehicleCard({ v, asgn, currentHandover, isDown, sc, sb, date, st
         {/* ── Two action buttons ── */}
         <div style={{ borderTop:'1px solid var(--border)', display:'grid', gridTemplateColumns:'1fr 1fr' }}>
           <button onClick={()=>setShowAssign(true)}
-            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'11px', background:'transparent', border:'none', borderRight:'1px solid var(--border)', cursor:'pointer', fontFamily:'inherit', fontSize:12.5, fontWeight:700, color:'#B8860B', transition:'background 0.15s' }}
+            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'11px', background:'transparent', border:'none', borderRight:'1px solid var(--border)', cursor:'pointer', fontFamily:'inherit', fontSize:12.5, fontWeight:700, color:'#8F6807', transition:'background 0.15s' }}
             onMouseEnter={e=>e.currentTarget.style.background='#FDF6E320'}
             onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
             <Users size={13}/> Assign
@@ -975,7 +975,7 @@ export function VehicleCard({ v, asgn, currentHandover, isDown, sc, sb, date, st
 }
 
 // ── DA Avatar ─────────────────────────────────────────────────
-const AVATAR_COLORS = ['#B8860B','#1D6FA4','#2E7D52','#7C3AED','#C0392B','#0F766E']
+const AVATAR_COLORS = ['#8F6807','#1D6FA4','#2E7D52','#7C3AED','#C0392B','#0F766E']
 export function DAAvatar({ emp, size = 52 }) {
   const [broken, setBroken] = useState(false)
   const initials = emp.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()
@@ -1013,7 +1013,7 @@ export function EmpDetailModal({ emp, sims, onClose }) {
     const days = daysDiff(date)
     if (days === null) return null
     const expired = days < 0; const soon = !expired && days <= 30
-    const c  = expired?'#C0392B':soon?'#B8860B':'#2E7D52'
+    const c  = expired?'#C0392B':soon?'#8F6807':'#2E7D52'
     const bg = expired?'#FEF2F2':soon?'#FDF6E3':'#ECFDF5'
     const bc = expired?'#FCA5A5':soon?'#F0D78C':'#A7F3D0'
     return (
@@ -1029,7 +1029,7 @@ export function EmpDetailModal({ emp, sims, onClose }) {
       </div>
     )
   }
-  const STATUS_C = { active:{c:'#2E7D52',bg:'#ECFDF5',bc:'#A7F3D0'}, on_leave:{c:'#B8860B',bg:'#FDF6E3',bc:'#F0D78C'}, inactive:{c:'#C0392B',bg:'#FEF2F2',bc:'#FCA5A5'} }
+  const STATUS_C = { active:{c:'#2E7D52',bg:'#ECFDF5',bc:'#A7F3D0'}, on_leave:{c:'#8F6807',bg:'#FDF6E3',bc:'#F0D78C'}, inactive:{c:'#C0392B',bg:'#FEF2F2',bc:'#FCA5A5'} }
   const sc = STATUS_C[emp.status]||STATUS_C.active
   return createPortal(
     <div className="modal-overlay" onClick={e => e.target===e.currentTarget&&onClose()}>
@@ -1044,7 +1044,7 @@ export function EmpDetailModal({ emp, sims, onClose }) {
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontWeight:800, fontSize:17, color:'var(--text)', marginBottom:6 }}>{emp.name}</div>
               <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                <span style={{ fontSize:11, fontWeight:700, color:'#B8860B', background:'#FDF6E3', border:'1px solid #F0D78C', borderRadius:6, padding:'2px 8px' }}>{emp.id}</span>
+                <span style={{ fontSize:11, fontWeight:700, color:'#8F6807', background:'#FDF6E3', border:'1px solid #F0D78C', borderRadius:6, padding:'2px 8px' }}>{emp.id}</span>
                 {emp.station_code&&<span style={{ fontSize:11, fontWeight:700, color:'#1D6FA4', background:'#EFF6FF', border:'1px solid #BFDBFE', borderRadius:6, padding:'2px 8px' }}>{emp.station_code}</span>}
                 <span style={{ fontSize:11, fontWeight:700, color:sc.c, background:sc.bg, border:`1px solid ${sc.bc}`, borderRadius:6, padding:'2px 8px', textTransform:'capitalize' }}>{emp.status?.replace('_',' ')}</span>
               </div>
@@ -1193,7 +1193,7 @@ export function DAsTab({ stationEmps, sims, onViewEmp }) {
                   <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:10 }}>
                     <span style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:6, padding:'2px 7px', fontFamily:'monospace' }}>{emp.id}</span>
                     {emp.station_code && (
-                      <span style={{ fontSize:10, fontWeight:700, color:'#B8860B', background:'#FDF6E3', border:'1px solid #F0D78C', borderRadius:6, padding:'2px 7px' }}>{emp.station_code}</span>
+                      <span style={{ fontSize:10, fontWeight:700, color:'#8F6807', background:'#FDF6E3', border:'1px solid #F0D78C', borderRadius:6, padding:'2px 7px' }}>{emp.station_code}</span>
                     )}
                     {emp.nationality && (
                       <span style={{ fontSize:10, fontWeight:600, color:'var(--text-muted)', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:6, padding:'2px 7px' }}>{emp.nationality}</span>

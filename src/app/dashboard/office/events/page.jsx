@@ -58,7 +58,7 @@ function EventModal({ event, onSave, onClose }) {
             <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
               {EVENT_TYPES.map(t=>(
                 <button key={t.v} type="button" onClick={()=>set('event_type',t.v)}
-                  style={{ padding:'5px 13px', borderRadius:20, border:`1.5px solid ${form.event_type===t.v?t.color:'var(--border)'}`, background:form.event_type===t.v?t.bg:'var(--card)', color:form.event_type===t.v?t.color:'var(--text-muted)', fontSize:11.5, fontWeight:700, cursor:'pointer', transition:'all 0.15s', fontFamily:'Poppins,sans-serif' }}>
+                  style={{ padding:'5px 13px', borderRadius:20, border:`1.5px solid ${form.event_type===t.v?t.color:'var(--border)'}`, background:form.event_type===t.v?t.bg:'var(--card)', color:form.event_type===t.v?t.color:'var(--text-muted)', fontSize:11.5, fontWeight:700, cursor:'pointer', transition:'all 0.15s', fontFamily:'inherit' }}>
                   {t.l}
                 </button>
               ))}

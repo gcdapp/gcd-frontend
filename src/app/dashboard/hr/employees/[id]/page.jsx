@@ -85,7 +85,7 @@ function WorkNumberAssigner({ emp, onSaved, userRole, onSelectEmployee }) {
         <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.07em' }}>Work Number</div>
         {canEdit && emp.work_number && (
           <button onClick={history===null ? openHistory : ()=>setHistory(null)}
-            style={{ fontSize:10, color:'var(--text-muted)', background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'Poppins,sans-serif', textDecoration:'underline' }}>
+            style={{ fontSize:10, color:'var(--text-muted)', background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textDecoration:'underline' }}>
             {history===null ? 'History' : 'Hide'}
           </button>
         )}
@@ -97,8 +97,8 @@ function WorkNumberAssigner({ emp, onSaved, userRole, onSelectEmployee }) {
             ⚠️ <strong>{pending}</strong> is already assigned to <strong>{conflict.conflictEmpName}</strong>. Proceed?
           </div>
           <div style={{ display:'flex', gap:6 }}>
-            <button onClick={()=>setStep(2)} style={{ flex:1, padding:'6px', borderRadius:100, background:'#B8860B', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'Poppins,sans-serif' }}>Yes, proceed</button>
-            <button onClick={reset} style={{ flex:1, padding:'6px', borderRadius:100, background:'var(--card)', color:'var(--text-sub)', border:'1px solid var(--border)', cursor:'pointer', fontSize:11, fontFamily:'Poppins,sans-serif' }}>Cancel</button>
+            <button onClick={()=>setStep(2)} style={{ flex:1, padding:'6px', borderRadius:100, background:'#8F6807', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit' }}>Yes, proceed</button>
+            <button onClick={reset} style={{ flex:1, padding:'6px', borderRadius:100, background:'var(--card)', color:'var(--text-sub)', border:'1px solid var(--border)', cursor:'pointer', fontSize:11, fontFamily:'inherit' }}>Cancel</button>
           </div>
         </div>
       )}
@@ -111,11 +111,11 @@ function WorkNumberAssigner({ emp, onSaved, userRole, onSelectEmployee }) {
           <div style={{ display:'flex', gap:6 }}>
             <button onClick={()=>{ tryAssign(pending,true); onSelectEmployee?.(conflict.conflictEmpId) }}
               disabled={saving}
-              style={{ flex:1, padding:'6px', borderRadius:7, background:'#10B981', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'Poppins,sans-serif' }}>
+              style={{ flex:1, padding:'6px', borderRadius:7, background:'#10B981', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit' }}>
               Yes, reassign them
             </button>
             <button onClick={()=>tryAssign(pending,true)} disabled={saving}
-              style={{ flex:1, padding:'6px', borderRadius:7, background:'#EF4444', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'Poppins,sans-serif' }}>
+              style={{ flex:1, padding:'6px', borderRadius:7, background:'#EF4444', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit' }}>
               {saving?'…':'No, just remove it'}
             </button>
           </div>
@@ -129,7 +129,7 @@ function WorkNumberAssigner({ emp, onSaved, userRole, onSelectEmployee }) {
           </span>
           {canEdit && (
             <div style={{ display:'flex', gap:5 }}>
-              <button onClick={openPicker} style={{ padding:'4px 10px', borderRadius:100, background:'var(--card)', border:'1px solid var(--border)', color:'var(--text-sub)', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'Poppins,sans-serif', display:'flex', alignItems:'center', gap:4 }}>
+              <button onClick={openPicker} style={{ padding:'4px 10px', borderRadius:100, background:'var(--card)', border:'1px solid var(--border)', color:'var(--text-sub)', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:4 }}>
                 <Phone size={10}/> {emp.work_number?'Change':'Assign'}
               </button>
               {emp.work_number && (
@@ -155,7 +155,7 @@ function WorkNumberAssigner({ emp, onSaved, userRole, onSelectEmployee }) {
                   style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 10px', borderRadius:8,
                     background: s.emp_id===emp.id ? 'var(--green-bg)' : 'var(--card)',
                     border: `1px solid ${s.emp_id===emp.id ? 'var(--green)' : 'var(--border)'}`,
-                    cursor:'pointer', textAlign:'left', fontFamily:'Poppins,sans-serif' }}>
+                    cursor:'pointer', textAlign:'left', fontFamily:'inherit' }}>
                   <span style={{ fontSize:13, fontWeight:700, fontFamily:'inherit', color:'var(--text)' }}>{s.phone_number}</span>
                   <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                     {s.emp_id===emp.id && <span style={{ fontSize:10, color:'var(--green)', fontWeight:700 }}>Current</span>}
@@ -165,7 +165,7 @@ function WorkNumberAssigner({ emp, onSaved, userRole, onSelectEmployee }) {
               ))}
             </div>
           )}
-          <button onClick={reset} style={{ width:'100%', padding:'6px', borderRadius:100, background:'var(--bg-alt)', border:'1px solid var(--border)', color:'var(--text-sub)', cursor:'pointer', fontSize:11, fontFamily:'Poppins,sans-serif' }}>Cancel</button>
+          <button onClick={reset} style={{ width:'100%', padding:'6px', borderRadius:100, background:'var(--bg-alt)', border:'1px solid var(--border)', color:'var(--text-sub)', cursor:'pointer', fontSize:11, fontFamily:'inherit' }}>Cancel</button>
         </div>
       )}
 
@@ -326,7 +326,7 @@ export default function DriverDashboardPage() {
   }
 
   const s           = STATUS[emp.status] || STATUS.inactive
-  const sc          = SC_COLOR[emp.station_code]  || '#B8860B'
+  const sc          = SC_COLOR[emp.station_code]  || '#8F6807'
   const serviceDays = emp.joined ? differenceInDays(new Date(), parseISO(emp.joined.slice(0,10))) : 0
   const serviceYrs  = Math.floor(serviceDays / 365)
   const serviceMos  = Math.floor((serviceDays % 365) / 30)
@@ -360,7 +360,7 @@ export default function DriverDashboardPage() {
   function InfoRow({ icon: Icon, label, value, href, mono, accent }) {
     const val = typeof value === 'object' ? JSON.stringify(value) : value
     const display = href && val
-      ? <a href={href} style={{ fontSize:13, fontWeight:600, color:'#B8860B', textDecoration:'none', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{val}</a>
+      ? <a href={href} style={{ fontSize:13, fontWeight:600, color:'#8F6807', textDecoration:'none', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{val}</a>
       : <span style={{ fontSize:13, fontWeight:600, color: val ? (accent||'var(--text)') : 'var(--text-muted)', fontFamily: mono ? 'monospace' : 'inherit', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{val || '—'}</span>
     return (
       <div style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 16px', borderBottom:'1px solid var(--border)' }}>
@@ -402,7 +402,7 @@ export default function DriverDashboardPage() {
     : null
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:14, fontFamily:'Poppins,sans-serif', animation:'slideUp 0.3s ease' }}>
+    <div style={{ display:'flex', flexDirection:'column', gap:14, fontFamily:'inherit', animation:'slideUp 0.3s ease' }}>
       <style>{`.snap-tile:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}`}</style>
 
       <BackLink router={router} href="/dashboard/hr/employees" label="Back to Employees"/>
@@ -433,7 +433,7 @@ export default function DriverDashboardPage() {
               </div>
             </div>
             {(['admin','accountant'].includes(userRole) || isProjectScoped) && (
-              <button onClick={()=>router.push(`/dashboard/hr/employees/${id}/edit`)} style={{ padding:'8px 18px', borderRadius:10, background:'#B8860B', color:'white', fontWeight:700, fontSize:12.5, border:'none', cursor:'pointer', fontFamily:'Poppins,sans-serif', boxShadow:'0 2px 10px rgba(184,134,11,0.4)', display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+              <button onClick={()=>router.push(`/dashboard/hr/employees/${id}/edit`)} style={{ padding:'8px 18px', borderRadius:10, background:'#8F6807', color:'white', fontWeight:700, fontSize:12.5, border:'none', cursor:'pointer', fontFamily:'inherit', boxShadow:'0 2px 10px rgba(184,134,11,0.4)', display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
                 <Pencil size={12}/> Edit
               </button>
             )}
@@ -489,7 +489,7 @@ export default function DriverDashboardPage() {
         <div style={{ display:'flex', overflowX:'auto', borderBottom:'1px solid var(--border)', background:'var(--card)', scrollbarWidth:'none', padding:'0 4px' }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              style={{ padding:'11px 16px', fontSize:12.5, fontWeight:tab===t.id?700:500, color:tab===t.id?'#B8860B':'var(--text-muted)', background:'none', border:'none', borderBottom:`2.5px solid ${tab===t.id?'#B8860B':'transparent'}`, cursor:'pointer', fontFamily:'Poppins,sans-serif', marginBottom:-1, whiteSpace:'nowrap', flexShrink:0, transition:'all var(--t-fast)' }}>
+              style={{ padding:'11px 16px', fontSize:12.5, fontWeight:tab===t.id?700:500, color:tab===t.id?'#8F6807':'var(--text-muted)', background:'none', border:'none', borderBottom:`2.5px solid ${tab===t.id?'#8F6807':'transparent'}`, cursor:'pointer', fontFamily:'inherit', marginBottom:-1, whiteSpace:'nowrap', flexShrink:0, transition:'all var(--t-fast)' }}>
               {t.l}
             </button>
           ))}
@@ -510,7 +510,7 @@ export default function DriverDashboardPage() {
                 {!isClientProject(emp.project_type) && <InfoRow icon={Building2}  label="Station"     value={emp.station_code}/>}
                 <InfoRow icon={Briefcase}  label="Project"     value={emp.project_type ? projectLabel(emp.project_type) : null}/>
                 <InfoRow icon={Calendar}   label="Join Date"   value={emp.joined?.slice(0,10)}/>
-                <InfoRow icon={Wallet}     label="Base Salary" value={emp.salary ? `AED ${Number(emp.salary).toLocaleString('en-US')}` : null} accent="#B8860B"/>
+                <InfoRow icon={Wallet}     label="Base Salary" value={emp.salary ? `AED ${Number(emp.salary).toLocaleString('en-US')}` : null} accent="#8F6807"/>
                 {emp.project_type==='pulser' && <InfoRow icon={TrendingUp} label="Hourly Rate"  value={emp.hourly_rate?`AED ${emp.hourly_rate}/hr`:null}/>}
                 {emp.project_type==='cret'   && <InfoRow icon={TrendingUp} label="Ship. Rate"   value={emp.per_shipment_rate?`AED ${emp.per_shipment_rate}/pkg`:null}/>}
               </Section>
@@ -523,7 +523,7 @@ export default function DriverDashboardPage() {
               {emp.insurance_url && (
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px' }}>
                   <span style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>Insurance Card</span>
-                  <a href={emp.insurance_url} target="_blank" rel="noreferrer" style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:700, color:'#B8860B', textDecoration:'none' }}>
+                  <a href={emp.insurance_url} target="_blank" rel="noreferrer" style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:700, color:'#8F6807', textDecoration:'none' }}>
                     View <ExternalLink size={11}/>
                   </a>
                 </div>
@@ -568,7 +568,7 @@ export default function DriverDashboardPage() {
                       <div style={{ fontSize:13, color:'var(--text-muted)' }}>No leave records</div>
                     </div>
                   : leaves.map(lv => {
-                      const TC  = { Annual:'#B8860B', Sick:'#2563EB', Emergency:'#EF4444', Unpaid:'#6B7280', Other:'#9CA3AF' }
+                      const TC  = { Annual:'#8F6807', Sick:'#2563EB', Emergency:'#EF4444', Unpaid:'#6B7280', Other:'#9CA3AF' }
                       const SC2 = { approved:'#059669', pending:'#D97706', rejected:'#EF4444' }
                       const SBG = { approved:'#F0FDF4', pending:'#FFFBEB', rejected:'#FEF2F2' }
                       return (

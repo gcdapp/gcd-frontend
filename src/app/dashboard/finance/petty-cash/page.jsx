@@ -124,7 +124,7 @@ function DriverPicker({ drivers, value, onChange }) {
           <div style={{ padding:'8px 10px', borderBottom:'1px solid var(--border)', position:'relative' }}>
             <Search size={12} style={{ position:'absolute', left:20, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)' }}/>
             <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search driver…"
-              style={{ width:'100%', padding:'6px 8px 6px 28px', borderRadius:8, border:'1px solid var(--border)', fontSize:12, background:'var(--bg-alt)', color:'var(--text)', fontFamily:'Poppins,sans-serif', outline:'none' }}
+              style={{ width:'100%', padding:'6px 8px 6px 28px', borderRadius:8, border:'1px solid var(--border)', fontSize:12, background:'var(--bg-alt)', color:'var(--text)', fontFamily:'inherit', outline:'none' }}
               onClick={e => e.stopPropagation()} autoFocus/>
           </div>
           <div style={{ maxHeight:200, overflowY:'auto' }}>
@@ -139,7 +139,7 @@ function DriverPicker({ drivers, value, onChange }) {
                 style={{ padding:'9px 14px', cursor:'pointer', display:'flex', gap:8, alignItems:'center', background: d.id === value ? '#FDF6E3' : 'transparent' }}
                 onMouseEnter={e => { if (d.id !== value) e.currentTarget.style.background='var(--bg-alt)' }}
                 onMouseLeave={e => { if (d.id !== value) e.currentTarget.style.background='transparent' }}>
-                <div style={{ width:28, height:28, borderRadius:8, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:800, color:'white', flexShrink:0 }}>
+                <div style={{ width:28, height:28, borderRadius:8, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:800, color:'white', flexShrink:0 }}>
                   {d.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
                 </div>
                 <div>
@@ -210,15 +210,15 @@ function ExpenseModal({ drivers, delegates, onSave, onClose }) {
         onClick={e => e.stopPropagation()}>
         <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#FDF6E3', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(184,134,11,0.3)' }}>
+            <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(184,134,11,0.3)' }}>
               <Receipt size={17} color="white"/>
             </div>
             <div>
               <div style={{ fontWeight:800, fontSize:15, color:'#1A1612' }}>Record Expense</div>
-              <div style={{ fontSize:11, color:'#A89880', marginTop:1 }}>Log a petty cash expense</div>
+              <div style={{ fontSize:11, color:'#78716C', marginTop:1 }}>Log a petty cash expense</div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background:'rgba(184,134,11,0.1)', border:'1px solid #F0D78C', cursor:'pointer', color:'#B8860B', display:'flex', padding:6, borderRadius:'50%' }}><X size={16}/></button>
+          <button onClick={onClose} style={{ background:'rgba(184,134,11,0.1)', border:'1px solid #F0D78C', cursor:'pointer', color:'#8F6807', display:'flex', padding:6, borderRadius:'50%' }}><X size={16}/></button>
         </div>
         <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14, overflowY:'auto' }}>
           {err && (
@@ -270,7 +270,7 @@ function ExpenseModal({ drivers, delegates, onSave, onClose }) {
             <input className="input" value={form.note} onChange={set('note')} placeholder="Add a note…" style={{ borderRadius:10 }}/>
           </div>
           <button onClick={handleSave} disabled={saving}
-            style={{ padding:'13px', borderRadius:12, border:'none', cursor:saving?'not-allowed':'pointer', background:saving?'var(--border)':'linear-gradient(135deg,#B8860B,#D4A017)', color:saving?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'Poppins,sans-serif', marginTop:4, transition:'all 0.2s', boxShadow:saving?'none':'0 3px 12px rgba(184,134,11,0.35)' }}>
+            style={{ padding:'13px', borderRadius:12, border:'none', cursor:saving?'not-allowed':'pointer', background:saving?'var(--border)':'linear-gradient(135deg,#8F6807,#D4A017)', color:saving?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'inherit', marginTop:4, transition:'all 0.2s', boxShadow:saving?'none':'0 3px 12px rgba(184,134,11,0.35)' }}>
             {saving ? 'Saving…' : 'Record Expense'}
           </button>
         </div>
@@ -374,15 +374,15 @@ function BulkUploadModal({ drivers, onSave, onClose }) {
         onClick={e => e.stopPropagation()}>
         <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#FDF6E3', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(184,134,11,0.3)' }}>
+            <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(184,134,11,0.3)' }}>
               <UploadCloud size={17} color="white"/>
             </div>
             <div>
               <div style={{ fontWeight:800, fontSize:15, color:'#1A1612' }}>Bulk Upload Expenses</div>
-              <div style={{ fontSize:11, color:'#A89880', marginTop:1 }}>Log many petty cash expenses from a CSV file</div>
+              <div style={{ fontSize:11, color:'#78716C', marginTop:1 }}>Log many petty cash expenses from a CSV file</div>
             </div>
           </div>
-          <button onClick={onClose} style={{ background:'rgba(184,134,11,0.1)', border:'1px solid #F0D78C', cursor:'pointer', color:'#B8860B', display:'flex', padding:6, borderRadius:'50%' }}><X size={16}/></button>
+          <button onClick={onClose} style={{ background:'rgba(184,134,11,0.1)', border:'1px solid #F0D78C', cursor:'pointer', color:'#8F6807', display:'flex', padding:6, borderRadius:'50%' }}><X size={16}/></button>
         </div>
 
         <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14, overflowY:'auto', flex:1 }}>
@@ -417,7 +417,7 @@ function BulkUploadModal({ drivers, onSave, onClose }) {
                   style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:10, border:'1px solid var(--border)', background:'var(--bg-alt)', color:'var(--text)', fontWeight:600, fontSize:12.5, cursor:'pointer', fontFamily:'inherit' }}>
                   <Download size={13}/> Download Template
                 </button>
-                <label style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:10, border:'1px solid rgba(184,134,11,0.5)', background:'rgba(184,134,11,0.15)', color:'#B8860B', fontWeight:700, fontSize:12.5, cursor:'pointer' }}>
+                <label style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 14px', borderRadius:10, border:'1px solid rgba(184,134,11,0.5)', background:'rgba(184,134,11,0.15)', color:'#8F6807', fontWeight:700, fontSize:12.5, cursor:'pointer' }}>
                   <UploadCloud size={13}/> Choose CSV File
                   <input type="file" accept=".csv" onChange={handleFile} style={{ display:'none' }}/>
                 </label>
@@ -446,7 +446,7 @@ function BulkUploadModal({ drivers, onSave, onClose }) {
               )}
 
               <button onClick={handleUpload} disabled={uploading || !validRows.length}
-                style={{ padding:'13px', borderRadius:12, border:'none', cursor:(uploading||!validRows.length)?'not-allowed':'pointer', background:(uploading||!validRows.length)?'var(--border)':'linear-gradient(135deg,#B8860B,#D4A017)', color:(uploading||!validRows.length)?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'Poppins,sans-serif', marginTop:4, transition:'all 0.2s' }}>
+                style={{ padding:'13px', borderRadius:12, border:'none', cursor:(uploading||!validRows.length)?'not-allowed':'pointer', background:(uploading||!validRows.length)?'var(--border)':'linear-gradient(135deg,#8F6807,#D4A017)', color:(uploading||!validRows.length)?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'inherit', marginTop:4, transition:'all 0.2s' }}>
                 {uploading ? 'Uploading…' : validRows.length ? `Upload ${validRows.length} Expense${validRows.length!==1?'s':''}` : 'Choose a file to continue'}
               </button>
             </>
@@ -541,7 +541,7 @@ function GiveCashModal({ users, onSave, onClose }) {
             <input className="input" value={form.note} onChange={set('note')} placeholder="e.g. March operational expenses" style={{ borderRadius:10 }}/>
           </div>
           <button onClick={handleSave} disabled={saving}
-            style={{ padding:'13px', borderRadius:12, border:'none', cursor:saving?'not-allowed':'pointer', background:saving?'var(--border)':'linear-gradient(135deg,#2E7D52,#22C55E)', color:saving?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'Poppins,sans-serif', marginTop:4, transition:'all 0.2s', boxShadow:saving?'none':'0 3px 12px rgba(46,125,82,0.3)' }}>
+            style={{ padding:'13px', borderRadius:12, border:'none', cursor:saving?'not-allowed':'pointer', background:saving?'var(--border)':'linear-gradient(135deg,#2E7D52,#22C55E)', color:saving?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'inherit', marginTop:4, transition:'all 0.2s', boxShadow:saving?'none':'0 3px 12px rgba(46,125,82,0.3)' }}>
             {saving ? 'Processing…' : 'Give Cash'}
           </button>
         </div>
@@ -655,7 +655,7 @@ function EditModal({ record, drivers, onSave, onClose }) {
             <input className="input" value={form.note} onChange={set('note')} placeholder="Add a note…" style={{ borderRadius:10 }}/>
           </div>
           <button onClick={handleSave} disabled={saving}
-            style={{ padding:'13px', borderRadius:12, border:'none', cursor:saving?'not-allowed':'pointer', background:saving?'var(--border)':'linear-gradient(135deg,#2563EB,#3B82F6)', color:saving?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'Poppins,sans-serif', marginTop:4, transition:'all 0.2s', boxShadow:saving?'none':'0 3px 12px rgba(37,99,235,0.35)' }}>
+            style={{ padding:'13px', borderRadius:12, border:'none', cursor:saving?'not-allowed':'pointer', background:saving?'var(--border)':'linear-gradient(135deg,#2563EB,#3B82F6)', color:saving?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'inherit', marginTop:4, transition:'all 0.2s', boxShadow:saving?'none':'0 3px 12px rgba(37,99,235,0.35)' }}>
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
         </div>
@@ -726,7 +726,7 @@ function TxRow({ record, canEdit, canDelete, onDelete, onEdit, selectMode, selec
         </div>
         <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2, display:'flex', gap:6, flexWrap:'wrap', alignItems:'baseline' }}>
           {record.emp_name && (
-            <span style={{ color:'#B8860B', fontWeight:600, display:'flex', alignItems:'center', gap:3, flexShrink:0 }}>
+            <span style={{ color:'#8F6807', fontWeight:600, display:'flex', alignItems:'center', gap:3, flexShrink:0 }}>
               <User size={9}/> {record.emp_name}
             </span>
           )}
@@ -837,11 +837,11 @@ function UserDetailPanel({ userId, userName, userRole, onBack, canEdit, canDelet
       {/* Detail hero */}
       <div style={{ background:'linear-gradient(135deg,#0f1623 0%,#1a2535 50%,#1e3a5f 100%)', borderRadius:16, padding:22, marginBottom:16 }}>
         <button onClick={onBack}
-          style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', cursor:'pointer', color:'rgba(255,255,255,0.7)', fontSize:12, fontWeight:600, padding:'6px 12px', borderRadius:8, fontFamily:'Poppins,sans-serif', marginBottom:18 }}>
+          style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', cursor:'pointer', color:'rgba(255,255,255,0.7)', fontSize:12, fontWeight:600, padding:'6px 12px', borderRadius:8, fontFamily:'inherit', marginBottom:18 }}>
           <ChevronLeft size={13}/> Back to Overview
         </button>
         <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
-          <div style={{ width:48, height:48, borderRadius:14, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:15, fontWeight:800, color:'white', boxShadow:'0 4px 12px rgba(184,134,11,0.3)' }}>
+          <div style={{ width:48, height:48, borderRadius:14, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:15, fontWeight:800, color:'white', boxShadow:'0 4px 12px rgba(184,134,11,0.3)' }}>
             {userName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
           </div>
           <div>
@@ -1178,8 +1178,8 @@ export default function PettyCashPage() {
   return (
     <>
       <style>{`
-        .pc-tab { background:none; border:none; border-bottom:2px solid transparent; padding:11px 18px; font-size:13px; font-weight:500; color:var(--text-muted); cursor:pointer; font-family:Poppins,sans-serif; transition:all 0.15s; }
-        .pc-tab.active { color:#B8860B; font-weight:700; border-bottom-color:#B8860B; }
+        .pc-tab { background:none; border:none; border-bottom:2px solid transparent; padding:11px 18px; font-size:13px; font-weight:500; color:var(--text-muted); cursor:pointer; font-family: inherit; transition:all 0.15s; }
+        .pc-tab.active { color:#8F6807; font-weight:700; border-bottom-color:#8F6807; }
         .pc-tab:hover:not(.active) { color:var(--text); background:var(--bg-alt); }
         @keyframes pc-spin { to { transform:rotate(360deg); } }
         .pc-spin { animation:pc-spin 0.8s linear infinite; }
@@ -1210,19 +1210,19 @@ export default function PettyCashPage() {
               </button>
               {canGiveCash && (
                 <button onClick={() => setModal('give')}
-                  style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer', background:'linear-gradient(135deg,#2E7D52,#22C55E)', color:'white', fontWeight:700, fontSize:13, fontFamily:'Poppins,sans-serif', boxShadow:'0 2px 10px rgba(46,125,82,0.4)', whiteSpace:'nowrap' }}>
+                  style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer', background:'linear-gradient(135deg,#2E7D52,#22C55E)', color:'white', fontWeight:700, fontSize:13, fontFamily:'inherit', boxShadow:'0 2px 10px rgba(46,125,82,0.4)', whiteSpace:'nowrap' }}>
                   <HandCoins size={14}/> Give Cash
                 </button>
               )}
               {!isAdmin && (
                 <button onClick={() => setModal('expense')}
-                  style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'1px solid rgba(184,134,11,0.5)', cursor:'pointer', background:'rgba(184,134,11,0.15)', color:'#D4A017', fontWeight:700, fontSize:13, fontFamily:'Poppins,sans-serif', whiteSpace:'nowrap' }}>
+                  style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'1px solid rgba(184,134,11,0.5)', cursor:'pointer', background:'rgba(184,134,11,0.15)', color:'#D4A017', fontWeight:700, fontSize:13, fontFamily:'inherit', whiteSpace:'nowrap' }}>
                   <Receipt size={14}/> Record Expense
                 </button>
               )}
               {!isAdmin && (
                 <button onClick={() => setModal('bulk')}
-                  style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'1px solid rgba(255,255,255,0.15)', cursor:'pointer', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.85)', fontWeight:700, fontSize:13, fontFamily:'Poppins,sans-serif', whiteSpace:'nowrap' }}>
+                  style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'1px solid rgba(255,255,255,0.15)', cursor:'pointer', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.85)', fontWeight:700, fontSize:13, fontFamily:'inherit', whiteSpace:'nowrap' }}>
                   <UploadCloud size={14}/> Bulk Upload
                 </button>
               )}
@@ -1289,7 +1289,7 @@ export default function PettyCashPage() {
                 style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', cursor:'pointer', transition:'background 0.15s' }}
                 onMouseEnter={e => e.currentTarget.style.background='var(--bg-alt)'}
                 onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-                <div style={{ width:36, height:36, borderRadius:10, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:12, fontWeight:800, color:'white' }}>
+                <div style={{ width:36, height:36, borderRadius:10, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:12, fontWeight:800, color:'white' }}>
                   {d.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
@@ -1445,7 +1445,7 @@ export default function PettyCashPage() {
                 <>
                   {byProject.projects.map(p => (
                     <div key={p.project_type} style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderBottom:'1px solid var(--border)' }}>
-                      <div style={{ width:40, height:40, borderRadius:12, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:13, fontWeight:800, color:'white' }}>
+                      <div style={{ width:40, height:40, borderRadius:12, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:13, fontWeight:800, color:'white' }}>
                         {p.label.slice(0,2).toUpperCase()}
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
@@ -1491,7 +1491,7 @@ export default function PettyCashPage() {
                 <input
                   value={search} onChange={e => setSearch(e.target.value)}
                   placeholder="Search team members…"
-                  style={{ width:'100%', padding:'9px 12px 9px 36px', borderRadius:10, border:'1px solid var(--border)', background:'var(--bg-alt)', color:'var(--text)', fontSize:13, fontFamily:'Poppins,sans-serif', outline:'none' }}/>
+                  style={{ width:'100%', padding:'9px 12px 9px 36px', borderRadius:10, border:'1px solid var(--border)', background:'var(--bg-alt)', color:'var(--text)', fontSize:13, fontFamily:'inherit', outline:'none' }}/>
               </div>
 
               {/* List header */}
@@ -1510,7 +1510,7 @@ export default function PettyCashPage() {
                     style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderBottom:'1px solid var(--border)', cursor:'pointer', transition:'background 0.15s' }}
                     onMouseEnter={e => e.currentTarget.style.background='var(--bg-alt)'}
                     onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-                    <div style={{ width:40, height:40, borderRadius:12, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:13, fontWeight:800, color:'white' }}>
+                    <div style={{ width:40, height:40, borderRadius:12, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:13, fontWeight:800, color:'white' }}>
                       {u.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>

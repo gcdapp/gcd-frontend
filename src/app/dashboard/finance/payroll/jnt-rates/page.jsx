@@ -272,7 +272,7 @@ export default function RateSettingsPage() {
         </Link>
         <div className="card" style={{ padding: '16px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <Settings2 size={18} color="#B8860B" />
+            <Settings2 size={18} color="#8F6807" />
             <h2 style={{ fontWeight: 800, fontSize: 17, margin: 0 }}>Pay Rate Settings</h2>
           </div>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>

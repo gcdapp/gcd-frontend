@@ -19,7 +19,7 @@ function fmtAED(n) { return `AED ${fmt(n)}` }
 function Tip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'8px 12px', boxShadow:'var(--shadow-md)', fontSize:12, fontFamily:'Poppins,sans-serif' }}>
+    <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:10, padding:'8px 12px', boxShadow:'var(--shadow-md)', fontSize:12, fontFamily:'inherit' }}>
       <div style={{ fontWeight:700, color:'var(--text-muted)', marginBottom:4 }}>{label}</div>
       {payload.map(p => (
         <div key={p.dataKey} style={{ color:p.color, fontWeight:600, display:'flex', gap:10, justifyContent:'space-between' }}>
@@ -320,8 +320,8 @@ function AdminDashboard({ summary, loading, leaves, onApproveLeave, simStats, si
                   <div style={{ fontSize:11,color:'var(--text-muted)',marginTop:2 }}>{l.type} · {l.from_date} → {l.to_date} · {l.days} days</div>
                 </div>
                 <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:1,background:'var(--border)' }}>
-                  <button onClick={()=>onApproveLeave(l.id,'approved')} style={{ padding:'9px',background:'var(--green-bg)',border:'none',color:'var(--green)',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'Poppins,sans-serif' }}>✓ Approve</button>
-                  <button onClick={()=>onApproveLeave(l.id,'rejected')} style={{ padding:'9px',background:'var(--red-bg)',border:'none',color:'var(--red)',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'Poppins,sans-serif' }}>✕ Reject</button>
+                  <button onClick={()=>onApproveLeave(l.id,'approved')} style={{ padding:'9px',background:'var(--green-bg)',border:'none',color:'var(--green)',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit' }}>✓ Approve</button>
+                  <button onClick={()=>onApproveLeave(l.id,'rejected')} style={{ padding:'9px',background:'var(--red-bg)',border:'none',color:'var(--red)',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit' }}>✕ Reject</button>
                 </div>
               </div>
             ))}

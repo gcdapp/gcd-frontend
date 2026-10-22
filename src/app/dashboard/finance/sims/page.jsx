@@ -95,7 +95,7 @@ export default function AccountantSimsPage() {
                     </td>
                     <td>
                       {sim.station_code && (
-                        <span style={{ fontSize:11, fontWeight:700, color:'#B8860B', background:'#FDF6E3', border:'1px solid #F0D78C', borderRadius:5, padding:'1px 6px' }}>
+                        <span style={{ fontSize:11, fontWeight:700, color:'#8F6807', background:'#FDF6E3', border:'1px solid #F0D78C', borderRadius:5, padding:'1px 6px' }}>
                           {sim.station_code}
                         </span>
                       )}

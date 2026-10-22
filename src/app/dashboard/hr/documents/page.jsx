@@ -23,7 +23,7 @@ function DocCard({ doc, onDelete }) {
         <div style={{ fontWeight:600, fontSize:13, color:'#1A1612', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{doc.file_name}</div>
         <div style={{ fontSize:11, color:dt.c, fontWeight:600, marginTop:1 }}>{dt.l}</div>
         {doc.expires_at && (
-          <div style={{ fontSize:10.5, color:expInfo?.color||'#A89880', marginTop:1, fontWeight:500 }}>
+          <div style={{ fontSize:10.5, color:expInfo?.color||'#78716C', marginTop:1, fontWeight:500 }}>
             {expInfo?.icon} Expires: {doc.expires_at.slice(0,10)} {expInfo?.label&&`· ${expInfo.label}`}
           </div>
         )}
@@ -106,7 +106,7 @@ export default function DocumentsPage() {
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
         <div>
           <h1 style={{ fontWeight:900, fontSize:20, color:'#1A1612', letterSpacing:'-0.03em' }}>Documents</h1>
-          <p style={{ fontSize:12, color:'#A89880', marginTop:3 }}>Stored securely on Google Drive · {totalDocs} files</p>
+          <p style={{ fontSize:12, color:'#78716C', marginTop:3 }}>Stored securely on Google Drive · {totalDocs} files</p>
         </div>
         <button onClick={()=>setModal({type:'add',emp:null})} className="btn btn-primary" style={{ borderRadius:24, gap:7 }}>
           <Plus size={15}/> Add Document
@@ -158,7 +158,7 @@ export default function DocumentsPage() {
         </div>
         {[{v:'all',l:'All Employees'},{v:'expiring',l:'⏰ Expiring'},{v:'missing',l:'⚠️ No Docs'}].map(f=>(
           <button key={f.v} onClick={()=>setFilter(f.v)}
-            style={{ padding:'7px 14px', borderRadius:20, fontSize:12, fontWeight:filter===f.v?700:500, border:`1.5px solid ${filter===f.v?'#B8860B':'#EAE6DE'}`, background:filter===f.v?'#FDF6E3':'#FFF', color:filter===f.v?'#B8860B':'#A89880', cursor:'pointer', transition:'all 0.18s', whiteSpace:'nowrap' }}>
+            style={{ padding:'7px 14px', borderRadius:20, fontSize:12, fontWeight:filter===f.v?700:500, border:`1.5px solid ${filter===f.v?'#8F6807':'#EAE6DE'}`, background:filter===f.v?'#FDF6E3':'#FFF', color:filter===f.v?'#8F6807':'#78716C', cursor:'pointer', transition:'all 0.18s', whiteSpace:'nowrap' }}>
             {f.l}
           </button>
         ))}
@@ -173,7 +173,7 @@ export default function DocumentsPage() {
           {[1,2,3].map(i=><div key={i} className="skeleton" style={{ height:80, borderRadius:16 }}/>)}
         </div>
       ) : filteredEmps.length === 0 ? (
-        <div style={{ textAlign:'center', padding:'50px 20px', color:'#A89880' }}>
+        <div style={{ textAlign:'center', padding:'50px 20px', color:'#78716C' }}>
           <div style={{ fontSize:40, marginBottom:10 }}>📂</div>
           <div style={{ fontWeight:600, color:'#6B5D4A' }}>{search?`No results for "${search}"`:'No employees found'}</div>
         </div>
@@ -194,9 +194,9 @@ export default function DocumentsPage() {
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontWeight:700, fontSize:14, color:'#1A1612' }}>{emp.name}</div>
-                    <div style={{ fontSize:11, color:'#A89880', marginTop:1, display:'flex', gap:6, alignItems:'center' }}>
+                    <div style={{ fontSize:11, color:'#78716C', marginTop:1, display:'flex', gap:6, alignItems:'center' }}>
                       <span style={{ fontFamily:'inherit' }}>{emp.id}</span>
-                      {emp.station_code && <span style={{ background:'#FDF6E3', color:'#B8860B', fontWeight:700, padding:'1px 6px', borderRadius:5, fontSize:10 }}>{emp.station_code}</span>}
+                      {emp.station_code && <span style={{ background:'#FDF6E3', color:'#8F6807', fontWeight:700, padding:'1px 6px', borderRadius:5, fontSize:10 }}>{emp.station_code}</span>}
                     </div>
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
@@ -219,10 +219,10 @@ export default function DocumentsPage() {
                         ))}
                       </div>
                     ) : (
-                      <div style={{ textAlign:'center', padding:'16px 0', color:'#A89880', fontSize:13 }}>No documents uploaded yet</div>
+                      <div style={{ textAlign:'center', padding:'16px 0', color:'#78716C', fontSize:13 }}>No documents uploaded yet</div>
                     )}
                     <button onClick={()=>setModal({type:'add',emp})}
-                      style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:20, background:'linear-gradient(135deg,#FDF6E3,#FEF9F0)', border:'1.5px dashed #D4A017', color:'#B8860B', fontSize:12, fontWeight:700, cursor:'pointer', width:'100%', justifyContent:'center', transition:'background 0.2s' }}>
+                      style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:20, background:'linear-gradient(135deg,#FDF6E3,#FEF9F0)', border:'1.5px dashed #D4A017', color:'#8F6807', fontSize:12, fontWeight:700, cursor:'pointer', width:'100%', justifyContent:'center', transition:'background 0.2s' }}>
                       <Plus size={13}/> Add Document for {emp.name.split(' ')[0]}
                     </button>
                   </div>

@@ -20,6 +20,8 @@ const PAGE_TITLES = {
   '/dashboard/finance/payroll':           'Payroll',
   '/dashboard/finance/expenses':          'Expenses',
   '/dashboard/finance/petty-cash':        'Petty Cash',
+  '/dashboard/finance/customers':         'Customers',
+  '/dashboard/finance/sims':              'SIM Cards',
   '/dashboard/poc':                       'POC Station',
   '/dashboard/poc/das':                   'Delivery Agents',
   '/dashboard/poc/fleet':                 'Fleet',
@@ -40,14 +42,19 @@ const PAGE_TITLES = {
   '/dashboard/compliance':               'Compliance',
 }
 
-const ROLE_CFG = {
-  admin:           { l:'Admin',    e:'👑' },
-  manager:         { l:'Manager',  e:'⭐' },
-  general_manager: { l:'Manager',  e:'🎯' },
-  hr:              { l:'HR',       e:'👥' },
-  accountant:      { l:'Finance',  e:'💰' },
-  poc:             { l:'POC',      e:'📡' },
-  driver:          { l:'Driver',   e:'🚗' },
+const ROLE_LABELS = {
+  admin: 'Admin', manager: 'Manager', general_manager: 'Manager', hr: 'HR',
+  accountant: 'Finance', poc: 'POC', driver: 'Driver',
+}
+
+// Exact match first, then the closest parent route — so detail pages like
+// /dashboard/hr/employees/CSDSPL45/salary show "Employees", not "Dashboard".
+function titleFor(pathname) {
+  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname]
+  const parent = Object.keys(PAGE_TITLES)
+    .filter(k => pathname.startsWith(k + '/'))
+    .sort((a, b) => b.length - a.length)[0]
+  return parent ? PAGE_TITLES[parent] : 'Dashboard'
 }
 
 export default function Topbar({ onMenuClick }) {
@@ -82,27 +89,28 @@ export default function Topbar({ onMenuClick }) {
     }
   }
 
-  const title = PAGE_TITLES[pathname] || 'Dashboard'
-  const role  = ROLE_CFG[user?.role] || { l: user?.role, e: '👤' }
+  const title = titleFor(pathname)
+  const roleLabel = ROLE_LABELS[user?.role] || user?.role
+  const initials  = user?.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '--'
 
   return (
     <header className="topbar">
       {/* Menu button — mobile only */}
-      <button onClick={onMenuClick} className="btn btn-ghost btn-icon" id="mobile-menu-btn"
+      <button onClick={onMenuClick} className="btn btn-ghost btn-icon" id="mobile-menu-btn" aria-label="Open menu"
         style={{ display:'none', color:'var(--text-sub)', flexShrink:0 }}>
         <Menu size={20}/>
       </button>
 
       {/* Title */}
       <div style={{ flex:1, minWidth:0 }}>
-        <div className="topbar-title" style={{ fontWeight:700, fontSize:16, color:'var(--text)', letterSpacing:'-0.01em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{title}</div>
-        <div className="topbar-date" style={{ fontSize:10.5, color:'var(--text-muted)', marginTop:1 }}>
+        <h1 className="topbar-title" style={{ fontWeight:650, fontSize:17, color:'var(--text)', letterSpacing:'-0.02em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', margin:0, lineHeight:1.25 }}>{title}</h1>
+        <div className="topbar-date" style={{ fontSize:12, color:'var(--text-muted)', marginTop:1 }}>
           {dateStr}
         </div>
       </div>
 
       {/* Dark mode toggle */}
-      <button onClick={toggleTheme} className="btn btn-ghost btn-icon" title={dark ? 'Light mode' : 'Dark mode'}
+      <button onClick={toggleTheme} className="btn btn-ghost btn-icon" title={dark ? 'Light mode' : 'Dark mode'} aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
         style={{ color:'var(--text-sub)', flexShrink:0 }}>
         {dark ? <Sun size={17}/> : <Moon size={17}/>}
       </button>
@@ -111,26 +119,22 @@ export default function Topbar({ onMenuClick }) {
       <NotificationBell userRole={user?.role}/>
 
       {/* Right side — combined user + sign-out pill */}
-      <div style={{ display:'flex', alignItems:'center', gap:0, flexShrink:0, background:'var(--card)', border:'1px solid var(--border)', borderRadius:28, boxShadow:'0 1px 4px rgba(0,0,0,0.06)', overflow:'hidden' }}>
-        {/* Avatar — initials, not emoji */}
-        <div style={{ width:34, height:34, margin:'4px 0 4px 4px', borderRadius:20, background:'linear-gradient(135deg,#B8860B,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:800, color:'#fff', letterSpacing:'-0.02em', flexShrink:0, userSelect:'none' }}>
-          {user?.name?.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() || '--'}
+      <div style={{ width:1, height:24, background:'var(--border)', flexShrink:0, margin:'0 4px' }} className="hide-mobile"/>
+      {/* User */}
+      <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+        <div aria-hidden="true" style={{ width:34, height:34, borderRadius:'50%', background:'var(--gold)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12.5, fontWeight:600, color:'#fff', flexShrink:0, userSelect:'none' }}>
+          {initials}
         </div>
-        {/* Name + role */}
-        <div className="hide-mobile" style={{ padding:'0 10px 0 8px' }}>
-          <div style={{ fontSize:12.5, fontWeight:700, color:'var(--text)', lineHeight:1.2 }}>{user?.name?.split(' ')[0]}</div>
-          <div style={{ fontSize:10, color:'var(--text-muted)', fontWeight:500 }}>{role.l}</div>
+        <div className="hide-mobile" style={{ lineHeight:1.25 }}>
+          <div style={{ fontSize:13.5, fontWeight:600, color:'var(--text)' }}>{user?.name?.split(' ')[0]}</div>
+          <div style={{ fontSize:12, color:'var(--text-muted)' }}>{roleLabel}</div>
         </div>
-        {/* Divider */}
-        <div className="hide-mobile" style={{ width:1, height:22, background:'var(--border)', flexShrink:0 }}/>
-        {/* Sign out */}
-        <button onClick={signOut}
-          style={{ display:'flex', alignItems:'center', gap:5, padding:'0 14px', height:42, background:'transparent', border:'none', color:'var(--red)', fontWeight:600, fontSize:12, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap', flexShrink:0, transition:'background 0.15s' }}
-          onMouseEnter={e=>e.currentTarget.style.background='var(--red-bg)'}
-          onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-          <LogOut size={13}/><span className="hide-mobile" style={{ marginLeft:2 }}>Sign Out</span>
-        </button>
       </div>
+      {/* Sign out */}
+      <button onClick={signOut} className="btn btn-ghost" aria-label="Sign out" title="Sign out"
+        style={{ color:'var(--text-sub)', gap:6, padding:'7px 10px', flexShrink:0 }}>
+        <LogOut size={15}/><span className="hide-mobile">Sign out</span>
+      </button>
     </header>
   )
 }

@@ -4,7 +4,7 @@
 // gradient than the other 5 pages because each file redefined its own copy).
 import { differenceInDays, parseISO } from 'date-fns'
 
-export const SC_COLOR  = { DDB1:'#B8860B', DXE6:'#2563EB' }
+export const SC_COLOR  = { DDB1:'#8F6807', DXE6:'#2563EB' }
 export const SC_BG     = { DDB1:'#FFFBEB', DXE6:'#EFF6FF' }
 export const SC_BORDER = { DDB1:'#FDE68A', DXE6:'#BFDBFE' }
 

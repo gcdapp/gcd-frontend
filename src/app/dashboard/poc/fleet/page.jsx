@@ -188,7 +188,7 @@ export default function FleetPage() {
   })
 
   const TABS = [
-    { id:'all',    label:'All',    count:vehs.length,       activeColor:'#B8860B', activeBg:'#B8860B18' },
+    { id:'all',    label:'All',    count:vehs.length,       activeColor:'#8F6807', activeBg:'#8F680718' },
     { id:'active', label:'Active', count:active,            activeColor:'#2E7D52', activeBg:'#2E7D5218' },
     { id:'down',   label:'Down',   count:grounded,          activeColor:'#C0392B', activeBg:'#C0392B18' },
     { id:'inuse',  label:'In Use', count:inUse,             activeColor:'#6366F1', activeBg:'#6366F118' },
@@ -245,7 +245,7 @@ export default function FleetPage() {
           {/* KPI tiles */}
           <div className="fl-hero-kpi" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12 }}>
             {[
-              { label:'Total Vehicles', val:vehs.length,  color:'#B8860B' },
+              { label:'Total Vehicles', val:vehs.length,  color:'#8F6807' },
               { label:'Active',         val:active,        color:'#4ADE80' },
               { label:'Down / Maint.',  val:grounded,      color:'#F87171' },
               { label:'In Use (HV)',    val:inUse,         color:'#818CF8' },
@@ -282,9 +282,9 @@ export default function FleetPage() {
             />
           </div>
           <button onClick={() => setModal('vehicle-add')}
-            style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background 0.15s' }}
+            style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#8F6807', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background 0.15s' }}
             onMouseEnter={e=>e.currentTarget.style.background='#9a7209'}
-            onMouseLeave={e=>e.currentTarget.style.background='#B8860B'}>
+            onMouseLeave={e=>e.currentTarget.style.background='#8F6807'}>
             <Plus size={14}/> Add Vehicle
           </button>
         </div>
@@ -391,7 +391,7 @@ export default function FleetPage() {
             </div>
             {filterStatus==='all' && !search && (
               <button onClick={() => setModal('vehicle-add')}
-                style={{ padding:'10px 24px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
+                style={{ padding:'10px 24px', borderRadius:10, border:'none', background:'#8F6807', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
                 <Plus size={13} style={{ display:'inline', marginRight:6, verticalAlign:'middle' }}/> Add Vehicle
               </button>
             )}
@@ -402,7 +402,7 @@ export default function FleetPage() {
               const asgn    = asgns.find(a => String(a.vehicle_id)===String(v.id))
               const curHV   = currentHVs.find(h => String(h.vehicle_id)===String(v.id))
               const isDown  = v.status !== 'active'
-              const sc      = VSTATUS_COLORS[v.status] || '#A89880'
+              const sc      = VSTATUS_COLORS[v.status] || '#78716C'
               const sb      = { active:'#ECFDF5', grounded:'#FEF2F2', maintenance:'#FFFBEB', sold:'#F5F4F1' }[v.status] || '#F5F4F1'
               const trackData = tracking ? (tracking[normPlate(v.plate)] || null) : null
               return (
@@ -434,7 +434,7 @@ export default function FleetPage() {
         {/* Enrichment indicator — subtle, only while loading phase 2 */}
         {!loading && enriching && (
           <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 14px', background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:10, fontSize:12, color:'var(--text-muted)' }}>
-            <span style={{ width:12, height:12, border:'2px solid var(--border)', borderTopColor:'#B8860B', borderRadius:'50%', animation:'spin 0.8s linear infinite', flexShrink:0 }}/>
+            <span style={{ width:12, height:12, border:'2px solid var(--border)', borderTopColor:'#8F6807', borderRadius:'50%', animation:'spin 0.8s linear infinite', flexShrink:0 }}/>
             Loading assignments &amp; handovers…
           </div>
         )}

@@ -55,7 +55,7 @@ function PhotoSlot({ index, file, onSelect, onRemove }) {
   const url = file ? URL.createObjectURL(file) : null
 
   return (
-    <div style={{ position:'relative', aspectRatio:'1', borderRadius:12, overflow:'hidden', border:`2px dashed ${file?'#B8860B':'#EAE6DE'}`, background:file?'#000':'#FAFAF8', cursor:'pointer' }}
+    <div style={{ position:'relative', aspectRatio:'1', borderRadius:12, overflow:'hidden', border:`2px dashed ${file?'#8F6807':'#EAE6DE'}`, background:file?'#000':'#FAFAF8', cursor:'pointer' }}
       onClick={()=>!file && ref.current?.click()}>
       <input ref={ref} type="file" accept="image/*" capture="environment" style={{ display:'none' }}
         onChange={e=>{ if(e.target.files[0]) onSelect(index, e.target.files[0]) }}/>
@@ -210,7 +210,7 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
         <div style={{ fontWeight:800, fontSize:18, color:'#1A1612', marginBottom:8 }}>
           {isMaintenance ? 'Parked for Maintenance!' : isReturn ? 'Return Submitted!' : 'Handover Recorded!'}
         </div>
-        <div style={{ fontSize:13, color:'#A89880' }}>
+        <div style={{ fontSize:13, color:'#78716C' }}>
           {isMaintenance
             ? `Vehicle parked at ${parkingLocation}. Status updated to maintenance.`
             : isReturn
@@ -235,7 +235,7 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
             <div>
               <h3 style={{ fontWeight:900, fontSize:17, color:'#1A1612' }}>Return Vehicle</h3>
-              <p style={{ fontSize:12, color:'#A89880', marginTop:3 }}>
+              <p style={{ fontSize:12, color:'#78716C', marginTop:3 }}>
                 {vehicle?.vehicle_plate || vehicle?.plate} — What would you like to do?
               </p>
             </div>
@@ -244,13 +244,13 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
         </div>
         <div style={{ padding:'20px 22px 24px', display:'flex', flexDirection:'column', gap:12 }}>
           <button onClick={() => setReturnMode('handover')}
-            style={{ display:'flex', alignItems:'center', gap:16, padding:'18px 20px', borderRadius:16, border:'2px solid #B8860B', background:'#FFFBEB', cursor:'pointer', textAlign:'left', width:'100%', fontFamily:'inherit', transition:'all 0.15s' }}>
+            style={{ display:'flex', alignItems:'center', gap:16, padding:'18px 20px', borderRadius:16, border:'2px solid #8F6807', background:'#FFFBEB', cursor:'pointer', textAlign:'left', width:'100%', fontFamily:'inherit', transition:'all 0.15s' }}>
             <div style={{ width:48, height:48, borderRadius:14, background:'#FEF3C7', border:'1px solid #FDE68A', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <ArrowLeftRight size={22} color="#B8860B"/>
+              <ArrowLeftRight size={22} color="#8F6807"/>
             </div>
             <div>
               <div style={{ fontWeight:800, fontSize:14, color:'#92400E' }}>Handover to Another Driver</div>
-              <div style={{ fontSize:12, color:'#A89880', marginTop:3 }}>No photos needed — the receiving driver takes them</div>
+              <div style={{ fontSize:12, color:'#78716C', marginTop:3 }}>No photos needed — the receiving driver takes them</div>
             </div>
           </button>
 
@@ -261,7 +261,7 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
             </div>
             <div>
               <div style={{ fontWeight:800, fontSize:14, color:'#374151' }}>Park for Maintenance</div>
-              <div style={{ fontSize:12, color:'#A89880', marginTop:3 }}>4 photos required — specify where you are parking it</div>
+              <div style={{ fontSize:12, color:'#78716C', marginTop:3 }}>4 photos required — specify where you are parking it</div>
             </div>
           </button>
         </div>
@@ -304,12 +304,12 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
             <div>
               <h3 style={{ fontWeight:900, fontSize:17, color:'#1A1612' }}>{headerTitle}</h3>
-              <p style={{ fontSize:12, color:'#A89880', marginTop:3 }}>{headerSub}</p>
+              <p style={{ fontSize:12, color:'#78716C', marginTop:3 }}>{headerSub}</p>
             </div>
             <div style={{ display:'flex', gap:8, alignItems:'center' }}>
               {isReturn && (
                 <button onClick={() => { setReturnMode(null); setErr(null) }}
-                  style={{ fontSize:11, color:'#B8860B', background:'#FEF3C7', border:'1px solid #FDE68A', borderRadius:8, padding:'4px 10px', cursor:'pointer', fontFamily:'inherit', fontWeight:600 }}>
+                  style={{ fontSize:11, color:'#8F6807', background:'#FEF3C7', border:'1px solid #FDE68A', borderRadius:8, padding:'4px 10px', cursor:'pointer', fontFamily:'inherit', fontWeight:600 }}>
                   ← Back
                 </button>
               )}
@@ -344,7 +344,7 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
                   <option key={d.id} value={d.id}>{d.name} {d.station_code ? `· ${d.station_code}` : ''}</option>
                 ))}
               </select>
-              <p style={{ fontSize:11, color:'#A89880', marginTop:5 }}>
+              <p style={{ fontSize:11, color:'#78716C', marginTop:5 }}>
                 The selected driver will upload the vehicle photos after accepting.
               </p>
             </div>
@@ -356,7 +356,7 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
               <label className="input-label" style={{ display:'flex', alignItems:'center', gap:6 }}><Wrench size={12}/> Parking Location *</label>
               <input className="input" value={parkingLocation} onChange={e=>setParkingLocation(e.target.value)}
                 placeholder="e.g. DDB1 yard, Gate 3, Parking Bay 5…" autoComplete="off"/>
-              <p style={{ fontSize:11, color:'#A89880', marginTop:5 }}>
+              <p style={{ fontSize:11, color:'#78716C', marginTop:5 }}>
                 Specify exactly where you are leaving the vehicle so it can be located for maintenance.
               </p>
             </div>
@@ -366,7 +366,7 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
           {(returnMode === 'receive' || isMaintenance) && (
             <div>
               <label className="input-label" style={{ display:'flex', alignItems:'center', gap:6 }}><Camera size={12}/> Vehicle Photos <span style={{color:'#E53E3E'}}>*</span></label>
-              <p style={{ fontSize:11, color:'#A89880', marginBottom:10 }}>All 4 photos required — front, back, left side, right side</p>
+              <p style={{ fontSize:11, color:'#78716C', marginBottom:10 }}>All 4 photos required — front, back, left side, right side</p>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
                 {photos.map((f,i) => (
                   <PhotoSlot key={i} index={i} file={f} onSelect={setPhoto} onRemove={removePhoto}/>
@@ -389,13 +389,13 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
             <div style={{ display:'flex', gap:6 }}>
               {FUEL_LEVELS.map(f=>(
                 <button key={f.v} onClick={()=>setFuel(f.v)} type="button"
-                  style={{ flex:1, padding:'8px 4px', borderRadius:10, border:`2px solid ${fuel===f.v?'#B8860B':'#EAE6DE'}`, background:fuel===f.v?'#FDF6E3':'#FAFAF8', cursor:'pointer', textAlign:'center', transition:'all 0.18s', fontFamily:'Poppins,sans-serif' }}>
-                  <div style={{ fontSize:10.5, fontWeight:700, color:fuel===f.v?'#B8860B':'#A89880' }}>{f.l}</div>
+                  style={{ flex:1, padding:'8px 4px', borderRadius:10, border:`2px solid ${fuel===f.v?'#8F6807':'#EAE6DE'}`, background:fuel===f.v?'#FDF6E3':'#FAFAF8', cursor:'pointer', textAlign:'center', transition:'all 0.18s', fontFamily:'inherit' }}>
+                  <div style={{ fontSize:10.5, fontWeight:700, color:fuel===f.v?'#8F6807':'#78716C' }}>{f.l}</div>
                 </button>
               ))}
             </div>
             <div style={{ marginTop:8, height:8, background:'#F0EDE6', borderRadius:10, overflow:'hidden' }}>
-              <div style={{ height:'100%', width:`${FUEL_LEVELS.find(f=>f.v===fuel)?.pct||0}%`, background:'linear-gradient(90deg,#B8860B,#D4A017)', borderRadius:10, transition:'width 0.4s ease' }}/>
+              <div style={{ height:'100%', width:`${FUEL_LEVELS.find(f=>f.v===fuel)?.pct||0}%`, background:'linear-gradient(90deg,#8F6807,#D4A017)', borderRadius:10, transition:'width 0.4s ease' }}/>
             </div>
           </div>
 
@@ -410,7 +410,7 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
             <div>
               <label className="input-label" style={{ display:'flex', alignItems:'center', gap:6 }}>
                 <User size={12}/> {isReturn ? 'Your Name / Reference' : 'Received From'}
-                {isReturn && <span style={{ fontSize:10, color:'#A89880', fontWeight:400 }}>(optional)</span>}
+                {isReturn && <span style={{ fontSize:10, color:'#78716C', fontWeight:400 }}>(optional)</span>}
                 {!isReturn && <span style={{color:'#E53E3E'}}>*</span>}
               </label>
               <input className="input" value={handoverPerson} onChange={e=>setHandoverPerson(e.target.value)}
@@ -428,7 +428,7 @@ export default function HandoverModal({ modal, user, onClose, onSave }) {
         <div style={{ padding:'14px 22px 20px', borderTop:'1px solid #EAE6DE', display:'flex', gap:10, background:'#FAFAF8' }}>
           <button onClick={onClose} className="btn btn-secondary" style={{ flex:1, justifyContent:'center' }}>Cancel</button>
           <button onClick={handleSubmit} disabled={saving}
-            style={{ flex:2, display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'11px', borderRadius:10, background:submitBg, color:'white', fontWeight:700, fontSize:13, border:'none', cursor:'pointer', fontFamily:'Poppins,sans-serif', opacity:saving?0.7:1 }}>
+            style={{ flex:2, display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'11px', borderRadius:10, background:submitBg, color:'white', fontWeight:700, fontSize:13, border:'none', cursor:'pointer', fontFamily:'inherit', opacity:saving?0.7:1 }}>
             {saving
               ? <><span style={{ width:14, height:14, border:'2px solid rgba(255,255,255,0.4)', borderTopColor:'white', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/> Saving…</>
               : submitLabel}

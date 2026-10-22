@@ -77,7 +77,7 @@ export default function POCHub() {
 
       {/* ── Hero Banner ── */}
       <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:22, overflow:'hidden' }}>
-        <div style={{ height:5, background:'linear-gradient(90deg,#B8860B 0%,#D4A017 40%,#F59E0B 70%,#B8860B 100%)' }}/>
+        <div style={{ height:5, background:'linear-gradient(90deg,#8F6807 0%,#D4A017 40%,#F59E0B 70%,#8F6807 100%)' }}/>
         <div style={{ padding:'22px 24px' }}>
           <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:16, marginBottom:20 }}>
             <div>
@@ -100,7 +100,7 @@ export default function POCHub() {
                 <div style={{ display:'flex', gap:6, marginTop:12 }}>
                   {['DDB1','DXE6'].map(s => (
                     <button key={s} onClick={() => setStation(s)}
-                      style={{ padding:'5px 16px', borderRadius:20, border:`1.5px solid ${station===s?'#B8860B':'var(--border)'}`, background:station===s?'#FDF6E3':'var(--bg-alt)', color:station===s?'#B8860B':'var(--text-muted)', fontWeight:station===s?700:500, fontSize:12, cursor:'pointer', fontFamily:'inherit', transition:'all 0.15s' }}>
+                      style={{ padding:'5px 16px', borderRadius:20, border:`1.5px solid ${station===s?'#8F6807':'var(--border)'}`, background:station===s?'#FDF6E3':'var(--bg-alt)', color:station===s?'#8F6807':'var(--text-muted)', fontWeight:station===s?700:500, fontSize:12, cursor:'pointer', fontFamily:'inherit', transition:'all 0.15s' }}>
                       {s}
                     </button>
                   ))}

@@ -359,7 +359,7 @@ export default function JntSalaryModal({ employees, month, initialEmpId, onSave,
               { label: 'Additional Earnings', value: additionalEarnings, c: '#10B981' },
               { label: 'Gross Salary', value: grossSalary, c: 'var(--text)' },
               { label: 'Total Deductions', value: totalDeductions, c: '#EF4444' },
-              { label: 'Net Salary', value: netSalary, c: '#B8860B' },
+              { label: 'Net Salary', value: netSalary, c: '#8F6807' },
             ].map(s => (
               <div key={s.label}>
                 <div style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>{s.label}</div>
@@ -370,7 +370,7 @@ export default function JntSalaryModal({ employees, month, initialEmpId, onSave,
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
             <button onClick={handleSave} disabled={saving || loadingRates}
-              style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 11, borderRadius: 100, background: 'linear-gradient(135deg,#B8860B,#D4A017)', color: 'white', fontWeight: 700, fontSize: 13, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'Poppins,sans-serif', opacity: saving ? 0.7 : 1 }}>
+              style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 11, borderRadius: 100, background: 'linear-gradient(135deg,#8F6807,#D4A017)', color: 'white', fontWeight: 700, fontSize: 13, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily:'inherit', opacity: saving ? 0.7 : 1 }}>
               {saving ? 'Saving…' : 'Save Salary'}
             </button>
           </div>

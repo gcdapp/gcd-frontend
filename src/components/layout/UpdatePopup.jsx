@@ -44,10 +44,10 @@ export default function UpdatePopup() {
       <div className="modal" style={{ maxWidth:420, padding:0, overflow:'hidden' }}>
         <div style={{ padding:'22px 22px 6px', display:'flex', gap:12, alignItems:'flex-start' }}>
           <div style={{ width:40, height:40, borderRadius:12, background:'rgba(184,134,11,0.12)', border:'1px solid rgba(184,134,11,0.28)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <Sparkles size={18} color="#B8860B"/>
+            <Sparkles size={18} color="#8F6807"/>
           </div>
           <div style={{ minWidth:0 }}>
-            <div style={{ fontSize:10, fontWeight:700, color:'#B8860B', textTransform:'uppercase', letterSpacing:'0.07em' }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'#8F6807', textTransform:'uppercase', letterSpacing:'0.07em' }}>
               New for you{updates.length > 1 ? ` · 1 of ${updates.length}` : ''}
             </div>
             <h3 style={{ margin:'3px 0 0', fontSize:16, fontWeight:800, color:'var(--text)' }}>{current.title}</h3>

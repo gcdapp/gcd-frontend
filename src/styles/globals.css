@@ -9,12 +9,12 @@ html { overflow-x:hidden; height:100%; }
 
 /*
  * Font smoothing — the single cheapest quality upgrade.
- * Without this, Poppins renders with sub-pixel hinting that makes
+ * Without this, the UI font renders with sub-pixel hinting that makes
  * it look slightly blurry and heavy at smaller sizes.
  * With antialiased rendering it looks crisp and premium.
  */
 body {
-  font-family: var(--font-sans), 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -23,100 +23,104 @@ body {
   min-height: 100vh;
   font-size: 14px;
   line-height: 1.5;
+  /* Inter: tabular figures so amounts line up in tables and cards */
+  font-feature-settings: 'cv11', 'ss01';
+  font-variant-numeric: tabular-nums;
 }
+h1, h2, h3, h4 { letter-spacing: -0.015em; color: var(--text); }
 #__next { height:100%; }
-/* Force Poppins on every element — no inheritance gaps */
+/* One typeface everywhere — form controls don't inherit fonts by default */
 *, *::before, *::after {
-  font-family: var(--font-sans), 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 /* Preserve monospace for code/IDs that explicitly opt in */
 .font-mono, [style*="monospace"] { font-family: ui-monospace, 'SF Mono', monospace !important; }
 button { cursor:pointer; border:none; background:none; }
+button:disabled { cursor:not-allowed; }
+
+/* Visible keyboard focus everywhere (mouse clicks stay ring-free) */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+::selection { background: rgba(143,104,7,0.18); }
 a { text-decoration:none; color:inherit; }
 
 /* ── Scrollbar ───────────────────────────────────────────────── */
-::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar { width:8px; height:8px; }
 ::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--border-med); border-radius:10px; }
+::-webkit-scrollbar-thumb { background:var(--border-med); border-radius:10px; border:2px solid transparent; background-clip:padding-box; }
 ::-webkit-scrollbar-thumb:hover { background:var(--text-muted); }
 
 /* ─────────────────────────────────────────────────────────────
-   DESIGN TOKENS
-   ─────────────────────────────────────────────────────────────
-
-   BEFORE: flat, clinical grays. Shadow: 0 1px 4px rgba(0,0,0,0.06) — too faint.
-   AFTER:  slightly warm neutrals (brand consistency) + layered shadow system.
-
-   Layered shadows are used by Linear, Stripe, Vercel. A single-layer
-   shadow looks flat. Two layers — one for ambient, one for direct —
-   gives the card genuine depth without looking heavy.
+   DESIGN TOKENS — "Refined gold" (2026-10 redesign)
+   Minimal / Swiss enterprise style (ui-ux-pro-max: "Minimalism & Swiss
+   Style", typography "Minimal Swiss" = Inter). Warm stone neutrals,
+   near-black text, and the brand gold deepened to #8F6807 — same hue
+   (43°) as the old #B8860B, but 5.1:1 on white instead of 3.2:1, so gold
+   text and white-on-gold buttons now pass WCAG AA (4.5:1).
+   Every text token below passes 4.5:1 on --card, --bg and --bg-alt.
    ───────────────────────────────────────────────────────────── */
 :root {
   /* Brand */
-  --gold:        #B8860B;
-  --gold-light:  #D4A017;
-  --gold-pale:   #FFFBEB;
-  --gold-border: #F0D878;
+  --gold:        #8F6807;   /* text, icons, primary buttons (5.1:1) */
+  --gold-hover:  #7A5906;
+  --gold-light:  #B8860B;   /* decorative only — fills, borders, charts */
+  --gold-pale:   #FBF6E9;
+  --gold-border: #E9D9A6;
+  --gold-tint:   rgba(143,104,7,0.08);
 
-  /* Backgrounds — warm whites, not cold grays */
-  --bg:          #F8F7F4;   /* BEFORE: #F9FAFB (cold) → warm near-white */
-  --bg-alt:      #EFEDE8;   /* BEFORE: #F3F4F6 → warm hover fill */
-  --bg-hover:    rgba(0,0,0,0.03);
+  /* Surfaces — warm stone */
+  --bg:          #FAFAF9;
+  --bg-alt:      #F5F5F4;
+  --bg-hover:    rgba(28,25,23,0.04);
   --card:        #FFFFFF;
 
-  /* Borders — more visible without being heavy */
-  --border:      #E8E5DF;   /* BEFORE: #F0F0EE (too faint) → visible but warm */
-  --border-med:  #D4D0C8;   /* BEFORE: #E5E7EB → for inputs */
-  --border-strong: #C0BBB0; /* for active/focused states */
+  /* Borders */
+  --border:      #E7E5E4;
+  --border-med:  #D6D3D1;
+  --border-strong: #A8A29E;
 
-  /* Text — warm hierarchy, not harsh black */
-  --text:        #3A3630;   /* soft dark brown — readable without feeling heavy */
-  --text-sub:    #6E6860;   /* warm medium */
-  --text-muted:  #A09890;   /* warm muted */
+  /* Text — 17.5 / 7.6 / 4.8 : 1 on white */
+  --text:        #1C1917;
+  --text-sub:    #57534E;
+  --text-muted:  #78716C;
 
-  /*
-   * Shadow System — BEFORE: single-layer flat shadows
-   * AFTER: layered (ambient + direct) like Linear/Stripe
-   *
-   * --shadow:    everyday card
-   * --shadow-md: hover lift / floating elements
-   * --shadow-lg: modals, popups
-   * --shadow-xl: full-screen overlays
-   *
-   * The second layer (direct light) is always 60% opacity of the first.
-   * Using warm rgba(15,10,3,…) keeps shadows on-brand, not blue-gray.
-   */
-  --shadow:      0 1px 3px rgba(15,10,3,0.07), 0 1px 2px rgba(15,10,3,0.04);
-  --shadow-md:   0 4px 12px rgba(15,10,3,0.08), 0 2px 4px rgba(15,10,3,0.05);
-  --shadow-lg:   0 16px 32px rgba(15,10,3,0.10), 0 4px 8px rgba(15,10,3,0.05);
-  --shadow-xl:   0 32px 64px rgba(15,10,3,0.12), 0 8px 16px rgba(15,10,3,0.06);
-  /* Gold-tinted shadow for primary CTAs */
-  --shadow-gold: 0 2px 8px rgba(184,134,11,0.22), 0 1px 3px rgba(184,134,11,0.12);
-  --shadow-gold-lg: 0 8px 24px rgba(184,134,11,0.28), 0 4px 8px rgba(184,134,11,0.14);
+  /* Elevation — soft, tight; Swiss style keeps shadows quiet */
+  --shadow:      0 1px 2px rgba(28,25,23,0.05), 0 0 0 1px rgba(28,25,23,0.02);
+  --shadow-md:   0 4px 12px rgba(28,25,23,0.07), 0 1px 3px rgba(28,25,23,0.05);
+  --shadow-lg:   0 12px 28px rgba(28,25,23,0.10), 0 2px 6px rgba(28,25,23,0.05);
+  --shadow-xl:   0 24px 56px rgba(28,25,23,0.16), 0 4px 12px rgba(28,25,23,0.06);
+  --shadow-gold:    0 1px 2px rgba(143,104,7,0.25);
+  --shadow-gold-lg: 0 4px 12px rgba(143,104,7,0.25);
 
-  /* Border radius — consistent scale */
-  --radius-sm:   8px;
-  --radius:      12px;   /* BEFORE: 14px → tighter, more Linear-like */
-  --radius-md:   16px;
-  --radius-lg:   20px;
+  /* Focus ring — visible on every surface (keyboard users) */
+  --ring: 0 0 0 3px rgba(143,104,7,0.28);
 
-  /* Semantic colors — unchanged (they work) */
-  --green:  #10B981; --green-bg:  #F0FDF4; --green-border: #A7F3D0;
-  --red:    #EF4444; --red-bg:    #FEF2F2; --red-border:   #FECACA;
-  --amber:  #F59E0B; --amber-bg:  #FFFBEB; --amber-border: #FDE68A;
-  --blue:   #2563EB; --blue-bg:   #EFF6FF; --blue-border:  #BFDBFE;
-  --purple: #7C3AED; --purple-bg: #F5F3FF; --purple-border:#DDD6FE;
+  /* Radius */
+  --radius-sm:   6px;
+  --radius:      10px;
+  --radius-md:   14px;
+  --radius-lg:   18px;
 
-  /* Glass (used in payroll hero, etc.) */
-  --surface:       rgba(255,255,255,0.65);
+  /* Semantic — text shades chosen to pass 4.5:1 on their -bg */
+  --green:  #15803D; --green-bg:  #F0FDF4; --green-border: #BBF7D0;
+  --red:    #B91C1C; --red-bg:    #FEF2F2; --red-border:   #FECACA;
+  --amber:  #B45309; --amber-bg:  #FFFBEB; --amber-border: #FDE68A;
+  --blue:   #1D4ED8; --blue-bg:   #EFF6FF; --blue-border:  #BFDBFE;
+  --purple: #6D28D9; --purple-bg: #F5F3FF; --purple-border:#DDD6FE;
+
+  /* Glass (payroll hero etc.) */
+  --surface:       rgba(255,255,255,0.72);
   --border-glass:  rgba(255,255,255,0.72);
-  --shadow-glass:  0 4px 24px rgba(15,10,3,0.07);
+  --shadow-glass:  0 4px 24px rgba(28,25,23,0.06);
 
-  /* Timing — deliberate, not random */
-  --t-fast:   120ms cubic-bezier(0.2,0,0,1);   /* micro: hover fills */
-  --t-base:   200ms cubic-bezier(0.2,0,0,1);   /* base: most transitions */
-  --t-slow:   300ms cubic-bezier(0.2,0,0,1);   /* slow: panels, modals */
-  --t-spring: 400ms cubic-bezier(0.16,1,0.3,1); /* spring: entrances */
+  /* Motion — 150–250ms, ease-out (skill: subtle hover 200–250ms) */
+  --t-fast:   140ms cubic-bezier(0.2,0,0,1);
+  --t-base:   200ms cubic-bezier(0.2,0,0,1);
+  --t-slow:   280ms cubic-bezier(0.2,0,0,1);
+  --t-spring: 380ms cubic-bezier(0.16,1,0.3,1);
 }
 
 /* ── Animations ─────────────────────────────────────────────── */
@@ -175,11 +179,11 @@ a { text-decoration:none; color:inherit; }
  *   box-shadow: inset 2.5px 0 0 — this follows border-radius perfectly.
  */
 .nav-item {
-  display: flex; align-items: center; gap: 9px;
-  padding: 7px 11px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 11px; min-height: 36px;
   border-radius: var(--radius-sm);
   margin: 1px 7px;
-  font-size: 13px; font-weight: 500;
+  font-size: 13.5px; font-weight: 500;
   color: var(--text-sub);
   transition: background var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);
   text-decoration: none; white-space: nowrap; overflow: hidden; cursor: pointer;
@@ -190,28 +194,24 @@ a { text-decoration:none; color:inherit; }
   color: var(--text);
 }
 .nav-item.active {
-  /* Gradient: 9% gold at left → 3% at right — creates implied left border feeling */
-  background: linear-gradient(90deg, rgba(184,134,11,0.09) 0%, rgba(184,134,11,0.025) 100%);
-  color: #7A5800;           /* darker gold — better readability than pure #B8860B */
+  background: var(--gold-tint);
+  color: var(--gold);
   font-weight: 600;
-  /* Inset shadow = left accent indicator, follows border-radius automatically */
-  box-shadow: inset 2.5px 0 0 rgba(184,134,11,0.75);
+  box-shadow: inset 3px 0 0 var(--gold);
 }
-.nav-item.active:hover {
-  background: linear-gradient(90deg, rgba(184,134,11,0.13) 0%, rgba(184,134,11,0.04) 100%);
-}
+.nav-item.active:hover { background: rgba(143,104,7,0.12); }
 
 .nav-label { transition: opacity var(--t-base), max-width var(--t-base); }
 .sidebar.collapsed .nav-label { opacity:0; max-width:0; overflow:hidden; }
 .sidebar.collapsed .nav-item  { justify-content:center; padding:9px; }
-.sidebar.collapsed .nav-item.active { box-shadow:none; background:rgba(184,134,11,0.09); }
+.sidebar.collapsed .nav-item.active { box-shadow:none; background:var(--gold-tint); }
 
 /* Section labels — BEFORE: 9px, 0.7 opacity (too faint to read)
    AFTER: 9px but full opacity with a lighter dedicated color */
 .nav-section-label {
-  font-size: 9.5px; font-weight: 700; letter-spacing: 0.09em;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--text-muted);
-  padding: 16px 14px 5px;
+  padding: 18px 18px 6px;
   white-space: nowrap; overflow: hidden;
   opacity: 1; /* was 0.7 — use color instead of opacity for predictability */
 }
@@ -230,15 +230,14 @@ a { text-decoration:none; color:inherit; }
   height: 56px; min-height: 56px;
   background: var(--card);
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 0 rgba(15,10,3,0.03); /* reinforces the border subtly */
-  display: flex; align-items: center; padding: 0 20px; gap: 12px;
+  display: flex; align-items: center; padding: 0 24px; gap: 12px;
   z-index: 50; flex-shrink: 0;
 }
 
 /* ── Page content ────────────────────────────────────────────── */
 .page-content {
   flex: 1; overflow-y: auto; overflow-x: hidden;
-  padding: 22px 24px;
+  padding: 24px 28px;
   background: var(--bg);
 }
 
@@ -262,10 +261,7 @@ a { text-decoration:none; color:inherit; }
   padding: 16px;
   transition: box-shadow var(--t-base), transform var(--t-base);
 }
-.stat-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
+.stat-card:hover { box-shadow: var(--shadow-md); border-color: var(--border-med); }
 
 /* ── Glass ───────────────────────────────────────────────────── */
 .glass {
@@ -284,34 +280,35 @@ a { text-decoration:none; color:inherit; }
    ───────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 16px;
-  border-radius: 100px;
-  font-size: 13px; font-weight: 600;
+  padding: 8px 16px; min-height: 36px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px; font-weight: 600;
   cursor: pointer;
   transition: all var(--t-base);
   border: none; font-family: inherit;
   white-space: nowrap;
 }
 .btn-primary {
-  background: linear-gradient(135deg, #B8860B 0%, #D4A017 100%);
-  color: white;
+  background: var(--gold);
+  color: #FFFFFF;
   box-shadow: var(--shadow-gold);
 }
-.btn-primary:hover  { box-shadow:var(--shadow-gold-lg); transform:translateY(-1px); }
-.btn-primary:active { box-shadow:var(--shadow-gold);    transform:translateY(0); }
+.btn-primary:hover  { background:var(--gold-hover); box-shadow:var(--shadow-gold-lg); }
+.btn-primary:active { transform:translateY(1px); }
 .btn-primary:disabled { opacity:0.55; cursor:not-allowed; transform:none; box-shadow:none; }
 
 .btn-secondary {
   background: var(--card);
   border: 1px solid var(--border-med);
-  color: var(--text-sub);
+  color: var(--text);
+  box-shadow: var(--shadow);
 }
 .btn-secondary:hover { color:var(--text); border-color:var(--border-strong); background:var(--bg-alt); }
 .btn-secondary:active { transform:translateY(1px); }
 
-.btn-ghost { background:none; color:var(--text-sub); border-radius:100px; padding:7px; }
+.btn-ghost { background:none; color:var(--text-sub); border-radius:var(--radius-sm); padding:7px; }
 .btn-ghost:hover { background:var(--bg-hover); color:var(--text); }
-.btn-icon { width:32px; height:32px; padding:0; justify-content:center; border-radius:100px; }
+.btn-icon { width:36px; height:36px; min-height:36px; padding:0; justify-content:center; border-radius:var(--radius-sm); }
 
 /* ─────────────────────────────────────────────────────────────
    INPUTS
@@ -320,26 +317,24 @@ a { text-decoration:none; color:inherit; }
            distinct (wider, correct gold opacity).
    ───────────────────────────────────────────────────────────── */
 .input {
-  width: 100%; padding: 9px 12px;
+  width: 100%; padding: 9px 12px; min-height: 38px;
   border-radius: var(--radius-sm);
-  border: 1.5px solid var(--border-med);
+  border: 1px solid var(--border-med);
   background: var(--card);
-  color: var(--text); font-size: 13px;
+  color: var(--text); font-size: 13.5px;
+  box-shadow: inset 0 1px 1px rgba(28,25,23,0.03);
   outline: none;
   transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
-.input:focus {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(184,134,11,0.12);
-}
+.input:hover { border-color: var(--border-strong); }
+.input:focus { border-color: var(--gold); box-shadow: var(--ring); }
 .input::placeholder { color: var(--text-muted); }
 
 .input-label {
   display: block;
-  font-size: 10.5px; font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.08em;
-  margin-bottom: 5px;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--text-sub);
+  margin-bottom: 6px;
 }
 
 /* ── Badges ──────────────────────────────────────────────────── */
@@ -347,11 +342,11 @@ a { text-decoration:none; color:inherit; }
   display: inline-flex; align-items: center;
   padding: 2px 9px;
   border-radius: 20px;
-  font-size: 11px; font-weight: 600;
-  letter-spacing: 0.01em;
+  font-size: 11.5px; font-weight: 600;
+  letter-spacing: 0.01em; line-height: 1.6; white-space: nowrap;
 }
 .badge-success { color:var(--green); background:var(--green-bg); }
-.badge-warning { color:#92700F;      background:var(--amber-bg); } /* darker amber for readability */
+.badge-warning { color:var(--amber);  background:var(--amber-bg); }
 .badge-danger  { color:var(--red);   background:var(--red-bg);   }
 .badge-info    { color:var(--blue);  background:var(--blue-bg);  }
 
@@ -363,8 +358,8 @@ a { text-decoration:none; color:inherit; }
    ───────────────────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 200;
-  background: rgba(0,0,0,0.38);
-  backdrop-filter: blur(6px) saturate(1.4);
+  background: rgba(28,25,23,0.45);
+  backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center;
   padding: 16px;
   animation: fadeIn 0.15s ease;
@@ -387,17 +382,17 @@ a { text-decoration:none; color:inherit; }
 .data-table { width:100%; border-collapse:collapse; }
 @media (max-width:768px) { .data-table { min-width:520px; } }
 .data-table thead th {
-  background: var(--bg);
-  padding: 9px 12px;
+  background: var(--bg-alt);
+  padding: 10px 14px;
   text-align: left;
-  font-size: 10.5px; font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.07em;
+  font-size: 11.5px; font-weight: 600;
+  color: var(--text-sub);
+  text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
   border-bottom: 1px solid var(--border);
 }
 .data-table tbody td {
-  padding: 11px 12px;
-  font-size: 13px; color: var(--text);
+  padding: 12px 14px;
+  font-size: 13.5px; color: var(--text);
   border-bottom: 1px solid var(--border);
 }
 .data-table tbody tr {
@@ -430,16 +425,16 @@ a { text-decoration:none; color:inherit; }
            Gold text is the indicator, not a background block.
    ───────────────────────────────────────────────────────────── */
 .tabs {
-  display: flex; gap: 3px;
+  display: flex; gap: 2px;
   background: var(--bg-alt);
   padding: 3px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
 }
 .tab-btn {
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 12.5px; font-weight: 500;
+  padding: 7px 14px; min-height: 32px;
+  border-radius: 7px;
+  font-size: 13px; font-weight: 500;
   color: var(--text-sub);
   cursor: pointer; border: none; background: none;
   transition: all var(--t-fast);
@@ -448,9 +443,9 @@ a { text-decoration:none; color:inherit; }
 .tab-btn:hover:not(.active) { color:var(--text); background:rgba(0,0,0,0.04); }
 .tab-btn.active {
   background: var(--card);
-  color: var(--gold);
+  color: var(--text);
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(15,10,3,0.08), 0 1px 2px rgba(15,10,3,0.04);
+  box-shadow: 0 1px 2px rgba(28,25,23,0.08), 0 0 0 1px rgba(28,25,23,0.04);
 }
 
 /* ── Sidebar collapse button — hide on mobile ────────────────── */
@@ -473,7 +468,7 @@ a { text-decoration:none; color:inherit; }
   font-size: 10px; font-weight: 500; gap: 3px;
   transition: color var(--t-fast);
 }
-.mobile-bottomnav a.active { color:var(--gold); font-weight:700; }
+.mobile-bottomnav a.active { color:var(--gold); font-weight:600; }
 
 /* ── Animation utility classes ───────────────────────────────── */
 .fade-up   { animation: fadeUp  0.4s cubic-bezier(0.16,1,0.3,1) both; }
@@ -667,18 +662,25 @@ a { text-decoration:none; color:inherit; }
    the whole app without touching component code.
    ───────────────────────────────────────────────────────────── */
 [data-theme="dark"] {
-  --bg:          #0F0E0C;
-  --bg-alt:      #1A1814;
-  --bg-hover:    rgba(255,255,255,0.04);
-  --card:        #1C1A17;
+  --gold:        #E0B03A;
+  --gold-hover:  #EBC25A;
+  --gold-tint:   rgba(224,176,58,0.12);
+  --ring:        0 0 0 3px rgba(224,176,58,0.32);
 
-  --border:      #2C2924;
-  --border-med:  #3A3530;
-  --border-strong:#4A4540;
+  --bg:          #0E0D0C;
+  --bg-alt:      #1A1816;
+  --bg-hover:    rgba(255,255,255,0.05);
+  --card:        #1C1917;
 
-  --text:        #E8E2D8;
-  --text-sub:    #A89880;
-  --text-muted:  #6A6460;
+  --border:      #2E2A27;
+  --border-med:  #3D3834;
+  --border-strong:#57534E;
+
+  --text:        #E7E5E4;
+  --text-sub:    #A8A29E;
+  --text-muted:  #8A8480;
+
+  --green:  #4ADE80; --red: #F87171; --amber: #FBBF24; --blue: #60A5FA; --purple: #A78BFA;
 
   --shadow:    0 1px 3px rgba(0,0,0,0.4),  0 1px 2px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.45), 0 2px 4px rgba(0,0,0,0.3);
@@ -696,6 +698,8 @@ a { text-decoration:none; color:inherit; }
   --purple-bg:   #1A1228; --purple-border:#2D1F52;
   --gold-pale:   #2D2000; --gold-border:  #5C4000;
 }
+/* Dark mode: bright gold button needs dark text to stay legible */
+[data-theme="dark"] .btn-primary { color: #1C1917; }
 
 /* ─────────────────────────────────────────────────────────────
    EXTRA UTILITY CLASSES

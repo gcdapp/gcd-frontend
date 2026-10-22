@@ -1,9 +1,11 @@
 import '@/styles/globals.css'
 import { AuthProvider } from '@/lib/auth'
-import { Poppins } from 'next/font/google'
+import { Inter } from 'next/font/google'
 
-const poppins = Poppins({
-  weight: ['300', '400', '500', '600', '700', '800'],
+// Inter — "Minimal Swiss" pairing for dashboards/admin (ui-ux-pro-max). Large
+// x-height keeps the app's many 12–13px labels readable; variable font, so
+// every weight below ships as one file.
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-sans',
@@ -27,7 +29,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" dir="ltr" className={poppins.variable} suppressHydrationWarning>
+    <html lang="en" dir="ltr" className={inter.variable} suppressHydrationWarning>
       <body suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('gcd_theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark')}catch(e){}})()` }} />
         <AuthProvider>{children}</AuthProvider>

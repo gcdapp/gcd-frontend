@@ -115,7 +115,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
             {Icon && <Icon size={16}/>}
             <span className="nav-label" style={{ flex:1 }}>{item.label}</span>
             {itemBadge > 0 && (
-              <span style={{ minWidth:17, height:17, borderRadius:9, background:'#EF4444', color:'white', fontSize:10, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px', flexShrink:0 }}>
+              <span style={{ minWidth:18, height:18, borderRadius:9, background:'var(--red)', color:'white', fontSize:10.5, fontWeight:600, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px', flexShrink:0 }}>
                 {itemBadge > 99 ? '99+' : itemBadge}
               </span>
             )}
@@ -134,12 +134,12 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
                 return (
                   <Link key={child.href} href={child.href}
                     className={`nav-item${active?' active':''}`}
-                    style={{ paddingLeft: collapsed?undefined:34, fontSize:12.5 }}
+                    style={{ paddingLeft: collapsed?undefined:36, fontSize:13 }}
                     onClick={() => setMobileOpen(false)}>
-                    {CIcon && <CIcon size={13} style={{ opacity:0.7 }}/>}
+                    {CIcon && <CIcon size={14} style={{ opacity:0.75 }}/>}
                     <span className="nav-label" style={{ flex:1 }}>{child.label}</span>
                     {childBadge > 0 && (
-                      <span style={{ minWidth:16, height:16, borderRadius:8, background:'#EF4444', color:'white', fontSize:9, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px', flexShrink:0 }}>
+                      <span style={{ minWidth:18, height:18, borderRadius:9, background:'var(--red)', color:'white', fontSize:10.5, fontWeight:600, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 4px', flexShrink:0 }}>
                         {childBadge > 99 ? '99+' : childBadge}
                       </span>
                     )}
@@ -151,7 +151,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
           <Link href={item.href}
             className={`nav-item${isActive?' active':''}`}
             onClick={() => setMobileOpen(false)}>
-            {Icon && <Icon size={16}/>}
+            {Icon && <Icon size={17} strokeWidth={1.9}/>}
             <span className="nav-label">{item.label}</span>
           </Link>
         )}
@@ -174,10 +174,10 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
               {/* Brand text — hidden when collapsed */}
               {!collapsed && (
                 <div style={{ minWidth:0, overflow:'hidden' }}>
-                  <div style={{ fontWeight:800, fontSize:13.5, color:'var(--text)', letterSpacing:'-0.02em', lineHeight:1.2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                  <div style={{ fontWeight:700, fontSize:14.5, color:'var(--text)', letterSpacing:'-0.02em', lineHeight:1.2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                     Golden Crescent
                   </div>
-                  <div style={{ fontSize:9, color:'var(--gold)', fontWeight:700, letterSpacing:'0.14em', textTransform:'uppercase', marginTop:1 }}>
+                  <div style={{ fontSize:10.5, color:'var(--gold)', fontWeight:600, letterSpacing:'0.12em', textTransform:'uppercase', marginTop:2 }}>
                     Operations
                   </div>
                 </div>
@@ -186,8 +186,8 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
             {/* Collapse toggle — desktop only */}
             <button onClick={() => setCollapsed(p => !p)}
               className="sidebar-collapse-btn"
-              style={{ flexShrink:0, width:26, height:26, borderRadius:8, border:'1px solid var(--border)', background:'var(--bg-alt)', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--text-muted)' }}
-              title={collapsed?'Expand':'Collapse'}>
+              style={{ flexShrink:0, width:28, height:28, borderRadius:7, border:'1px solid var(--border)', background:'var(--card)', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--text-sub)' }}
+              title={collapsed?'Expand sidebar':'Collapse sidebar'} aria-label={collapsed?'Expand sidebar':'Collapse sidebar'}>
               {collapsed ? <ChevronRight size={13}/> : <ChevronLeft size={13}/>}
             </button>
           </div>
@@ -195,18 +195,18 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
 
         {/* ── User chip ── */}
         {!collapsed && user && (
-          <div style={{ margin:'8px 10px', padding:'9px 11px', background:'var(--bg-alt)', borderRadius:11, border:'1px solid var(--border)' }}>
-            <div style={{ fontWeight:700, fontSize:12.5, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+          <div style={{ margin:'10px 12px 4px', padding:'10px 12px', background:'var(--bg-alt)', borderRadius:10, border:'1px solid var(--border)' }}>
+            <div style={{ fontWeight:600, fontSize:13.5, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
               {user.name}
             </div>
-            <div style={{ fontSize:10.5, color:'var(--gold)', fontWeight:600, marginTop:1 }}>
+            <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:1 }}>
               {ROLE_LABELS[user.role] || user.role}{user.station_code ? ` · ${user.station_code}` : ''}
             </div>
           </div>
         )}
 
         {/* ── Nav ── */}
-        <nav style={{ flex:1, paddingTop:4, paddingBottom:12, overflowY:'auto', overflowX:'hidden' }}>
+        <nav aria-label="Main" style={{ flex:1, paddingTop:4, paddingBottom:16, overflowY:'auto', overflowX:'hidden' }}>
           {navGroups.map(group => {
             // Leading ungrouped items (just Overview) — always shown, no header
             if (!group.label) return group.items.map(item => renderItem(item))
@@ -214,7 +214,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
             return (
               <div key={`group-${group.label}`}>
                 {!collapsed && (
-                  <div style={{ fontSize:9, fontWeight:700, color:'var(--text-muted)', letterSpacing:'0.1em', textTransform:'uppercase', padding:'14px 14px 4px', marginTop:2, userSelect:'none' }}>
+                  <div className="nav-section-label" style={{ userSelect:'none' }}>
                     {group.label}
                   </div>
                 )}

@@ -1,4 +1,4 @@
-export const GOLD       = '#B8860B'
+export const GOLD       = '#8F6807'
 export const GOLD_LIGHT = '#D4A017'
 
 // Role display names

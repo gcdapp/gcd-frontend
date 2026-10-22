@@ -39,7 +39,7 @@ const ROLE_COLOR = {
   Manager:            { c:'#0F766E', bg:'#F0FDFA', bc:'#99F6E4' },
   HR:                 { c:'#B45309', bg:'#FFFBEB', bc:'#FCD34D' },
   Accountant:         { c:'#2E7D52', bg:'#ECFDF5', bc:'#A7F3D0' },
-  POC:                { c:'#B8860B', bg:'#FDF6E3', bc:'#F0D78C' },
+  POC:                { c:'#8F6807', bg:'#FDF6E3', bc:'#F0D78C' },
   Admin:              { c:'#7C3AED', bg:'#F5F3FF', bc:'#DDD6FE' },
   default:            { c:'#6B5D4A', bg:'#F5F4F1', bc:'#EAE6DE' },
 }
@@ -181,7 +181,7 @@ function AdminModal({ emp, onSave, onClose, mode }) {
           <div style={{ display:'flex', gap:2 }}>
             {TABS.map(t=>(
               <button key={t.id} onClick={()=>setTab(t.id)}
-                style={{ padding:'8px 14px', fontSize:12.5, fontWeight:tab===t.id?700:500, color:tab===t.id?'var(--gold)':'var(--text-muted)', background:'none', border:'none', borderBottom:`2px solid ${tab===t.id?'var(--gold)':'transparent'}`, cursor:'pointer', fontFamily:'Poppins,sans-serif', marginBottom:-1, transition:'all 0.15s' }}>
+                style={{ padding:'8px 14px', fontSize:12.5, fontWeight:tab===t.id?700:500, color:tab===t.id?'var(--gold)':'var(--text-muted)', background:'none', border:'none', borderBottom:`2px solid ${tab===t.id?'var(--gold)':'transparent'}`, cursor:'pointer', fontFamily:'inherit', marginBottom:-1, transition:'all 0.15s' }}>
                 {t.l}
               </button>
             ))}
@@ -338,7 +338,7 @@ function WorkNumberAssigner({ emp, onSaved, userRole }) {
         <div style={{ fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.07em' }}>Work Number</div>
         {canEdit && emp.work_number && (
           <button onClick={history===null ? openHistory : ()=>setHistory(null)}
-            style={{ fontSize:10, color:'var(--text-muted)', background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'Poppins,sans-serif', textDecoration:'underline' }}>
+            style={{ fontSize:10, color:'var(--text-muted)', background:'none', border:'none', cursor:'pointer', padding:0, fontFamily:'inherit', textDecoration:'underline' }}>
             {history===null ? 'History' : 'Hide'}
           </button>
         )}
@@ -348,8 +348,8 @@ function WorkNumberAssigner({ emp, onSaved, userRole }) {
         <div style={{ background:'#FFFBEB', border:'1px solid #FDE68A', borderRadius:9, padding:'10px 12px', fontSize:12 }}>
           <div style={{ fontWeight:600, color:'#92400E', marginBottom:8 }}>⚠️ <strong>{pending}</strong> is assigned to <strong>{conflict.conflictEmpName}</strong>. Proceed?</div>
           <div style={{ display:'flex', gap:6 }}>
-            <button onClick={()=>setStep(2)} style={{ flex:1, padding:'6px', borderRadius:100, background:'#B8860B', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'Poppins,sans-serif' }}>Yes, proceed</button>
-            <button onClick={reset} style={{ flex:1, padding:'6px', borderRadius:100, background:'var(--card)', color:'var(--text-sub)', border:'1px solid var(--border)', cursor:'pointer', fontSize:11, fontFamily:'Poppins,sans-serif' }}>Cancel</button>
+            <button onClick={()=>setStep(2)} style={{ flex:1, padding:'6px', borderRadius:100, background:'#8F6807', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit' }}>Yes, proceed</button>
+            <button onClick={reset} style={{ flex:1, padding:'6px', borderRadius:100, background:'var(--card)', color:'var(--text-sub)', border:'1px solid var(--border)', cursor:'pointer', fontSize:11, fontFamily:'inherit' }}>Cancel</button>
           </div>
         </div>
       )}
@@ -358,8 +358,8 @@ function WorkNumberAssigner({ emp, onSaved, userRole }) {
         <div style={{ background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:9, padding:'10px 12px', fontSize:12 }}>
           <div style={{ fontWeight:600, color:'#7F1D1D', marginBottom:8 }}>Assign a new number to <strong>{conflict.conflictEmpName}</strong>?</div>
           <div style={{ display:'flex', gap:6 }}>
-            <button onClick={()=>tryAssign(pending,true)} disabled={saving} style={{ flex:1, padding:'6px', borderRadius:100, background:'#10B981', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'Poppins,sans-serif' }}>Yes, reassign</button>
-            <button onClick={()=>tryAssign(pending,true)} disabled={saving} style={{ flex:1, padding:'6px', borderRadius:100, background:'#EF4444', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'Poppins,sans-serif' }}>{saving?'…':'No, just remove'}</button>
+            <button onClick={()=>tryAssign(pending,true)} disabled={saving} style={{ flex:1, padding:'6px', borderRadius:100, background:'#10B981', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit' }}>Yes, reassign</button>
+            <button onClick={()=>tryAssign(pending,true)} disabled={saving} style={{ flex:1, padding:'6px', borderRadius:100, background:'#EF4444', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit' }}>{saving?'…':'No, just remove'}</button>
           </div>
         </div>
       )}
@@ -371,7 +371,7 @@ function WorkNumberAssigner({ emp, onSaved, userRole }) {
           </span>
           {canEdit && (
             <div style={{ display:'flex', gap:5 }}>
-              <button onClick={openPicker} style={{ padding:'4px 10px', borderRadius:100, background:'var(--card)', border:'1px solid var(--border)', color:'var(--text-sub)', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'Poppins,sans-serif', display:'flex', alignItems:'center', gap:4 }}>
+              <button onClick={openPicker} style={{ padding:'4px 10px', borderRadius:100, background:'var(--card)', border:'1px solid var(--border)', color:'var(--text-sub)', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:4 }}>
                 <Phone size={10}/> {emp.work_number?'Change':'Assign'}
               </button>
               {emp.work_number && (
@@ -395,7 +395,7 @@ function WorkNumberAssigner({ emp, onSaved, userRole }) {
               <span style={{ fontSize:10.5, color:s.emp_id===emp.id?'#10B981':'var(--text-muted)' }}>{s.emp_id===emp.id?'Current':'Available'}</span>
             </div>
           ))}
-          <button onClick={reset} style={{ width:'100%', marginTop:4, padding:'6px', borderRadius:100, background:'none', border:'1px solid var(--border)', fontSize:11, color:'var(--text-muted)', cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>Cancel</button>
+          <button onClick={reset} style={{ width:'100%', marginTop:4, padding:'6px', borderRadius:100, background:'none', border:'1px solid var(--border)', fontSize:11, color:'var(--text-muted)', cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
         </div>
       )}
 
@@ -486,10 +486,10 @@ function SalaryPanel({ emp, userRole }) {
       {/* Month selector */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
         <input type="month" value={month} onChange={e=>setMonth(e.target.value)}
-          style={{ padding:'6px 10px', borderRadius:9, border:'1px solid var(--border)', fontSize:12, background:'var(--card)', color:'var(--text)', fontFamily:'Poppins,sans-serif' }}/>
+          style={{ padding:'6px 10px', borderRadius:9, border:'1px solid var(--border)', fontSize:12, background:'var(--card)', color:'var(--text)', fontFamily:'inherit' }}/>
         {isPaid
           ? <span style={{ fontSize:11, fontWeight:700, color:'#10B981', background:'#F0FDF4', border:'1px solid #A7F3D0', borderRadius:20, padding:'3px 10px' }}>✓ Paid</span>
-          : canManage && !loading && <button onClick={markPaid} style={{ padding:'5px 12px', borderRadius:100, background:'#10B981', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'Poppins,sans-serif' }}>Mark Paid</button>
+          : canManage && !loading && <button onClick={markPaid} style={{ padding:'5px 12px', borderRadius:100, background:'#10B981', color:'white', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, fontFamily:'inherit' }}>Mark Paid</button>
         }
       </div>
 
@@ -501,7 +501,7 @@ function SalaryPanel({ emp, userRole }) {
               { l:'Base',       v:`${base.toLocaleString()}`,    c:'var(--text)',  bg:'var(--bg-alt)' },
               { l:'Bonuses',    v:`+${bonus.toLocaleString()}`,  c:'#10B981',     bg:'#F0FDF4' },
               { l:'Deductions', v:`-${ded.toLocaleString()}`,    c:'#EF4444',     bg:'#FEF2F2' },
-              { l:'Net Pay',    v:`${net.toLocaleString()}`,     c:'#B8860B',     bg:'#FDF6E3' },
+              { l:'Net Pay',    v:`${net.toLocaleString()}`,     c:'#8F6807',     bg:'#FDF6E3' },
             ].map(s=>(
               <div key={s.l} style={{ textAlign:'center', padding:'10px 6px', borderRadius:10, background:s.bg, border:'1px solid var(--border)' }}>
                 <div style={{ fontWeight:800, fontSize:14, color:s.c }}>{s.v}</div>
@@ -532,7 +532,7 @@ function SalaryPanel({ emp, userRole }) {
                   <span style={{ color:'var(--text)', fontWeight:500 }}>{d.description||d.type}</span>
                   <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                     <span style={{ fontWeight:700, color:'#EF4444' }}>-AED {Number(d.amount).toLocaleString()}</span>
-                    {canManage && !isPaid && <button onClick={()=>removeDeduction(d.id)} style={{ padding:'2px 6px', borderRadius:5, background:'none', border:'1px solid #FECACA', color:'#EF4444', cursor:'pointer', fontSize:10, fontFamily:'Poppins,sans-serif' }}>×</button>}
+                    {canManage && !isPaid && <button onClick={()=>removeDeduction(d.id)} style={{ padding:'2px 6px', borderRadius:5, background:'none', border:'1px solid #FECACA', color:'#EF4444', cursor:'pointer', fontSize:10, fontFamily:'inherit' }}>×</button>}
                   </div>
                 </div>
               ))}
@@ -542,10 +542,10 @@ function SalaryPanel({ emp, userRole }) {
           {/* Add bonus / deduction buttons */}
           {canManage && !isPaid && (
             <div style={{ display:'flex', gap:8, marginBottom:10 }}>
-              <button onClick={()=>{setShowBonus(p=>!p);setShowDed(false)}} style={{ flex:1, padding:'7px', borderRadius:9, background:'#F0FDF4', border:'1px solid #A7F3D0', color:'#10B981', fontWeight:700, fontSize:11.5, cursor:'pointer', fontFamily:'Poppins,sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
+              <button onClick={()=>{setShowBonus(p=>!p);setShowDed(false)}} style={{ flex:1, padding:'7px', borderRadius:9, background:'#F0FDF4', border:'1px solid #A7F3D0', color:'#10B981', fontWeight:700, fontSize:11.5, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
                 <TrendingUp size={12}/> {showBonus?'Cancel':'Add Bonus'}
               </button>
-              <button onClick={()=>{setShowDed(p=>!p);setShowBonus(false)}} style={{ flex:1, padding:'7px', borderRadius:9, background:'#FEF2F2', border:'1px solid #FECACA', color:'#EF4444', fontWeight:700, fontSize:11.5, cursor:'pointer', fontFamily:'Poppins,sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
+              <button onClick={()=>{setShowDed(p=>!p);setShowBonus(false)}} style={{ flex:1, padding:'7px', borderRadius:9, background:'#FEF2F2', border:'1px solid #FECACA', color:'#EF4444', fontWeight:700, fontSize:11.5, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
                 <Minus size={12}/> {showDed?'Cancel':'Add Deduction'}
               </button>
             </div>
@@ -670,10 +670,10 @@ function DetailDrawer({ emp, onEdit, onDelete, onClose, onRefresh, onCreateProfi
           </div>
           {/* Actions */}
           <div style={{ display:'flex', gap:8, flexShrink:0 }}>
-            <button onClick={onEdit} style={{ padding:'7px 14px',borderRadius:100,background:'var(--bg-alt)',border:'1px solid var(--border)',cursor:'pointer',fontSize:12.5,color:'var(--text-sub)',fontWeight:600,display:'flex',alignItems:'center',gap:5,fontFamily:'Poppins,sans-serif' }}>
+            <button onClick={onEdit} style={{ padding:'7px 14px',borderRadius:100,background:'var(--bg-alt)',border:'1px solid var(--border)',cursor:'pointer',fontSize:12.5,color:'var(--text-sub)',fontWeight:600,display:'flex',alignItems:'center',gap:5,fontFamily:'inherit' }}>
               <Pencil size={13}/> Edit
             </button>
-            <button onClick={onDelete} style={{ padding:'7px 10px',borderRadius:100,background:'var(--red-bg)',border:'1px solid var(--red-border)',cursor:'pointer',color:'var(--red)',display:'flex',alignItems:'center',fontFamily:'Poppins,sans-serif' }}>
+            <button onClick={onDelete} style={{ padding:'7px 10px',borderRadius:100,background:'var(--red-bg)',border:'1px solid var(--red-border)',cursor:'pointer',color:'var(--red)',display:'flex',alignItems:'center',fontFamily:'inherit' }}>
               <Trash2 size={13}/>
             </button>
           </div>
@@ -684,7 +684,7 @@ function DetailDrawer({ emp, onEdit, onDelete, onClose, onRefresh, onCreateProfi
       <div className="detail-tabs" style={{ display:'flex', overflowX:'auto', padding:'0 14px', borderBottom:'1px solid var(--border)', flexShrink:0 }}>
         {TABS.map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)}
-            style={{ padding:'9px 12px', fontSize:12, fontWeight:tab===t.id?700:500, color:tab===t.id?'var(--gold)':'var(--text-muted)', background:'none', border:'none', borderBottom:`2px solid ${tab===t.id?'var(--gold)':'transparent'}`, cursor:'pointer', fontFamily:'Poppins,sans-serif', marginBottom:-1, transition:'all 0.15s', whiteSpace:'nowrap', flexShrink:0 }}>
+            style={{ padding:'9px 12px', fontSize:12, fontWeight:tab===t.id?700:500, color:tab===t.id?'var(--gold)':'var(--text-muted)', background:'none', border:'none', borderBottom:`2px solid ${tab===t.id?'var(--gold)':'transparent'}`, cursor:'pointer', fontFamily:'inherit', marginBottom:-1, transition:'all 0.15s', whiteSpace:'nowrap', flexShrink:0 }}>
             {t.l}
           </button>
         ))}
@@ -726,7 +726,7 @@ function DetailDrawer({ emp, onEdit, onDelete, onClose, onRefresh, onCreateProfi
                 <button onClick={onEdit} className="btn btn-secondary" style={{ justifyContent:'center' }}>
                   <Pencil size={13}/> Edit
                 </button>
-                <button onClick={onDelete} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'9px', borderRadius:100, background:'var(--red-bg)', border:'1px solid var(--red-border)', color:'var(--red)', fontWeight:600, fontSize:12, cursor:'pointer', fontFamily:'Poppins,sans-serif' }}>
+                <button onClick={onDelete} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'9px', borderRadius:100, background:'var(--red-bg)', border:'1px solid var(--red-border)', color:'var(--red)', fontWeight:600, fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
                   <Trash2 size={13}/> Delete
                 </button>
               </div>
@@ -951,12 +951,12 @@ export default function AdminsPage() {
   `
 
   const ROLE_TAB_COLORS = {
-    All:        { c:'#B8860B', bg:'#B8860B18' },
+    All:        { c:'#8F6807', bg:'#8F680718' },
     Admin:      { c:'#7C3AED', bg:'#7C3AED18' },
     Manager:    { c:'#0F766E', bg:'#0F766E18' },
     HR:         { c:'#B45309', bg:'#B4530918' },
     Accountant: { c:'#2E7D52', bg:'#2E7D5218' },
-    POC:        { c:'#B8860B', bg:'#B8860B18' },
+    POC:        { c:'#8F6807', bg:'#8F680718' },
   }
 
   return (
@@ -987,7 +987,7 @@ export default function AdminsPage() {
           {/* KPI tiles */}
           <div className="adm-kpi">
             {[
-              { label:'Total Staff', val:loading?'—':total,   color:'#B8860B' },
+              { label:'Total Staff', val:loading?'—':total,   color:'#8F6807' },
               { label:'Active',      val:loading?'—':active,  color:'#4ADE80' },
               { label:'On Leave',    val:loading?'—':onLeave, color:'#FBBF24' },
               { label:'Alerts',      val:loading?'—':alerts,  color:alerts>0?'#F87171':'#4ADE80' },
@@ -1014,9 +1014,9 @@ export default function AdminsPage() {
           </div>
           {['admin','hr','general_manager'].includes(userRole) && (
             <button onClick={()=>setModal({mode:'add',emp:null})}
-              style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#B8860B', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background 0.15s' }}
+              style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', borderRadius:10, border:'none', background:'#8F6807', color:'white', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', flexShrink:0, whiteSpace:'nowrap', transition:'background 0.15s' }}
               onMouseEnter={e=>e.currentTarget.style.background='#9a7209'}
-              onMouseLeave={e=>e.currentTarget.style.background='#B8860B'}>
+              onMouseLeave={e=>e.currentTarget.style.background='#8F6807'}>
               <Plus size={14}/> Add Staff
             </button>
           )}
