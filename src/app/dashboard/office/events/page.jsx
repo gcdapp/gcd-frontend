@@ -187,7 +187,7 @@ export default function EventsPage() {
                     const isToday  = daysAway===0
                     const isSoon   = daysAway<=7
                     return (
-                      <div key={ev.id} style={{ background:'var(--card)', border:`1px solid ${isSoon?et.color+'40':'var(--border)'}`, borderLeft:`4px solid ${et.color}`, borderRadius:12, padding:'12px 14px', display:'flex', gap:12, alignItems:'flex-start' }}>
+                      <div key={ev.id} style={{ background:'var(--card)', border:`1px solid ${isSoon?et.color+'40':'var(--border)'}`, borderRadius:12, padding:'12px 14px', display:'flex', gap:12, alignItems:'flex-start' }}>
                         <div style={{ flexShrink:0, textAlign:'center', minWidth:40, paddingTop:2 }}>
                           <div style={{ fontSize:20, fontWeight:900, color:et.color, lineHeight:1 }}>{new Date(ev.event_date).toLocaleDateString('en-AE',{day:'numeric',timeZone:'UTC'})}</div>
                           <div style={{ fontSize:9, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', marginTop:1 }}>{new Date(ev.event_date).toLocaleDateString('en-AE',{month:'short',timeZone:'UTC'})}</div>
@@ -224,7 +224,7 @@ export default function EventsPage() {
                   {past.slice(0,12).map(ev=>{
                     const et = evtMap[ev.event_type]||evtMap.other
                     return (
-                      <div key={ev.id} style={{ background:'var(--bg-alt)', border:'1px solid var(--border)', borderLeft:`4px solid ${et.color}80`, borderRadius:12, padding:'11px 14px', display:'flex', gap:12, alignItems:'flex-start', opacity:0.65 }}>
+                      <div key={ev.id} style={{ background:'var(--bg-alt)', border:'1px solid var(--border)', borderRadius:12, padding:'11px 14px', display:'flex', gap:12, alignItems:'flex-start', opacity:0.65 }}>
                         <div style={{ flexShrink:0, textAlign:'center', minWidth:40, paddingTop:2 }}>
                           <div style={{ fontSize:18, fontWeight:800, color:'var(--text-muted)', lineHeight:1 }}>{new Date(ev.event_date).toLocaleDateString('en-AE',{day:'numeric'})}</div>
                           <div style={{ fontSize:9, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', marginTop:1 }}>{new Date(ev.event_date).toLocaleDateString('en-AE',{month:'short'})}</div>

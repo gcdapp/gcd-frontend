@@ -173,15 +173,7 @@ a { text-decoration:none; color:inherit; }
 }
 
 /* ── Nav items ───────────────────────────────────────────────── */
-/*
- * BEFORE: .nav-item.active { background:var(--amber-bg); color:var(--gold); font-weight:700; }
- *   → Heavy filled block. Every active item screams.
- *
- * AFTER: Gradient (strong left → transparent right) + inset shadow acts as
- *   a left-edge accent. The gradient draws the eye to the left edge where
- *   the indicator is, then fades out so the rest of the sidebar stays clean.
- *   box-shadow: inset 2.5px 0 0 — this follows border-radius perfectly.
- */
+/* Active item = soft gold fill + gold text. No left-edge stripe. */
 .nav-item {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 11px; min-height: 36px;
@@ -201,7 +193,6 @@ a { text-decoration:none; color:inherit; }
   background: var(--gold-tint);
   color: var(--gold);
   font-weight: 600;
-  box-shadow: inset 3px 0 0 var(--gold);
 }
 .nav-item.active:hover { background: rgba(143,104,7,0.12); }
 

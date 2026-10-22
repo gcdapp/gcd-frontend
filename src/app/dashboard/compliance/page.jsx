@@ -101,7 +101,7 @@ export default function CompliancePage() {
               const st = insStatus(p.expiry)
               const d  = differenceInDays(parseISO(p.expiry.slice(0,10)), new Date())
               return (
-                <div key={p.id} className="card" style={{ padding:'16px 18px', borderLeft:`4px solid ${st.color}`, animation:`slideUp 0.3s ${i*0.04}s ease both` }}>
+                <div key={p.id} className="card" style={{ padding:'16px 18px', animation:`slideUp 0.3s ${i*0.04}s ease both` }}>
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
                     <div>
                       <div style={{ fontWeight:700, fontSize:14, color:'#1A1612' }}>{p.type} Insurance</div>

@@ -190,8 +190,7 @@ function TaskCard({ task, isAdmin, onEdit, onDelete, onStatusChange }) {
 
   return (
     <div style={{
-      background:'var(--card)', border:`1px solid ${isOverdue ? '#FECACA' : 'var(--border)'}`,
-      borderLeft:`4px solid ${isOverdue ? '#DC2626' : statusColor}`, borderRadius:14, padding:'14px 16px',
+      background:'var(--card)', border:`1px solid ${isOverdue ? '#FECACA' : 'var(--border)'}`, borderRadius:14, padding:'14px 16px',
       display:'flex', gap:14, alignItems:'flex-start', opacity:task.status==='completed' ? 0.7 : 1,
       transition:'box-shadow 0.15s',
     }}

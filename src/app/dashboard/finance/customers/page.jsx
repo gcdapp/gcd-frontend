@@ -415,7 +415,7 @@ const CSS = `
   .txn-stat-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
   .txn-stat-tile {
     border-radius: 16px; padding: 18px 20px; background: var(--card);
-    border: 1px solid var(--border); border-top: 3px solid transparent;
+    border: 1px solid var(--border);
     transition: box-shadow 0.18s, transform 0.18s;
   }
   .txn-stat-tile:hover { box-shadow: 0 8px 26px rgba(0,0,0,0.08); transform: translateY(-2px); }
@@ -1698,19 +1698,19 @@ function AllTransactionsView() {
       )}
 
       <div className="txn-stat-strip">
-        <div className="txn-stat-tile" style={{ borderTopColor:'#F97316' }}>
+        <div className="txn-stat-tile">
           <div className="txn-stat-icon" style={{ background:'rgba(249,115,22,0.12)' }}><TrendingUp size={16} color="#F97316"/></div>
           <div className="txn-stat-label">Invoiced</div>
           <div className="txn-stat-val" style={{ color:'#F97316' }}>AED {fmtNum(totalInvoiced) ?? '0.00'}</div>
           <div className="txn-stat-sub">{invCount} invoice{invCount === 1 ? '' : 's'}</div>
         </div>
-        <div className="txn-stat-tile" style={{ borderTopColor:'#22C55E' }}>
+        <div className="txn-stat-tile">
           <div className="txn-stat-icon" style={{ background:'rgba(34,197,94,0.12)' }}><ArrowDownLeft size={16} color="#22C55E"/></div>
           <div className="txn-stat-label">Received</div>
           <div className="txn-stat-val" style={{ color:'#22C55E' }}>AED {fmtNum(totalReceived) ?? '0.00'}</div>
           <div className="txn-stat-sub">{recCount} receipt{recCount === 1 ? '' : 's'}</div>
         </div>
-        <div className="txn-stat-tile" style={{ borderTopColor: net >= 0 ? '#F97316' : '#22C55E' }}>
+        <div className="txn-stat-tile">
           <div className="txn-stat-icon" style={{ background: net >= 0 ? 'rgba(249,115,22,0.12)' : 'rgba(34,197,94,0.12)' }}>
             {net >= 0 ? <TrendingUp size={16} color="#F97316"/> : <CheckCircle2 size={16} color="#22C55E"/>}
           </div>
@@ -1921,7 +1921,7 @@ export default function CustomersPage() {
                       <RateCell label="Pickup" value={c.pickup_rate}/>
                     </div>
                   )}
-                  {c.notes && <div style={{ fontSize:11.5, color:'var(--text-muted)', fontStyle:'italic', borderLeft:'2px solid var(--border)', paddingLeft:8 }}>{c.notes}</div>}
+                  {c.notes && <div style={{ fontSize:11.5, color:'var(--text-muted)', fontStyle:'italic', paddingLeft:8 }}>{c.notes}</div>}
                 </div>
                 <div className="cust-card-actions">
                   <button onClick={() => setDrillCustomer(c)} className="cust-btn cust-btn-view">

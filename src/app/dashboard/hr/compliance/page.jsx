@@ -85,7 +85,6 @@ function ExpiryRow({ item }) {
       display:'flex', alignItems:'center', gap:14, flexWrap:'wrap',
       background:'var(--card)',
       border:`1px solid ${urgent ? sev.bc : 'var(--border)'}`,
-      borderLeft:`4px solid ${sev.c}`,
       borderRadius:16, padding:'14px 18px 14px 16px',
       boxShadow:'var(--shadow)', transition:'box-shadow 0.18s, transform 0.18s',
     }}

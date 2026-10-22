@@ -1233,9 +1233,6 @@ const PAY_CSS = `
   .py-row:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); border-color:var(--border-strong); }
   .py-row-paid  { border-color:rgba(52,211,153,0.25); }
   .py-row-pend  { border-color:var(--border); }
-  .py-row-top   { height:2px; flex-shrink:0; }
-  .py-row-paid  .py-row-top { background:linear-gradient(90deg,#34D399,#10B981); }
-  .py-row-pend  .py-row-top { background:var(--gold-border); }
   .py-row-inner { display:flex; align-items:center; gap:14px; padding:14px 18px; cursor:pointer; user-select:none; }
   .py-avatar { width:42px; height:42px; border-radius:50%; border:1.5px solid; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:900; flex-shrink:0; transition:transform var(--t-base); }
   .py-row:hover .py-avatar { transform:scale(1.06); }
@@ -1354,7 +1351,6 @@ const PayrollCard = memo(function PayrollCard({slip, onMarkPaid, onMarkUnpaid, m
 
   return (
     <div className={`py-row ${isPaid ? 'py-row-paid' : 'py-row-pend'}`} style={{animationDelay:`${Math.min(index*0.03,0.4)}s`, background: selected ? 'rgba(220,38,38,0.05)' : undefined}}>
-      <div className="py-row-top"/>
       <div className="py-row-inner" onClick={()=> selectMode ? onToggleSelect(slip.id) : setOpen(p=>!p)}>
         {selectMode && (
           <input type="checkbox" checked={selected} onChange={()=>onToggleSelect(slip.id)} onClick={e=>e.stopPropagation()}
