@@ -88,15 +88,6 @@ const GlassTip = ({active,payload,label}) => {
   )
 }
 
-// Purely decorative — no real historical trend data source without extra per-month
-// API calls (out of scope), just a visual cue matching the KPI card design.
-function KpiSpark({color}) {
-  return (
-    <svg width="30" height="14" viewBox="0 0 30 14" fill="none" style={{color,flexShrink:0}}>
-      <path d="M1 11 L7 6 L12 9 L18 3 L24 7 L29 2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" opacity="0.55"/>
-    </svg>
-  )
-}
 
 // Deterministic per-employee avatar color (same employee → same color every time,
 // unlike random) — gives each row visual identity instead of one flat gold circle
@@ -869,7 +860,7 @@ function GenericUnitsModal({employees, month, projectType, initialEmpId, subType
 
           <div style={{display:'flex',gap:10,marginTop:4}}>
             <button onClick={onClose} className="btn btn-secondary" style={{flex:1,justifyContent:'center'}}>Cancel</button>
-            <button onClick={handleSave} disabled={saving} style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'11px',borderRadius:100,background:'linear-gradient(135deg,#8F6807,#D4A017)',color:'white',fontWeight:700,fontSize:13,border:'none',cursor:'pointer',fontFamily:'inherit',opacity:saving?0.7:1}}>
+            <button onClick={handleSave} disabled={saving} style={{flex:2,display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'11px',borderRadius:100,background:'linear-gradient(135deg,#7A5906,#8F6807)',color:'white',fontWeight:700,fontSize:13,border:'none',cursor:'pointer',fontFamily:'inherit',opacity:saving?0.7:1}}>
               {saving?'Saving…':'Save'}
             </button>
           </div>
@@ -1174,7 +1165,7 @@ function BulkUnitsModal({month, projectType, employees, onSave, onClose}) {
               )}
 
               <button onClick={handleUpload} disabled={uploading||!validRows.length}
-                style={{padding:'13px',borderRadius:12,border:'none',cursor:(uploading||!validRows.length)?'not-allowed':'pointer',background:(uploading||!validRows.length)?'var(--border)':'linear-gradient(135deg,#8F6807,#D4A017)',color:(uploading||!validRows.length)?'var(--text-muted)':'white',fontWeight:700,fontSize:14,fontFamily:'inherit',marginTop:4,transition:'all 0.2s'}}>
+                style={{padding:'13px',borderRadius:12,border:'none',cursor:(uploading||!validRows.length)?'not-allowed':'pointer',background:(uploading||!validRows.length)?'var(--border)':'linear-gradient(135deg,#7A5906,#8F6807)',color:(uploading||!validRows.length)?'var(--text-muted)':'white',fontWeight:700,fontSize:14,fontFamily:'inherit',marginTop:4,transition:'all 0.2s'}}>
                 {uploading?'Uploading…':validRows.length?`Upload ${validRows.length} Record${validRows.length!==1?'s':''}`:'Choose a file to continue'}
               </button>
             </>
@@ -1227,7 +1218,7 @@ const PAY_CSS = `
   .py-tbtn-slip  { background:rgba(29,111,164,0.1); border:1.5px solid rgba(29,111,164,0.3); color:#1D6FA4; }
   .py-tbtn-bonus { background:rgba(16,185,129,0.1); border:1.5px solid rgba(16,185,129,0.3); color:#10B981; }
   .py-tbtn-ded   { background:rgba(239,68,68,0.08); border:1.5px solid rgba(239,68,68,0.25); color:#EF4444; }
-  .py-tbtn-all   { background:linear-gradient(135deg,#8F6807,#D4A017); border:none; color:white; box-shadow:var(--shadow-gold); }
+  .py-tbtn-all   { background:linear-gradient(135deg,#7A5906,#8F6807); border:none; color:white; box-shadow:var(--shadow-gold); }
   .py-tbtn-all:hover { box-shadow:var(--shadow-gold-lg); }
 
   /* Section header */
@@ -1241,10 +1232,10 @@ const PAY_CSS = `
   .py-row { background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:var(--shadow); transition:box-shadow var(--t-base),transform var(--t-base),border-color var(--t-base); animation:pySlide 0.35s ease both; }
   .py-row:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); border-color:var(--border-strong); }
   .py-row-paid  { border-color:rgba(52,211,153,0.25); }
-  .py-row-pend  { border-color:rgba(184,134,11,0.28); }
-  .py-row-top   { height:3px; flex-shrink:0; }
+  .py-row-pend  { border-color:var(--border); }
+  .py-row-top   { height:2px; flex-shrink:0; }
   .py-row-paid  .py-row-top { background:linear-gradient(90deg,#34D399,#10B981); }
-  .py-row-pend  .py-row-top { background:linear-gradient(90deg,#8F6807,#D4A017); }
+  .py-row-pend  .py-row-top { background:var(--gold-border); }
   .py-row-inner { display:flex; align-items:center; gap:14px; padding:14px 18px; cursor:pointer; user-select:none; }
   .py-avatar { width:42px; height:42px; border-radius:50%; border:1.5px solid; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:900; flex-shrink:0; transition:transform var(--t-base); }
   .py-row:hover .py-avatar { transform:scale(1.06); }
@@ -1332,7 +1323,7 @@ const PAY_CSS = `
   .py-page-num { min-width:28px; height:28px; padding:0 6px; border-radius:8px; border:1.5px solid transparent; background:transparent; color:var(--text-muted); font-weight:700; font-size:12px; cursor:pointer; font-family: inherit; transition:all var(--t-fast); }
   .py-page-num:hover { background:var(--bg-alt); color:var(--text); }
   .py-page-num:active { transform:scale(0.92); }
-  .py-page-num.active { background:linear-gradient(135deg,#8F6807,#D4A017); border-color:transparent; color:white; box-shadow:var(--shadow-gold); }
+  .py-page-num.active { background:linear-gradient(135deg,#7A5906,#8F6807); border-color:transparent; color:white; box-shadow:var(--shadow-gold); }
   .py-page-dots { color:var(--text-muted); font-size:12px; padding:0 2px; }
   .py-page-size { padding:6px 10px; border-radius:8px; border:1.5px solid var(--border); background:var(--card); color:var(--text); font-weight:600; font-size:11.5px; cursor:pointer; font-family: inherit; outline:none; }
 
@@ -1896,7 +1887,7 @@ export default function PayrollPage() {
           <div className="py-header-icon"><Wallet size={20}/></div>
           <div>
             <div className="py-header-title">Payroll</div>
-            <div className="py-header-sub">{payroll.length} employees · {paidCount} paid · v{APP_VERSION}</div>
+            <div className="py-header-sub">{payroll.length} employees · {paidCount} paid</div>
           </div>
           <select value={month} onChange={e=>setMonth(e.target.value)} className="py-month-sel">
             {MONTHS.map(m=><option key={m}>{m}</option>)}
@@ -1909,7 +1900,6 @@ export default function PayrollPage() {
             <div key={k.key} className={i<3?`py-kpi-card fade-up-${i+1}`:'py-kpi-card fade-up'} style={{'--kpi-glow':k.bg, ...(i===3?{animationDelay:'0.16s'}:{})}}>
               <div className="py-kpi-card-top">
                 <div className="py-kpi-badge" style={{color:k.color,background:k.bg,borderColor:k.border}}><k.Icon size={16}/></div>
-                <KpiSpark color={k.color}/>
               </div>
               {loading
                 ? <div className="sk" style={{height:23,width:'55%',borderRadius:6,marginBottom:2}}/>

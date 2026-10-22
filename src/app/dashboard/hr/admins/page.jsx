@@ -965,7 +965,7 @@ export default function AdminsPage() {
       <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
 
         {/* ── Hero ─────────────────────────────────────────────── */}
-        <div style={{ background:'linear-gradient(135deg,#0f1623 0%,#1a2535 50%,#1e3a5f 100%)', borderRadius:16, padding:24 }}>
+        <div style={{ background:'var(--hero-bg)', borderRadius:16, padding:24 }}>
 
           {/* Title row */}
           <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20, flexWrap:'wrap' }}>

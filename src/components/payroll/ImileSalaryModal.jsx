@@ -254,7 +254,7 @@ export default function ImileSalaryModal({ employees, month, initialEmpId, onSav
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
-            <button onClick={handleSave} disabled={saving} style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '11px', borderRadius: 100, background: 'linear-gradient(135deg,#8F6807,#D4A017)', color: 'white', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer', fontFamily:'inherit', opacity: saving ? 0.7 : 1 }}>
+            <button onClick={handleSave} disabled={saving} style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '11px', borderRadius: 100, background: 'linear-gradient(135deg,#7A5906,#8F6807)', color: 'white', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer', fontFamily:'inherit', opacity: saving ? 0.7 : 1 }}>
               {saving ? 'Saving…' : 'Save'}
             </button>
           </div>

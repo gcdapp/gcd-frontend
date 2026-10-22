@@ -153,7 +153,7 @@ export default function DriverSalaryPage() {
     { l:row.entry_amount != null ? 'Confirmed Amount' : 'Basic Salary', v:`AED ${fmt(base)}` },
     row.entry_amount == null && { l:isHours ? 'Hours Earnings' : 'Shipment Earnings', v:`AED ${fmt(unitsPay)}` },
     { l:'Bonuses', v:`+${fmt(bonusTotal)}`, c:'#059669' },
-    { l:'Deductions Applied', v:`-${fmt(dedTotal)}`, c:'#DC2626' },
+    { l:'Deductions Applied', v: dedTotal > 0 ? `-${fmt(dedTotal)}` : fmt(0), c: dedTotal > 0 ? '#DC2626' : undefined },
     { l:'Carried Forward', v:fmt(dedCarry) },
   ].filter(Boolean) : []
 
@@ -177,7 +177,7 @@ export default function DriverSalaryPage() {
             <div><span style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>Base</span> <strong style={{ fontSize:13, color:'white', marginLeft:4 }}>AED {fmt(base)}</strong></div>
             {unitsPay > 0 && <div><span style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>{isHours ? 'Hours' : 'Shipments'} ({unitsLabel})</span> <strong style={{ fontSize:13, color:'white', marginLeft:4 }}>AED {fmt(unitsPay)}</strong></div>}
             <div><span style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>Bonuses</span> <strong style={{ fontSize:13, color:'#34D399', marginLeft:4 }}>+{fmt(bonusTotal)}</strong></div>
-            <div><span style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>Deductions</span> <strong style={{ fontSize:13, color:'#F87171', marginLeft:4 }}>-{fmt(dedTotal)}</strong></div>
+            <div><span style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>Deductions</span> <strong style={{ fontSize:13, color: dedTotal > 0 ? '#F87171' : 'white', marginLeft:4 }}>{dedTotal > 0 ? '-' : ''}{fmt(dedTotal)}</strong></div>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:14 }}>
             <span style={{ fontSize:11, fontWeight:700, color:isPaid?'#34D399':'#FBBF24', background:isPaid?'rgba(52,211,153,0.15)':'rgba(251,191,36,0.15)', borderRadius:99, padding:'3px 12px' }}>
@@ -269,7 +269,7 @@ export default function DriverSalaryPage() {
             {deds.length > 0 && (
               <div style={{ display:'flex', justifyContent:'space-between', gap:12, flexWrap:'wrap', padding:'10px 16px', background:'var(--bg-alt)', fontSize:11.5, color:'var(--text-muted)' }}>
                 <span>Outstanding balance <strong style={{ color:'var(--text)' }}>{fmt(dedPending)}</strong></span>
-                <span>Applied this month <strong style={{ color:'#DC2626' }}>-{fmt(dedTotal)}</strong></span>
+                <span>Applied this month <strong style={{ color: dedTotal > 0 ? '#DC2626' : 'var(--text)' }}>{dedTotal > 0 ? '-' : ''}{fmt(dedTotal)}</strong></span>
                 <span>Carried forward <strong style={{ color:'var(--text)' }}>{fmt(dedCarry)}</strong></span>
               </div>
             )}

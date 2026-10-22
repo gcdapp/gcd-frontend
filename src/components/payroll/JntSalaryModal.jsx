@@ -370,7 +370,7 @@ export default function JntSalaryModal({ employees, month, initialEmpId, onSave,
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={onClose} className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
             <button onClick={handleSave} disabled={saving || loadingRates}
-              style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 11, borderRadius: 100, background: 'linear-gradient(135deg,#8F6807,#D4A017)', color: 'white', fontWeight: 700, fontSize: 13, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily:'inherit', opacity: saving ? 0.7 : 1 }}>
+              style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 11, borderRadius: 100, background: 'linear-gradient(135deg,#7A5906,#8F6807)', color: 'white', fontWeight: 700, fontSize: 13, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontFamily:'inherit', opacity: saving ? 0.7 : 1 }}>
               {saving ? 'Saving…' : 'Save Salary'}
             </button>
           </div>

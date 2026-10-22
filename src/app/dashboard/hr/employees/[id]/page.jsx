@@ -416,7 +416,7 @@ export default function DriverDashboardPage() {
               <div style={{ width:58, height:58, borderRadius:16, background:`linear-gradient(145deg,${sc}30,${sc}60)`, border:`2px solid ${sc}60`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, fontWeight:900, color:'white', letterSpacing:'-0.02em', boxShadow:`0 6px 20px ${sc}35` }}>
                 {emp.name?.slice(0,2).toUpperCase()}
               </div>
-              <div style={{ position:'absolute', bottom:-2, right:-2, width:14, height:14, borderRadius:'50%', background:s.dot, border:'2.5px solid #0f1623', boxShadow:'0 1px 4px rgba(0,0,0,0.4)' }}/>
+              <div style={{ position:'absolute', bottom:-2, right:-2, width:14, height:14, borderRadius:'50%', background:s.dot, border:'2.5px solid #1C1917', boxShadow:'0 1px 4px rgba(0,0,0,0.4)' }}/>
             </div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>

@@ -78,7 +78,7 @@ export default function SettingsPage() {
         <div style={{ position:'absolute', right:-30, top:-30, width:120, height:120, borderRadius:'50%', background:'rgba(184,134,11,0.15)' }}/>
         <div style={{ position:'absolute', right:40, bottom:-40, width:80, height:80, borderRadius:'50%', background:'rgba(184,134,11,0.1)' }}/>
         <div style={{ position:'relative', zIndex:1, display:'flex', alignItems:'center', gap:14 }}>
-          <div style={{ width:52, height:52, borderRadius:16, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow:'0 4px 14px rgba(184,134,11,0.4)' }}>
+          <div style={{ width:52, height:52, borderRadius:16, background:'linear-gradient(135deg,#7A5906,#8F6807)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, boxShadow:'0 4px 14px rgba(184,134,11,0.4)' }}>
             <ShieldCheck size={26} color="white"/>
           </div>
           <div>
@@ -195,7 +195,7 @@ export default function SettingsPage() {
             disabled={!canSubmit}
             style={{
               marginTop:4, padding:'13px 24px', borderRadius:14, border:'none', cursor: canSubmit ? 'pointer' : 'not-allowed',
-              background: canSubmit ? 'linear-gradient(135deg,#8F6807,#D4A017)' : 'var(--border)',
+              background: canSubmit ? 'linear-gradient(135deg,#7A5906,#8F6807)' : 'var(--border)',
               color: canSubmit ? 'white' : 'var(--text-muted)',
               fontWeight:700, fontSize:14, fontFamily:'inherit',
               display:'flex', alignItems:'center', justifyContent:'center', gap:8,

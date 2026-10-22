@@ -260,7 +260,7 @@ export default function HandoversPage() {
       <style>{`
         /* ── Hero ── */
         .hv-hero {
-          background: linear-gradient(135deg,#0f1623 0%,#1a2535 50%,#1e3a5f 100%);
+          background: var(--hero-bg);
           border-radius: 20px;
           padding: 24px 24px 20px;
           position: relative;

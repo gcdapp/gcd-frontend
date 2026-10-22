@@ -21,7 +21,7 @@ export default function Root() {
   return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#F8F7F4' }}>
       <div style={{ textAlign:'center' }}>
-        <div style={{ width:48, height:48, borderRadius:14, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, margin:'0 auto 12px' }}>🌙</div>
+        <div style={{ width:48, height:48, borderRadius:14, background:'linear-gradient(135deg,#7A5906,#8F6807)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, margin:'0 auto 12px' }}>🌙</div>
         <div style={{ fontSize:13, color:'#78716C' }}>Loading…</div>
       </div>
     </div>

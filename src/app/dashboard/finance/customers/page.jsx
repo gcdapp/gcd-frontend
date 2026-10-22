@@ -40,7 +40,7 @@ function initials(name) {
 /* ─────────────────────────────────────────── CSS ─────────────────────────── */
 const CSS = `
   .cust-hero {
-    background: linear-gradient(135deg, #0f1623 0%, #1a2535 50%, #1e3a5f 100%);
+    background: var(--hero-bg);
     border-radius: 16px; padding: 24px; margin-bottom: 20px;
   }
   .cust-hero-top { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; position: relative; }
@@ -90,7 +90,7 @@ const CSS = `
   .cust-card-header { display: flex; align-items: center; gap: 12px; padding: 16px 16px 12px; border-bottom: 1px solid var(--border); }
   .cust-avatar {
     width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
-    background: linear-gradient(135deg, #8F6807, #D4A017);
+    background: linear-gradient(135deg,#7A5906,#8F6807);
     display: flex; align-items: center; justify-content: center;
     font-weight: 800; font-size: 15px; color: white; letter-spacing: 0.03em;
   }
@@ -208,7 +208,7 @@ const CSS = `
 
   /* ── Detail hero ── */
   .det-hero {
-    background: linear-gradient(135deg, #0f1623 0%, #1a2535 50%, #1e3a5f 100%);
+    background: var(--hero-bg);
     border-radius: 16px; padding: 22px; margin-bottom: 16px;
   }
   .det-back-btn {
@@ -221,7 +221,7 @@ const CSS = `
   .det-hero-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
   .det-avatar {
     width: 50px; height: 50px; border-radius: 14px; flex-shrink: 0;
-    background: linear-gradient(135deg, #8F6807, #D4A017);
+    background: linear-gradient(135deg,#7A5906,#8F6807);
     display: flex; align-items: center; justify-content: center;
     font-weight: 800; font-size: 16px; color: white;
     box-shadow: 0 4px 12px rgba(184,134,11,0.3);
@@ -302,7 +302,7 @@ const CSS = `
   }
   .ent-modal-head {
     padding: 18px 22px; border-bottom: 1px solid var(--border);
-    background: linear-gradient(135deg, #0f1623, #1a2535);
+    background: var(--hero-bg);
     display: flex; align-items: center; justify-content: space-between;
   }
 
@@ -600,7 +600,7 @@ function EntryModal({ type, customer, entry, onSave, onClose }) {
   const iconBg   = isInvoice ? 'rgba(184,134,11,0.2)'  : 'rgba(34,197,94,0.2)'
   const iconBdr  = isInvoice ? 'rgba(184,134,11,0.4)'  : 'rgba(34,197,94,0.4)'
   const iconColor= isInvoice ? '#D4A017' : '#22C55E'
-  const btnBg    = isInvoice ? 'linear-gradient(135deg,#8F6807,#D4A017)' : 'linear-gradient(135deg,#15803D,#22C55E)'
+  const btnBg    = isInvoice ? 'linear-gradient(135deg,#7A5906,#8F6807)' : 'linear-gradient(135deg,#15803D,#22C55E)'
   const btnShadow= isInvoice ? '0 3px 12px rgba(184,134,11,0.35)' : '0 3px 12px rgba(34,197,94,0.3)'
 
   return createPortal(
@@ -1140,7 +1140,7 @@ function CustomerDetailView({ customer, isAdmin, onBack }) {
               <ArrowDownLeft size={14}/> Add Receipt
             </button>
             <button onClick={() => setModal({ type:'invoice', entry:null })}
-              style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer', background:'linear-gradient(135deg,#8F6807,#D4A017)', color:'white', fontWeight:700, fontSize:13, fontFamily:'inherit', boxShadow:'0 2px 10px rgba(184,134,11,0.4)', whiteSpace:'nowrap' }}>
+              style={{ display:'flex', alignItems:'center', gap:7, padding:'9px 16px', borderRadius:10, border:'none', cursor:'pointer', background:'linear-gradient(135deg,#7A5906,#8F6807)', color:'white', fontWeight:700, fontSize:13, fontFamily:'inherit', boxShadow:'0 2px 10px rgba(184,134,11,0.4)', whiteSpace:'nowrap' }}>
               <Plus size={14}/> Add Invoice
             </button>
           </div>

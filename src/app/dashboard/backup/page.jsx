@@ -83,7 +83,7 @@ function DownloadCard() {
       </div>
 
       <button onClick={runBackup} disabled={loading}
-        style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'11px 24px', borderRadius:24, background:loading?'#C4A882':'linear-gradient(135deg,#8F6807,#D4A017)', color:'#FFF', fontWeight:700, fontSize:13.5, border:'none', cursor:loading?'not-allowed':'pointer', fontFamily:'inherit', boxShadow:loading?'none':'0 4px 16px rgba(184,134,11,0.3)', transition:'all 0.2s' }}>
+        style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'11px 24px', borderRadius:24, background:loading?'#C4A882':'linear-gradient(135deg,#7A5906,#8F6807)', color:'#FFF', fontWeight:700, fontSize:13.5, border:'none', cursor:loading?'not-allowed':'pointer', fontFamily:'inherit', boxShadow:loading?'none':'0 4px 16px rgba(184,134,11,0.3)', transition:'all 0.2s' }}>
         {loading
           ? <><RefreshCw size={15} style={{ animation:'spin 1s linear infinite' }}/> Creating backup…</>
           : <><Download size={15}/> Download Backup</>}

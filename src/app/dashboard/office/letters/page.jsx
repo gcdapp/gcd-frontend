@@ -342,7 +342,7 @@ function RichEditor({ defaultValue, onChange, placeholder = 'Write your letter c
 const PAGE_CSS = `
   /* ── Hero ── */
   .ltr-hero {
-    background: linear-gradient(135deg, #0f1623 0%, #1a2535 50%, #1e3a5f 100%);
+    background: var(--hero-bg);
     border-radius: 16px;
     padding: 24px;
     margin-bottom: 20px;

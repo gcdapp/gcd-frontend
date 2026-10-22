@@ -95,4 +95,4 @@ export function profileCompletion(emp) {
 }
 
 /* ── Shared hero gradient — every DA page uses this exact one ── */
-export const DA_HERO_GRADIENT = 'linear-gradient(135deg,#0f1623 0%,#1a2535 55%,#1e3a5f 100%)'
+export const DA_HERO_GRADIENT = 'var(--hero-bg)'

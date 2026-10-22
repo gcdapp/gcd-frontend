@@ -627,7 +627,7 @@ function AssignModal({ v, asgn, emps, allAsgns, station, date, currentUser, onAs
           {/* Current assignment */}
           {assignedEmp ? (
             <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:'#ECFDF5', border:'1.5px solid #A7F3D0', borderRadius:14, marginBottom:18 }}>
-              <div style={{ width:42, height:42, borderRadius:11, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:14, color:'white', flexShrink:0 }}>
+              <div style={{ width:42, height:42, borderRadius:11, background:'linear-gradient(135deg,#7A5906,#8F6807)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:14, color:'white', flexShrink:0 }}>
                 {assignedEmp.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
               </div>
               <div style={{ flex:1, minWidth:0 }}>
@@ -899,7 +899,7 @@ export function VehicleCard({ v, asgn, currentHandover, isDown, sc, sb, date, st
           {/* ── Today's assignment pill ── */}
           {assignedEmp ? (
             <div style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', background:'#FDF6E3', border:'1px solid #F0D78C', borderRadius:10 }}>
-              <div style={{ width:28, height:28, borderRadius:8, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:11, color:'white', flexShrink:0 }}>
+              <div style={{ width:28, height:28, borderRadius:8, background:'linear-gradient(135deg,#7A5906,#8F6807)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:11, color:'white', flexShrink:0 }}>
                 {assignedEmp.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
               </div>
               <span style={{ fontSize:12, fontWeight:700, color:'#92400E', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{assignedEmp.name}</span>

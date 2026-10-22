@@ -95,7 +95,7 @@ function ShiftCell({ shift, empId, date, station, onAssign }) {
           </>}
           <div style={{display:'flex',gap:6}}>
             {shift&&<button onClick={clear} style={{flex:1,padding:'7px',borderRadius:100,background:'#FEF2F2',border:'1px solid #FCA5A5',color:'#C0392B',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>Clear</button>}
-            <button onClick={save} disabled={saving} style={{flex:2,padding:'7px',borderRadius:100,background:'linear-gradient(135deg,#8F6807,#D4A017)',border:'none',color:'white',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
+            <button onClick={save} disabled={saving} style={{flex:2,padding:'7px',borderRadius:100,background:'linear-gradient(135deg,#7A5906,#8F6807)',border:'none',color:'white',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>
               {saving?'Saving…':'Save'}
             </button>
           </div>

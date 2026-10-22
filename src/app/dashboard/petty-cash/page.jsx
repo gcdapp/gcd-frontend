@@ -98,7 +98,7 @@ function ExpenseModal({ onSave, onClose }) {
             <input className="input" value={form.note} onChange={set('note')} placeholder="Add a note…" style={{ borderRadius: 10 }} />
           </div>
           <button onClick={handleSave} disabled={saving}
-            style={{ padding: '12px', borderRadius: 12, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', background: saving ? 'var(--border)' : 'linear-gradient(135deg,#8F6807,#D4A017)', color: saving ? 'var(--text-muted)' : 'white', fontWeight: 700, fontSize: 14, fontFamily:'inherit', marginTop: 4, transition: 'all 0.2s' }}>
+            style={{ padding: '12px', borderRadius: 12, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', background: saving ? 'var(--border)' : 'linear-gradient(135deg,#7A5906,#8F6807)', color: saving ? 'var(--text-muted)' : 'white', fontWeight: 700, fontSize: 14, fontFamily:'inherit', marginTop: 4, transition: 'all 0.2s' }}>
             {saving ? 'Saving…' : 'Record Expense'}
           </button>
         </div>
@@ -169,7 +169,7 @@ function AllocateModal({ users, onSave, onClose }) {
             <input className="input" value={form.note} onChange={set('note')} placeholder="e.g. March operational expenses" style={{ borderRadius: 10 }} />
           </div>
           <button onClick={handleSave} disabled={saving}
-            style={{ padding: '12px', borderRadius: 12, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', background: saving ? 'var(--border)' : 'linear-gradient(135deg,#8F6807,#D4A017)', color: saving ? 'var(--text-muted)' : 'white', fontWeight: 700, fontSize: 14, fontFamily:'inherit', marginTop: 4, transition: 'all 0.2s' }}>
+            style={{ padding: '12px', borderRadius: 12, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', background: saving ? 'var(--border)' : 'linear-gradient(135deg,#7A5906,#8F6807)', color: saving ? 'var(--text-muted)' : 'white', fontWeight: 700, fontSize: 14, fontFamily:'inherit', marginTop: 4, transition: 'all 0.2s' }}>
             {saving ? 'Giving…' : 'Give Cash'}
           </button>
         </div>
@@ -251,7 +251,7 @@ function UserDetailPanel({ userId, userName, userRole, onBack, canDelete }) {
       {/* User balance card */}
       <div style={{ background: isNeg ? 'linear-gradient(135deg,#1A0A0A,#2C1212)' : 'linear-gradient(135deg,#0D1F12,#133A1F)', borderRadius: 16, padding: '20px 22px', color: 'white' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#8F6807,#D4A017)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,#7A5906,#8F6807)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>
             {ROLE_EMOJI[userRole] || '👤'}
           </div>
           <div>
@@ -370,7 +370,7 @@ export default function PettyCashPage() {
         <div style={{ position: 'absolute', right: 40, bottom: -40, width: 80, height: 80, borderRadius: '50%', background: 'rgba(184,134,11,0.1)' }} />
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg,#8F6807,#D4A017)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 14px rgba(184,134,11,0.4)' }}>
+            <div style={{ width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg,#7A5906,#8F6807)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 14px rgba(184,134,11,0.4)' }}>
               <Wallet size={26} color="white" />
             </div>
             <div>
@@ -384,7 +384,7 @@ export default function PettyCashPage() {
             {/* Give Cash — accountant/manager only */}
             {canManage && (
               <button onClick={() => setModal('allocate')}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 12, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#8F6807,#D4A017)', color: 'white', fontWeight: 700, fontSize: 13, fontFamily:'inherit' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 12, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#7A5906,#8F6807)', color: 'white', fontWeight: 700, fontSize: 13, fontFamily:'inherit' }}>
                 <Plus size={14} /> Give Cash
               </button>
             )}
@@ -402,7 +402,7 @@ export default function PettyCashPage() {
         <div style={{ display: 'flex', gap: 8 }}>
           {[['my', 'My Balance'], ['team', 'Team Overview']].map(([v, l]) => (
             <button key={v} onClick={() => setTab(v)}
-              style={{ padding: '8px 18px', borderRadius: 20, border: `1px solid ${tab === v ? '#8F6807' : 'var(--border)'}`, background: tab === v ? 'linear-gradient(135deg,#8F6807,#D4A017)' : 'var(--card)', color: tab === v ? 'white' : 'var(--text)', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily:'inherit', transition: 'all 0.2s' }}>
+              style={{ padding: '8px 18px', borderRadius: 20, border: `1px solid ${tab === v ? '#8F6807' : 'var(--border)'}`, background: tab === v ? 'linear-gradient(135deg,#7A5906,#8F6807)' : 'var(--card)', color: tab === v ? 'white' : 'var(--text)', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily:'inherit', transition: 'all 0.2s' }}>
               {l}
             </button>
           ))}
@@ -492,7 +492,7 @@ export default function PettyCashPage() {
                     style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: '1px solid var(--border)', cursor: 'pointer', transition: 'background 0.15s' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-alt)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                    <div style={{ width: 38, height: 38, borderRadius: 11, background: 'linear-gradient(135deg,#8F6807,#D4A017)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 17 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 11, background: 'linear-gradient(135deg,#7A5906,#8F6807)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 17 }}>
                       {ROLE_EMOJI[u.role] || '👤'}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>

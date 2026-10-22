@@ -106,7 +106,7 @@ function BulkUploadModal({ isProjectScoped, defaultProject, onSave, onClose }) {
         onClick={e => e.stopPropagation()}>
         <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border)', background:'#FDF6E3', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#8F6807,#D4A017)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(184,134,11,0.3)' }}>
+            <div style={{ width:38, height:38, borderRadius:11, background:'linear-gradient(135deg,#7A5906,#8F6807)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 10px rgba(184,134,11,0.3)' }}>
               <UploadCloud size={17} color="white"/>
             </div>
             <div>
@@ -177,7 +177,7 @@ function BulkUploadModal({ isProjectScoped, defaultProject, onSave, onClose }) {
               )}
 
               <button onClick={handleUpload} disabled={uploading || !validRows.length}
-                style={{ padding:'13px', borderRadius:12, border:'none', cursor:(uploading||!validRows.length)?'not-allowed':'pointer', background:(uploading||!validRows.length)?'var(--border)':'linear-gradient(135deg,#8F6807,#D4A017)', color:(uploading||!validRows.length)?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'inherit', marginTop:4, transition:'all 0.2s' }}>
+                style={{ padding:'13px', borderRadius:12, border:'none', cursor:(uploading||!validRows.length)?'not-allowed':'pointer', background:(uploading||!validRows.length)?'var(--border)':'linear-gradient(135deg,#7A5906,#8F6807)', color:(uploading||!validRows.length)?'var(--text-muted)':'white', fontWeight:700, fontSize:14, fontFamily:'inherit', marginTop:4, transition:'all 0.2s' }}>
                 {uploading ? 'Uploading…' : validRows.length ? `Upload ${validRows.length} DA${validRows.length!==1?'s':''}` : 'Choose a file to continue'}
               </button>
             </>
